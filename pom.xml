@@ -12,6 +12,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<watVersion>v1.1-1.1.0.616-SNAPSHOT</watVersion>
 	</properties>
 	
 	<repositories>
@@ -71,47 +72,47 @@
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-model</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hec</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hec-maps</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hec-plots</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hecnf</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hecnf-pluginapi</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-rma</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-rmadev</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
     		<groupId>jdom</groupId>
