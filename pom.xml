@@ -12,6 +12,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<watVersion>v1.1-1.1.0.616-SNAPSHOT</watVersion>
 	</properties>
 	
 	<repositories>
@@ -63,6 +64,18 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<WatPluginMainClass>usbr.wat.plugins.actionpanel.ActionPanelPlugin</WatPluginMainClass>
+						</manifestEntries>
+					</archive>
+				</configuration>
+				</plugin>
 		</plugins>
 	</build>
 
@@ -71,47 +84,47 @@
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-model</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hec</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hec-maps</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hec-plots</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hecnf</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-hecnf-pluginapi</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-rma</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
   			<groupId>mil.army.usace.hec.wat</groupId>
   			<artifactId>wat-rmadev</artifactId>
-  			<version>v1.1-1.1.0.605-SNAPSHOT</version>
+  			<version>${watVersion}</version>
 		</dependency>
 		<dependency>
     		<groupId>jdom</groupId>
@@ -126,7 +139,7 @@
 		<dependency>
     		<groupId>net.sf.jasperreports</groupId>
     		<artifactId>jasperreports</artifactId>
-    		<version>6.16.0</version>
+    		<version>6.17.0</version>
 		</dependency>
     </dependencies>
 </project>
