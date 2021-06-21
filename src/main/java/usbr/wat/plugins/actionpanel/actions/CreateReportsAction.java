@@ -213,8 +213,10 @@ public class CreateReportsAction extends AbstractAction
 		locals.__setitem__("modelName", Py.java2py(modelAlt.getProgram()));
 		locals.__setitem__("alternativeName", Py.java2py(modelAlt.getName()));
 		locals.__setitem__("alternativeFpart", Py.java2py(sim.getFPart(modelAlt)));
-		locals.__setitem__("simulationName", Py.java2py(baseSimulationName));
+		locals.__setitem__("baseSimulationName", Py.java2py(baseSimulationName));
 		locals.__setitem__("obsDataFolder", Py.java2py(getObsDataPath(studyDir)));
+		locals.__setitem__("dssFile", Py.java2py(sim.getSimulationDssFile()));
+		locals.__setitem__("simulationName", Py.java2py(sim.getName()));
 	
 		
 		// set additional variables....
