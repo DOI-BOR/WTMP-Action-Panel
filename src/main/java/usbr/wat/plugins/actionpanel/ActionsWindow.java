@@ -7,16 +7,21 @@
  */
 package usbr.wat.plugins.actionpanel;
 
+import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -30,9 +35,11 @@ import com.rma.client.LookAndFeel;
 
 import hec.gui.NameDescriptionPanel;
 
+import hec2.plugin.model.ModelAlternative;
 import hec2.wat.model.WatAnalysisPeriod;
 import hec2.wat.model.WatSimulation;
 
+import rma.swing.ColorIcon;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJList;
@@ -51,6 +58,10 @@ public class ActionsWindow extends RmaJDialog
 {
 	private static final int SELECTED_COLUMN = 0;
 	private static final int SIMULATION_COLUMN = 1;
+	private static final Color NOT_COMPUTED_COLOR = Color.BLUE;
+	private static final Color COMPUTED_COLOR = Color.GREEN.darker();
+	private static final Color COMPUTED_ERROR_COLOR = Color.RED;
+	private static final Color NEEDS_TO_COMPUTE_COLOR = Color.BLACK;
 	
 	private ActionsPanel _actionsPanel;
 	private JPanel _rightPanel;
@@ -241,6 +252,11 @@ public class ActionsWindow extends RmaJDialog
 			{
 				return col != 1;
 			}
+			@Override
+			public String getToolTipText(MouseEvent e)
+			{
+				return getTableToolTipText(e);
+			}
 		};
 		_simulationTable.setColumnWidths(150,350,110,110);
 		_simulationTable.removePopupMenuSumOptions();
@@ -263,6 +279,21 @@ public class ActionsWindow extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		_rightPanel.add(_simulationTable.getScrollPane(), gbc);
 		
+		if (! Boolean.getBoolean("NoSimulationComputeState"))
+		{
+			JPanel legendPanel = buildLegendPanel();
+			gbc.gridx     = GridBagConstraints.RELATIVE;
+			gbc.gridy     = GridBagConstraints.RELATIVE;
+			gbc.gridwidth = GridBagConstraints.REMAINDER;
+			gbc.weightx   = 1.0;
+			gbc.weighty   = 0.0;
+			gbc.anchor    = GridBagConstraints.NORTHWEST;
+			gbc.fill      = GridBagConstraints.HORIZONTAL;
+			gbc.insets    = RmaInsets.INSETS5505;
+			_rightPanel.add(legendPanel, gbc);
+		
+		}
+		
 		_statusList = new RmaJList<>(new RmaListModel<String>(false));
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -274,6 +305,109 @@ public class ActionsWindow extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5555;
 		_rightPanel.add(new JScrollPane(_statusList), gbc);
 	}
+	/**
+	 * @param e
+	 * @return
+	 */
+	protected String getTableToolTipText(MouseEvent e)
+	{
+		Point pt = e.getPoint();
+		int row = _simulationTable.rowAtPoint(pt);
+		int col = _simulationTable.columnAtPoint(pt);
+		if ( row == -1 || col == -1)
+		{
+			return null;
+		}
+		if ( col == SIMULATION_COLUMN )
+		{
+			WatSimulation sim = (WatSimulation) _simulationTable.getValueAt(row, col);
+			List<ModelAlternative> modelAlts = sim.getAllModelAlternativeList();
+			StringBuilder tip = new StringBuilder();
+			ModelAlternative modelAlt;
+			tip.append("<html>");
+			for (int i = 0;i < modelAlts.size();i++)
+			{
+				modelAlt = modelAlts.get(i);
+				if ( modelAlt != null )
+				{
+					tip.append(modelAlt.getProgram());
+					tip.append(" : ");
+					tip.append(modelAlt.getName());
+					tip.append("<br>");
+				}
+			}
+			tip.append("</html>");
+			return tip.toString().trim();
+		}
+		return null;
+	}
+
+	/**
+	 * @return
+	 */
+	private JPanel buildLegendPanel()
+	{
+		JPanel legendPanel = new JPanel(new GridBagLayout());
+		legendPanel.setBorder(BorderFactory.createTitledBorder(""));
+		
+		ColorIcon icon = new ColorIcon(NOT_COMPUTED_COLOR);
+		JLabel label = new JLabel("Not Computed");
+		label.setIcon(icon);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1; 
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.CENTER;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5555;
+		legendPanel.add(label, gbc);
+		
+		icon = new ColorIcon(NEEDS_TO_COMPUTE_COLOR);
+		label = new JLabel("Out of Date");
+		label.setIcon(icon);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1; 
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.CENTER;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5555;
+		legendPanel.add(label, gbc);
+		
+		icon = new ColorIcon(COMPUTED_COLOR);
+		label = new JLabel("Computed");
+		label.setIcon(icon);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1; 
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.CENTER;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5555;
+		legendPanel.add(label, gbc);
+		
+		icon = new ColorIcon(COMPUTED_ERROR_COLOR);
+		label = new JLabel("Compute Error");
+		label.setIcon(icon);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.001;
+		gbc.anchor    = GridBagConstraints.CENTER;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5555;
+		legendPanel.add(label, gbc);
+		
+		
+		
+		return legendPanel;
+	}
+
 	/**
 	 * @return
 	 */
@@ -363,41 +497,91 @@ public class ActionsWindow extends RmaJDialog
 	 */
 	public void setSimulationGroup(SimulationGroup sg)
 	{
-		clearForm();
-		_simulationTable.deleteCells();
-		_sg = sg;
-		if ( sg != null )
+		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		try
 		{
-			_nameDescPanel.setName(sg.getName());
-			_nameDescPanel.setDescription(sg.getDescription());
-			WatAnalysisPeriod ap = sg.getAnalysisPeriod();
-			String apName = "";
-			String apStart = "";
-			String apEnd = "";
-			if ( ap!= null )
+			clearForm();
+			_simulationTable.deleteCells();
+			_sg = sg;
+			if ( sg != null )
 			{
-				apName = ap.getName();
-				apStart = ap.getRunTimeWindow().getStartTime().toString();
-				apEnd = ap.getRunTimeWindow().getEndTime().toString();
+				_nameDescPanel.setName(sg.getName());
+				_nameDescPanel.setDescription(sg.getDescription());
+				WatAnalysisPeriod ap = sg.getAnalysisPeriod();
+				String apName = "";
+				String apStart = "";
+				String apEnd = "";
+				if ( ap!= null )
+				{
+					apName = ap.getName();
+					apStart = ap.getRunTimeWindow().getStartTime().toString();
+					apEnd = ap.getRunTimeWindow().getEndTime().toString();
+				}
+				_apLabel.setText(apName);
+				_apStartLabel.setText(apStart);
+				_apEndLabel.setText(apEnd);
+				List<WatSimulation> sims= sg.getSimulations();
+				Vector row;
+				WatSimulation sim;
+				Color bgColor;
+				for (int i = 0;i < sims.size(); i++ )
+				{
+					row = new Vector();
+					sim = sims.get(i);
+					row.add(Boolean.FALSE);
+					row.add(sim);
+					row.add("Show on Map");
+					row.add("View Report");
+					_simulationTable.appendRow(row);
+					if (! Boolean.getBoolean("NoSimulationComputeState"))
+					{
+						Color color = getSimForegroundColor(sim);
+						_simulationTable.setRowForeground(_simulationTable.getRowCount()-1, color);
+					}
+				}
 			}
-			_apLabel.setText(apName);
-			_apStartLabel.setText(apStart);
-			_apEndLabel.setText(apEnd);
-			List<WatSimulation> sims= sg.getSimulations();
-			Vector row;
-			for (int i = 0;i < sims.size(); i++ )
+			else
 			{
-				row = new Vector();
-				row.add(Boolean.FALSE);
-				row.add(sims.get(i));
-				row.add("Show on Map");
-				row.add("View Report");
-				_simulationTable.appendRow(row);
+				_apLabel.setText("");
+				_apStartLabel.setText("");
+				_apEndLabel.setText("");	
 			}
+			_actionsPanel.setSimulationGroup(sg);
 		}
-		_actionsPanel.setSimulationGroup(sg);
+		finally
+		{
+			setCursor(Cursor.getDefaultCursor());
+		}
 	}
 	
+	/**
+	 * @param sim
+	 * @return
+	 */
+	private Color getSimForegroundColor(WatSimulation sim)
+	{
+		if ( !sim.isComputable())
+		{
+			return NOT_COMPUTED_COLOR;
+		}
+		else if ( sim.hasComputeError() )
+		{
+			return COMPUTED_ERROR_COLOR;
+		}
+		else if( sim.hasComputed() && sim.needToCompute())
+		{
+			return NEEDS_TO_COMPUTE_COLOR;
+		}
+		else if ( sim.isComputable() && sim.hasComputed())
+		{
+			return COMPUTED_COLOR;
+		}
+		else 
+		{
+			return NOT_COMPUTED_COLOR;
+		}
+	}
+
 	public void addMessage(String message)
 	{
 		if ( message == null )
@@ -454,5 +638,26 @@ public class ActionsWindow extends RmaJDialog
 			return _sg.getAnalysisPeriod();
 		}
 		return null;
+	}
+
+	/**
+	 * 
+	 */
+	public void updateComputeStates()
+	{
+		_simulationTable.clearColors();
+		if ( Boolean.getBoolean("NoSimulationComputeState"))
+		{
+			return;
+		}
+		WatSimulation sim;
+		Color fgColor ;
+		for(int r = 0;r < _simulationTable.getRowCount();r++)
+		{
+			sim = (WatSimulation) _simulationTable.getValueAt(r, SIMULATION_COLUMN);
+			fgColor = getSimForegroundColor(sim);
+			_simulationTable.setRowForeground(r, fgColor);
+		}
+		
 	}
 }

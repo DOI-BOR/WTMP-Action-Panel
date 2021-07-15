@@ -15,6 +15,8 @@ import javax.swing.JPanel;
 
 import rma.swing.RmaInsets;
 import usbr.wat.plugins.actionpanel.actions.CreateReportsAction;
+import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
+import usbr.wat.plugins.actionpanel.actions.EditSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.NewSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.PostResultsAction;
 import usbr.wat.plugins.actionpanel.actions.ReviewDataAction;
@@ -40,6 +42,8 @@ public class ActionsPanel extends JPanel
 	private RunSimulationAction _runSimulationAction;
 	private CreateReportsAction _createReportsAction;
 	private PostResultsAction _postResultsAction;
+	private EditSimulationGroupAction _editSimulationAction;
+	private DeleteSimulationGroupAction _deleteSimulationAction;
 
 	public ActionsPanel(ActionsWindow parent)
 	{
@@ -75,6 +79,30 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
+		add(button, gbc);
+	
+		_editSimulationAction = new EditSimulationGroupAction(_parent);
+		button = new JButton(_editSimulationAction);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		add(button, gbc);
+
+		_deleteSimulationAction = new DeleteSimulationGroupAction(_parent);
+		button = new JButton(_deleteSimulationAction);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5555;
 		add(button, gbc);
 		
 		_updateModelsAction = new UpdateModelsAction();
@@ -171,6 +199,7 @@ public class ActionsPanel extends JPanel
 		_reviewDataAction.setEnabled(enabled);
 		_runSimulationAction.setEnabled(enabled);
 		_createReportsAction.setEnabled(enabled);
-	
+		_editSimulationAction.setEnabled(enabled);
+		_deleteSimulationAction.setEnabled(enabled);
 	}
 }

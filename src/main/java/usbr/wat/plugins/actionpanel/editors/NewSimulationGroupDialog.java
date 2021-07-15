@@ -11,14 +11,19 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import com.rma.client.Browser;
+import com.rma.factories.DeleteManagerFactory;
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Manager;
@@ -177,14 +182,8 @@ public class NewSimulationGroupDialog extends RmaJDialog
 				switch (e.getID())
 				{
 					case ButtonCmdPanel.OK_BUTTON :
-						if ( isValidData())
-						{
-							if ( createSimulationGroup())
-							{
-								_canceled = false;
-								setVisible(false);
-							}
-						}
+						saveForm();
+						
 						break;
 					case ButtonCmdPanel.CANCEL_BUTTON :
 						_canceled = true;
@@ -195,6 +194,37 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		});
 	}
 	
+	/**
+	 * 
+	 */
+	protected void saveForm()
+	{
+		if ( isValidData())
+		{
+			if ( _simGroup == null )
+			{
+				if ( createSimulationGroup())
+				{
+					_canceled = false;
+					setVisible(false);
+				}
+			}
+			else
+			{
+				if ( updateSimulationGroup())
+				{
+					_canceled = false;
+					setVisible(false);
+				}
+			}
+		}
+	}
+
+
+
+	
+
+
 	/**
 	 * @return
 	 */
@@ -219,9 +249,14 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	 */
 	private void fillForm()
 	{
-		Project proj = Project.getCurrentProject();
 		fillAnalysisPeriodCombo();
+	
+		fillTable();
+	}
+	private void fillTable()
+	{
 		
+		Project proj = Project.getCurrentProject();
 		_simTable.deleteCells();
 		List<WatSimulation> sims = proj.getManagerListForType(WatSimulation.class);
 		WatSimulation sim;
@@ -240,7 +275,52 @@ public class NewSimulationGroupDialog extends RmaJDialog
 			}
 		}
 	}
-	
+	/**
+	 * @param simGroup
+	 */
+	public void fillForm(SimulationGroup simGroup)
+	{
+		_simGroup = simGroup;
+		fillTable();
+		
+		setTitle("Edit Simulation Group ");
+		_nameDescPanel.setName(simGroup.getName());
+		_nameDescPanel.setNameEditable(false);
+		_nameDescPanel.setDescription(simGroup.getDescription());
+		
+		List<WatSimulation> sims = _simGroup.getSimulations();
+		WatSimulation sim;
+		for(int i = 0;i < sims.size(); i++ )
+		{
+			sim = sims.get(i);
+			selectSimulation(sim);
+		}
+		
+		WatAnalysisPeriod ap = _simGroup.getAnalysisPeriod();
+		_apCombo.setSelectedItem(ap);
+		
+	}	
+	/**
+	 * @param sim
+	 */
+	private void selectSimulation(WatSimulation sim)
+	{
+		int rows = _simTable.getRowCount();
+		String origSimName = getOriginalSimName(sim.getName());
+		WatSimulation tblSim;
+		for (int r = 0;r < rows; r++ )
+		{
+			tblSim= (WatSimulation) _simTable.getValueAt(r, SIMULATION_COLUMN);
+			if (  tblSim.getName().equals(origSimName) )
+			{
+				_simTable.setValueAt(Boolean.TRUE, r, SELECTED_COLUMN);
+				return;
+			}
+		}
+	}
+
+
+
 	/**
 	 * 
 	 */
@@ -267,6 +347,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		for (int i = 0;i < size; i++ )
 		{
 			simGroup = simGroups.get(i);
+			
 			if (simGroup.containsSimulation(sim))
 			{
 				return true;
@@ -292,6 +373,149 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		_simGroup = cmd.getSimulationGroup();
 		return _simGroup != null;
 	}
+	/**
+	 * @return
+	 */
+	private boolean updateSimulationGroup()
+	{
+		String desc = _nameDescPanel.getDescription();
+		_simGroup.setDescription(desc);
+		WatAnalysisPeriod ap = (WatAnalysisPeriod) _apCombo.getSelectedItem();
+		List<WatSimulation> sgSims = _simGroup.getSimulations();
+		if ( ap != _simGroup.getAnalysisPeriod() )
+		{
+			_simGroup.setAnalysisPeriod(ap);
+			WatSimulation sim;
+			for (int i = 0;i < sgSims.size(); i++ )
+			{
+				sim = sgSims.get(i);
+				sim.getContainerParent().setAnalysisPeriod(ap);
+				sim.getContainerParent().setModified(true);
+				sim.clearHasComputed();
+			}
+		}
+		List<WatSimulation> selectedSims =  getSelectedSimulations();
+		
+		List<String> selectedSimNames = selectedSims.stream().map(s->s.getName()).collect(Collectors.toList());
+		List<String> existingSimNames =sgSims.stream().map(s->s.getName()).collect(Collectors.toList());
+		
+		List<String>origExistingSimNames = getOriginalNames(existingSimNames);
+		
+		Set<String>set = new HashSet<>(selectedSimNames);
+		set.removeAll(origExistingSimNames);
+		//whats left in the set are any new simulations
+		Iterator<String> iter = set.iterator();
+		WatSimulation simToAdd, newSim;
+		Project proj = Project.getCurrentProject();
+		while (iter.hasNext())
+		{
+			String newSimName = iter.next();
+			simToAdd = findSimulationInTable(newSimName);
+			if ( simToAdd != null )
+			{
+				newSim = NewSimulationGroupCmd.createSimulation(simToAdd, _simGroup, proj, ap);
+				if ( newSim != null )
+				{
+					_simGroup.addSimulation(newSim);
+				}
+			}
+		}
+		
+		// delete any unselected simulations 
+		set = new HashSet<>(origExistingSimNames);
+		set.removeAll(selectedSimNames);
+		iter= set.iterator();
+		// what's left in the set are simulations to delete
+		while ( iter.hasNext())
+		{
+			String delSimName = iter.next();
+			WatSimulation simToDel = findSimGroupSimulationByOrigName(delSimName);
+			if ( simToDel != null )
+			{
+				if ( DeleteManagerFactory.deleteManager(simToDel))
+				{
+					_simGroup.removeSimulation(simToDel);
+				}
+			}
+		}
+		_simGroup.setModified(true);
+		
+		return true;
+	}
+
+
+	/**
+	 * @param delSimName
+	 * @return
+	 */
+	private WatSimulation findSimGroupSimulationByOrigName(String baseSimName)
+	{
+		List<WatSimulation> sims = _simGroup.getSimulations();
+		String groupSimName = NewSimulationGroupCmd.getGroupSimName(baseSimName, _simGroup.getName());
+		WatSimulation sim;
+		for (int i = 0;i < sims.size();i ++ )
+		{
+			sim = sims.get(i);
+			if ( groupSimName.equals(sim.getName()))
+			{
+				return sim;
+			}
+		}
+		return null;
+	}
+
+
+
+	/**
+	 * @param newSimName
+	 * @return
+	 */
+	private WatSimulation findSimulationInTable(String newSimName)
+	{
+		int numRows = _simTable.getRowCount();
+		WatSimulation sim;
+		for (int r = 0;r < numRows; r++)
+		{
+			sim = (WatSimulation) _simTable.getValueAt(r,  SIMULATION_COLUMN);
+			if ( newSimName.equals(sim.getName()))
+			{
+				return sim;
+			}
+		}
+		return null;
+	}
+
+
+
+	/**
+	 * @param existingSimNames
+	 * @return
+	 */
+	private List<String> getOriginalNames(List<String> existingSimNames)
+	{
+		List<String>baseSimNames = new ArrayList<>();
+		for (int i = 0;i < existingSimNames.size();i++ ) 
+		{
+			String simName = existingSimNames.get(i);
+			String baseSimulationName = getOriginalSimName(simName);
+			baseSimNames.add(baseSimulationName);
+		}
+		return baseSimNames;
+	}
+
+
+
+	/**
+	 * @param simName
+	 * @return
+	 */
+	private String getOriginalSimName(String simName)
+	{
+		String groupName = _simGroup.getName();
+		return  RMAIO.replace(simName, "-"+groupName, "");	
+	}
+
+
 
 	/**
 	 * @return
@@ -314,12 +538,15 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	protected boolean isValidData()
 	{
 		Project proj = Project.getCurrentProject();
-		String name = _nameDescPanel.getName();
-		if ( proj.getManagerProxy(name, SimulationGroup.class) != null )
+		if ( _simGroup == null )
 		{
-			JOptionPane.showMessageDialog(this, "A Simulation Group named "+name+" already exists. Please enter a unique name", 
-					"Duplicate Name", JOptionPane.INFORMATION_MESSAGE);
-			return false;
+			String name = _nameDescPanel.getName();
+			if ( proj.getManagerProxy(name, SimulationGroup.class) != null )
+			{
+				JOptionPane.showMessageDialog(this, "A Simulation Group named "+name+" already exists. Please enter a unique name", 
+						"Duplicate Name", JOptionPane.INFORMATION_MESSAGE);
+				return false;
+			}
 		}
 		WatAnalysisPeriod ap = (WatAnalysisPeriod) _apCombo.getSelectedItem();
 		if ( ap == null )
@@ -374,5 +601,9 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	{
 		return _simGroup;
 	}
+
+
+
+	
 
 }

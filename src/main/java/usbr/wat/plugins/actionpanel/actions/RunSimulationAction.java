@@ -57,6 +57,7 @@ public class RunSimulationAction extends AbstractAction
 		computeDlg.setSelectOutOfDate(false);
 		computeDlg.setComputeOnOpen(true);
 		computeDlg.setVisible(true);
+		_parent.updateComputeStates();
 	}
 
 }

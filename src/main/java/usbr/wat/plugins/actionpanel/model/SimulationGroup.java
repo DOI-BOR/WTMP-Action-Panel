@@ -252,6 +252,18 @@ public class SimulationGroup extends AbstractXMLManager
 		List<WatSimulation> sims = getSimulations();
 		return sims.contains(sim);
 	}
+	/**
+	 * @param simToDel
+	 */
+	public boolean removeSimulation(WatSimulation simToDel)
+	{
+		getSimulations();
+		if ( simToDel != null )
+		{
+			return _sims.remove(simToDel);
+		}
+		return false;
+	}
 
 
 	
