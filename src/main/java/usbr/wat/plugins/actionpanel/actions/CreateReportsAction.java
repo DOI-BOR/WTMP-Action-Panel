@@ -72,6 +72,7 @@ public class CreateReportsAction extends AbstractAction
 	public static final String PYTHON_REPORT_BAT = "runPythonReport.bat";
 	public static final String PYTHON_INIT_BAT = "initializePython.bat";
 	public static final String JYTHON_POST_PROCESS_SCRIPT ="PostProcess_Region.py";
+	public static final String REPORT_INSTALL_FOLDER = "AutomatedReport";
 	
 	public static final String JASPER_COMPILED_FILE_EXT = ".jasper";
 	private static final String JASPER_SOURCE_FILE_EXT = "jrxml";
@@ -179,14 +180,20 @@ public class CreateReportsAction extends AbstractAction
 				return true;
 			}
 			List<String>cmdList = new ArrayList<>();
-			String studyDir = Project.getCurrentProject().getProjectDirectory();
-			String batFile = RMAIO.concatPath(studyDir, PYTHON_REPORT_BAT);
+			String dir = System.getProperty("WAT.InstallDir", null);
+			if ( dir == null )
+			{
+				dir = System.getProperty("user.dir");
+			}
+			dir = RMAIO.concatPath(dir, REPORT_INSTALL_FOLDER);
+			
+			String batFile = RMAIO.concatPath(dir, PYTHON_REPORT_BAT);
 			//cmdList.add("cmd.exe");
 			//cmdList.add("/c");
 			cmdList.add(batFile);
 			cmdList.add(reportFile);
 
-			return runProcess(cmdList, studyDir);
+			return runProcess(cmdList, dir);
 		}
 		finally
 		{
@@ -542,12 +549,13 @@ public class CreateReportsAction extends AbstractAction
 		return RMAIO.concatPath(studyDir, OBS_DATA_FOLDER);
 	}
 	
-	private boolean runProcess(List<String> cmdList, String studyDir)
+	private boolean runProcess(List<String> cmdList, String runInFolder)
 	{
 		String[] cmdArray = new String[cmdList.size()];
 		cmdList.toArray(cmdArray);
 		ProcessBuilder procBuilder = new ProcessBuilder(cmdArray);
 		//String simDir = sim.getSimulationDirectory();
+		String studyDir = Project.getCurrentProject().getProjectDirectory();
 		String reportDir = RMAIO.concatPath(studyDir, REPORT_DIR);
 		reportDir = RMAIO.concatPath(reportDir, DATA_SOURCES_DIR);
 		File f = new File(reportDir);
@@ -558,7 +566,8 @@ public class CreateReportsAction extends AbstractAction
 		procBuilder.directory(f);
 		try
 		{
-			System.out.println("runProcess:launching "+cmdList);
+			System.out.println("runProcess:launching in folder:"+runInFolder);
+			System.out.println("runProcess:launching: "+cmdList);
 			Process proc = procBuilder.start();
 			BufferedReader reader1 = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
 			ProcessOutputReader preader1 = new ProcessOutputReader(reader1, true, proc);
