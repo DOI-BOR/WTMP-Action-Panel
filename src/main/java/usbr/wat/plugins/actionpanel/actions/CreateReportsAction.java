@@ -69,7 +69,7 @@ import usbr.wat.plugins.actionpanel.io.ReportXmlFile;
 @SuppressWarnings("serial")
 public class CreateReportsAction extends AbstractAction
 {
-	public static final String PYTHON_REPORT_BAT = "runPythonReport.bat";
+	public static final String PYTHON_REPORT_BAT = "WAT_Report_Generator.exe";
 	public static final String PYTHON_INIT_BAT = "initializePython.bat";
 	public static final String JYTHON_POST_PROCESS_SCRIPT ="PostProcess_Region.py";
 	public static final String REPORT_INSTALL_FOLDER = "AutomatedReport";
@@ -554,11 +554,8 @@ public class CreateReportsAction extends AbstractAction
 		String[] cmdArray = new String[cmdList.size()];
 		cmdList.toArray(cmdArray);
 		ProcessBuilder procBuilder = new ProcessBuilder(cmdArray);
-		//String simDir = sim.getSimulationDirectory();
-		String studyDir = Project.getCurrentProject().getProjectDirectory();
-		String reportDir = RMAIO.concatPath(studyDir, REPORT_DIR);
-		reportDir = RMAIO.concatPath(reportDir, DATA_SOURCES_DIR);
-		File f = new File(reportDir);
+		
+		File f = new File(runInFolder);
 		if (!f.exists())
 		{
 			f.mkdirs();
