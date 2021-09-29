@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -33,8 +34,6 @@ import org.python.util.PythonInterpreter;
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
-
-import hec.heclib.util.HecTime;
 
 import hec2.plugin.model.ModelAlternative;
 import hec2.wat.io.ProcessOutputReader;
@@ -654,8 +653,9 @@ public class CreateReportsAction extends AbstractAction
 			params.put(ANALYSIS_START_TIME_PARAM, sim.getRunTimeWindow().getStartTime().toString());
 			params.put(ANALYSIS_END_TIME_PARAM, sim.getRunTimeWindow().getEndTime().toString());
 			Date date = new Date(sim.getLastComputedDate());
-			HecTime computedDate = new HecTime(date, 0);
-			params.put(SIMULATION_LAST_COMPUTED_DATE_PARAM, computedDate.toString());
+			SimpleDateFormat fmt = new SimpleDateFormat("MMMM dd, yyyy HH:mm");
+
+			params.put(SIMULATION_LAST_COMPUTED_DATE_PARAM, fmt.format(date));
 
 			String xmlDataDoc = RMAIO.concatPath(studyDir, REPORT_DIR);
 			xmlDataDoc = RMAIO.concatPath(xmlDataDoc, DATA_SOURCES_DIR);
