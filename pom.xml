@@ -12,7 +12,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<watVersion>v1.1-1.1.0.629-SNAPSHOT</watVersion>
+		<watVersion>v1.1-1.1.0.642-SNAPSHOT</watVersion>
 	</properties>
 
 	<distributionManagement>
