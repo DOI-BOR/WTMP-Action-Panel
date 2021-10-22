@@ -235,5 +235,10 @@
 			<artifactId>wat-cequalw2-plugin</artifactId>
 			<version>v1.1-2.0.0.1149-20210903.004433-1</version>
 		</dependency>
-		</dependencies>
+		<dependency>
+			<groupId>mil.army.usace.hec</groupId>
+			<artifactId>hec-dssvue</artifactId>
+			<version>3.0.1-SNAPSHOT</version>
+		</dependency>
+    </dependencies>
 </project>

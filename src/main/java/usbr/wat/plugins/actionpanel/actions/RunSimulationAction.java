@@ -8,6 +8,8 @@
 package usbr.wat.plugins.actionpanel.actions;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -15,10 +17,13 @@ import javax.swing.JOptionPane;
 
 import com.rma.client.Browser;
 
-import hec2.wat.client.WatComputeSelectorDialog;
 import hec2.wat.model.WatSimulation;
 
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.editors.iterationCompute.UsgsComputeSelectorDialog;
+import usbr.wat.plugins.actionpanel.model.ActionComputable;
+import usbr.wat.plugins.actionpanel.model.IterationSettings;
+import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
  * @author Mark Ackerman
@@ -37,7 +42,8 @@ public class RunSimulationAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		if ( _parent.getSimulationGroup() == null )
+		SimulationGroup simGroup = _parent.getSimulationGroup();
+		if ( simGroup == null )
 		{
 			JOptionPane.showMessageDialog(_parent,"Please create or select a Simulation Group first",
 					"No Simulation Group Selected", JOptionPane.INFORMATION_MESSAGE);
@@ -51,9 +57,21 @@ public class RunSimulationAction extends AbstractAction
 					"No Simulations Selected", JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
-		
-		WatComputeSelectorDialog computeDlg = new WatComputeSelectorDialog(Browser.getBrowserFrame(),WatSimulation.class);
-		computeDlg.setSelectSimulations(sims);
+		List<ActionComputable>computables = new ArrayList<>();
+		Iterator<WatSimulation> iter = sims.iterator();
+		ActionComputable computable;
+		WatSimulation sim ;
+		IterationSettings iterSettings;
+		UsgsComputeSelectorDialog computeDlg = new UsgsComputeSelectorDialog(Browser.getBrowserFrame(),WatSimulation.class);
+		while ( iter.hasNext())
+		{
+			sim = iter.next();
+			iterSettings = simGroup.getIterationSettings(sim.getName());
+			computable = new ActionComputable(sim, iterSettings);
+			computable.setProgressDialog(computeDlg);
+			computables.add(computable);
+		}
+		computeDlg.setSelectedComputables(computables);
 		computeDlg.setSelectOutOfDate(false);
 		computeDlg.setComputeOnOpen(true);
 		computeDlg.setVisible(true);
