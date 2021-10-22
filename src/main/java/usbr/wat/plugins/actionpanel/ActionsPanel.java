@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import rma.swing.RmaInsets;
 import usbr.wat.plugins.actionpanel.actions.CreateReportsAction;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
+import usbr.wat.plugins.actionpanel.actions.EditInterativeSimulationAction;
 import usbr.wat.plugins.actionpanel.actions.EditSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.NewSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.PostResultsAction;
@@ -44,6 +45,7 @@ public class ActionsPanel extends JPanel
 	private PostResultsAction _postResultsAction;
 	private EditSimulationGroupAction _editSimulationAction;
 	private DeleteSimulationGroupAction _deleteSimulationAction;
+	private EditInterativeSimulationAction _editInterativeSimAction;
 
 	public ActionsPanel(ActionsWindow parent)
 	{
@@ -105,6 +107,8 @@ public class ActionsPanel extends JPanel
 		gbc.insets    = RmaInsets.INSETS5555;
 		add(button, gbc);
 		
+	
+		
 		_updateModelsAction = new UpdateModelsAction();
 		button = new JButton(_updateModelsAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -150,9 +154,21 @@ public class ActionsPanel extends JPanel
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
+		gbc.insets    = RmaInsets.INSETS5555;
 		add(button, gbc);
-	
+		
+		_editInterativeSimAction = new EditInterativeSimulationAction(_parent);
+		button = new JButton(_editInterativeSimAction);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		add(button, gbc);		
+		
 		_runSimulationAction = new RunSimulationAction(_parent);
 		button = new JButton(_runSimulationAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -162,7 +178,7 @@ public class ActionsPanel extends JPanel
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
+		gbc.insets    = RmaInsets.INSETS5555;
 		add(button, gbc);
 	
 		_createReportsAction = new CreateReportsAction(_parent);
@@ -197,6 +213,7 @@ public class ActionsPanel extends JPanel
 	{
 		boolean enabled = sg != null;
 		_reviewDataAction.setEnabled(enabled);
+		_editInterativeSimAction.setEnabled(enabled);
 		_runSimulationAction.setEnabled(enabled);
 		_createReportsAction.setEnabled(enabled);
 		_editSimulationAction.setEnabled(enabled);

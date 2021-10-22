@@ -155,6 +155,10 @@ public class SelectSimulationGroupDialog extends RmaJDialog
 			
 			
 		}
+		if ( _simGroupTable.getRowCount() == 1)
+		{
+			_simGroupTable.setSelectedIndices(0);
+		}
 	}
 
 	public boolean isCanceled()

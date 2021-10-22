@@ -1,15 +1,11 @@
-/*
- * Copyright 2021  Hydrologic Engineering Center (HEC).
- * United States Army Corps of Engineers
- * All Rights Reserved.  HEC PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval
- * from HEC
- */
+
 package usbr.wat.plugins.actionpanel.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jdom.Document;
 import org.jdom.Element;
@@ -39,6 +35,8 @@ public class SimulationGroup extends AbstractXMLManager
 	private WatAnalysisPeriod _analysisPeriod;
 
 	private String _apName;
+	
+	private Map<String, IterationSettings>_iterationsSettings = new HashMap<>();
 
 	public SimulationGroup()
 	{
@@ -87,10 +85,26 @@ public class SimulationGroup extends AbstractXMLManager
 			simsElem.addContent(simelem);
 			XMLUtilities.saveChildElement(simelem, "Name", sim.getName());
 			XMLUtilities.saveChildElement(simelem, "Class", sim.getClass().getName());
+			saveIterationSettings(simelem, sim.getName());
 		}
 		
-		
 		return true;
+	}
+	/**
+	 * 
+	 */
+	private void saveIterationSettings(Element simElem, String simName)
+	{
+		IterationSettings settings = _iterationsSettings.get(simName);
+		if ( settings == null )
+		{
+			return;
+		}
+		Element iterElem = new Element("IterationSettings");
+		simElem.addContent(iterElem);
+		
+		settings.saveData(iterElem);
+		
 	}
 	@Override
 	protected boolean loadDocument(Document doc)
@@ -121,6 +135,7 @@ public class SimulationGroup extends AbstractXMLManager
 					String simName = XMLUtilities.getChildElementAsString(simElem, "Name", true, null);
 					String simClass = XMLUtilities.getChildElementAsString(simElem, "Class", true, null);
 					_simulationInfo.add(new SimulationInfo(simName, simClass));
+					loadIterationSettings(simElem, simName);
 				}
 			}
 		}
@@ -137,6 +152,21 @@ public class SimulationGroup extends AbstractXMLManager
 		
 	}
 
+	/**
+	 * @param simElem
+	 */
+	private void loadIterationSettings(Element simElem, String simName)
+	{
+		Element iterElem = simElem.getChild("IterationSettings");
+		if ( iterElem == null )
+		{
+			return;
+		}
+		IterationSettings settings = new IterationSettings();
+		settings.loadData(iterElem);
+		
+		_iterationsSettings.put(simName, settings);
+	}
 	/**
 	 * @return
 	 */
@@ -263,6 +293,20 @@ public class SimulationGroup extends AbstractXMLManager
 			return _sims.remove(simToDel);
 		}
 		return false;
+	}
+	/**
+	 * @param name
+	 * @return
+	 */
+	public IterationSettings getIterationSettings(String simName)
+	{
+		IterationSettings settings = _iterationsSettings.get(simName);
+		if ( settings == null )
+		{
+			settings = new IterationSettings();
+			_iterationsSettings.put(simName, settings);
+		}
+		return settings;
 	}
 
 
