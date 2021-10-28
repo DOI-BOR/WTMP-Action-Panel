@@ -31,6 +31,7 @@ import com.rma.model.Project;
 import com.rma.ui.ComputeProgressPanel;
 
 import hec.heclib.dss.DSSPathname;
+import hec.heclib.dss.HecDSSFileDataManager;
 import hec.heclib.dss.HecDSSUtilities;
 import hec.heclib.dss.HecDataManager;
 import hec.io.DSSIdentifier;
@@ -172,8 +173,8 @@ public class ActionComputable
 					return false;
 				}
 				// close any DSS files we might have had open
-				HecDataManager dm = new HecDataManager();
-				dm.closeAll();
+				HecDSSFileDataManager dm = new HecDSSFileDataManager();
+				dm.closeAllFiles();
 				
 				_sim.setRecomputeAll(_computeDialog.shouldRecomputeAll());
 				// compute
