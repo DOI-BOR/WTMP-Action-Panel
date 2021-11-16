@@ -1,142 +1,20 @@
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>usbr.wat.plugins</groupId>
+	<parent>
+		<groupId>usbr.wat.plugins</groupId>
+		<artifactId>usbr-wat-plugins-parent</artifactId>
+		<version>0.0.2-SNAPSHOT</version>
+		<relativePath>../</relativePath>
+	</parent>
+
 	<artifactId>usbr-actionpanel-plugin</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>USBR WQ Action Panel Plugin</name>
 	<url>http://maven.apache.org</url>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<watVersion>v1.1-1.1.0.642-SNAPSHOT</watVersion>
-	</properties>
-
-	<distributionManagement>
-		<repository>
-			<id>rma-maven-library-releases</id>
-			<url>http://artifactory.rmanet.com:2447/artifactory/rma-maven-library-releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>rma-maven-library-snapshots</id>
-			<url>http://artifactory.rmanet.com:2447/artifactory/rma-maven-library-snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
-
-	<repositories>
-		<repository>
-			<id>hec-nexus-public</id>
-			<name>HEC Nexus Maven Public</name>
-			<url>https://www.hec.usace.army.mil/nexus/repository/maven-public/</url>
-		</repository>
-		<repository>
-			<id>rma-artifactory</id>
-			<name>RMA Artifactory</name>
-			<url>http://artifactory.rmanet.com:2447/artifactory/rma-maven-library-snapshots</url>
-		</repository>
-	</repositories>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.1.2</version>
-				<executions>
-					<execution>
-						<id>download-heclib</id>
-						<phase>package</phase>
-						<goals>
-							<goal>unpack</goal>
-						</goals>
-						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>mil.army.usace.hec</groupId>
-									<artifactId>javaHeclib</artifactId>
-									<version>7-HX-win-x64</version>
-									<type>zip</type>
-									<outputDirectory>${project.build.directory}/install/lib</outputDirectory>
-								</artifactItem>
-							</artifactItems>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.4</version>
-				<configuration>
-					<archive>
-						<manifestEntries>
-							<WatPluginMainClass>usbr.wat.plugins.actionpanel.ActionPanelPlugin</WatPluginMainClass>
-						</manifestEntries>
-					</archive>
-				</configuration>
-				</plugin>
-		</plugins>
-	</build>
-
-
 	<dependencies>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-model</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-hec</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-hec-maps</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-hec-plots</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-hecnf</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-hecnf-pluginapi</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-rma</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
-		<dependency>
-				<groupId>mil.army.usace.hec.wat</groupId>
-				<artifactId>wat-rmadev</artifactId>
-				<version>${watVersion}</version>
-		</dependency>
 		<dependency>
 				<groupId>jdom</groupId>
 				<artifactId>jdom</artifactId>
