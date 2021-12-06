@@ -32,6 +32,7 @@ import javax.swing.JSeparator;
 
 import com.rma.client.Browser;
 import com.rma.client.LookAndFeel;
+import com.rma.util.PlugInLoader;
 
 import hec.gui.NameDescriptionPanel;
 
@@ -78,11 +79,13 @@ public class ActionsWindow extends RmaJDialog
 		super(parent);
 		buildControls();
 		addListeners();
+		loadPlugins();
 		pack();
 		setSize(950, 550);
 		setLocationRelativeTo(Browser.getBrowserFrame());
 	}
 
+	
 	/**
 	 * 
 	 */
@@ -406,6 +409,15 @@ public class ActionsWindow extends RmaJDialog
 		
 		
 		return legendPanel;
+	}
+
+	
+	/**
+	 * 
+	 */
+	private void loadPlugins()
+	{
+		PlugInLoader.loadPlugIns("ReportPlugin");
 	}
 
 	/**

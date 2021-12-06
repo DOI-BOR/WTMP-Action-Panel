@@ -14,9 +14,9 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 
 import rma.swing.RmaInsets;
-import usbr.wat.plugins.actionpanel.actions.CreateReportsAction;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.EditInterativeSimulationAction;
+import usbr.wat.plugins.actionpanel.actions.DisplayReportSelectorAction;
 import usbr.wat.plugins.actionpanel.actions.EditSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.NewSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.PostResultsAction;
@@ -41,7 +41,7 @@ public class ActionsPanel extends JPanel
 	private UpdateDataAction _updateDataAction;
 	private ReviewDataAction _reviewDataAction;
 	private RunSimulationAction _runSimulationAction;
-	private CreateReportsAction _createReportsAction;
+	private DisplayReportSelectorAction _displayReportsAction;
 	private PostResultsAction _postResultsAction;
 	private EditSimulationGroupAction _editSimulationAction;
 	private DeleteSimulationGroupAction _deleteSimulationAction;
@@ -181,8 +181,8 @@ public class ActionsPanel extends JPanel
 		gbc.insets    = RmaInsets.INSETS5555;
 		add(button, gbc);
 	
-		_createReportsAction = new CreateReportsAction(_parent);
-		button = new JButton(_createReportsAction);
+		_displayReportsAction = new DisplayReportSelectorAction(_parent);
+		button = new JButton(_displayReportsAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -215,7 +215,7 @@ public class ActionsPanel extends JPanel
 		_reviewDataAction.setEnabled(enabled);
 		_editInterativeSimAction.setEnabled(enabled);
 		_runSimulationAction.setEnabled(enabled);
-		_createReportsAction.setEnabled(enabled);
+		_displayReportsAction.setEnabled(enabled);
 		_editSimulationAction.setEnabled(enabled);
 		_deleteSimulationAction.setEnabled(enabled);
 	}

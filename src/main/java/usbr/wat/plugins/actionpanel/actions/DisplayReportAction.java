@@ -64,7 +64,7 @@ public class DisplayReportAction extends AbstractAction
 	{
 		if ( sim != null )
 		{
-			String rptDir = RMAIO.concatPath(sim.getSimulationDirectory(), CreateReportsAction.REPORT_DIR);
+			String rptDir = RMAIO.concatPath(sim.getSimulationDirectory(), BaseReportAction.REPORT_DIR);
 			String latestFile = findLatestReportFile(rptDir);
 			if ( latestFile != null )
 			{
