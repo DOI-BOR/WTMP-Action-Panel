@@ -22,12 +22,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
 import hec.util.AnimatedWaitGlassPane;
@@ -110,7 +113,9 @@ public class DisplayReportsSelector extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(_reportTable.getScrollPane(), gbc);
 		
-		_cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.OK_CANCEL_BUTTONS);
+		_cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.OK_BUTTON|ButtonCmdPanel.CLOSE_BUTTON);
+		JButton button = _cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON);
+		button.setText("Create Reports");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -147,9 +152,8 @@ public class DisplayReportsSelector extends RmaJDialog
 					case ButtonCmdPanel.OK_BUTTON :
 						_isCanceled = false;
 						createReports();
-						setVisible(false);
 						break;
-					case ButtonCmdPanel.CANCEL_BUTTON :
+					case ButtonCmdPanel.CLOSE_BUTTON :
 						_isCanceled = true;
 						setVisible(false);
 						break;
@@ -163,9 +167,10 @@ public class DisplayReportsSelector extends RmaJDialog
 	 */
 	private void fillForm()
 	{
+		
 		List<ReportPlugin> plugins = ReportsManager.getPlugins();
-		List<WatSimulation> sims = _parent.getSelectedSimulations();
 		SimulationGroup simGroup = _parent.getSimulationGroup();
+		List<WatSimulation>sims = _parent.getSelectedSimulations();
 		boolean canBeComparisionReport = sims.size()>1;
 		
 		List<ReportPlugin>reportsToUse = new ArrayList<>();
@@ -319,7 +324,9 @@ public class DisplayReportsSelector extends RmaJDialog
 				}
 				private Future<ReportCreator> createReport( ReportPlugin reportPlugin)
 				{
-					return (Future<ReportCreator>) threadPool.submit(new ReportCreator(reportPlugin));
+					ReportCreator rc = new ReportCreator(reportPlugin); 
+					Future< ? > future = threadPool.submit(rc);
+					return (Future<ReportCreator>) future;
 				}
 				@Override
 				public void process(List<Future<ReportCreator>> chunks)
@@ -334,9 +341,16 @@ public class DisplayReportsSelector extends RmaJDialog
 						try
 						{
 							rc = chunks.get(i).get();
-							if ( !rc.wasReportSuccessFul())
+							if ( rc != null )
 							{
-								_agp.setMessage("Failed to create report "+rc.getReportPlugin().getName());
+								if ( !rc.wasReportSuccessFul())
+								{
+									_agp.setMessage("Failed to create report "+rc.getReportPlugin()); 
+								}
+							}
+							else
+							{
+								_agp.setMessage("Failed to create report ");
 							}
 						}
 						catch (InterruptedException | ExecutionException e)
@@ -351,6 +365,14 @@ public class DisplayReportsSelector extends RmaJDialog
 				public void done() 
 				{ 
 					_agp.setMessage("Reports Complete");
+					try
+					{
+						threadPool.awaitTermination(30, TimeUnit.SECONDS);
+					}
+					catch (InterruptedException e)
+					{
+						// TODO Auto-generated catch block
+					}
 					try
 					{
 						
@@ -406,6 +428,13 @@ public class DisplayReportsSelector extends RmaJDialog
 	@Override
 	public void setVisible(boolean visible)
 	{
+		if ( visible )
+		{
+			if ( !checkSims())
+			{
+				return;
+			}
+		}
 		super.setVisible(visible);
 		if ( !visible)
 		{
@@ -414,6 +443,25 @@ public class DisplayReportsSelector extends RmaJDialog
 				saveSelectedReports();
 			}
 		}
+	}
+	private boolean checkSims()
+	{
+		if ( _parent.getSimulationGroup() == null )
+		{
+			JOptionPane.showMessageDialog(_parent,"Please create or select a Simulation Group first",
+					"No Simulation Group Selected", JOptionPane.INFORMATION_MESSAGE);
+			return false;
+			
+		}
+		
+		List<WatSimulation>sims = _parent.getSelectedSimulations();
+		if ( sims.isEmpty())
+		{
+			JOptionPane.showMessageDialog(_parent,"Please select the simulations that you want to create reports for",
+					"No Simulations Selected", JOptionPane.INFORMATION_MESSAGE);
+			return false;
+		}
+		return true;
 	}
 	
 	/**
@@ -443,7 +491,7 @@ public class DisplayReportsSelector extends RmaJDialog
 	 *
 	 */
 	public class ReportCreator
-	implements Runnable
+		implements Runnable
 	{
 
 		private ReportPlugin _reportPlugin;
@@ -462,7 +510,16 @@ public class DisplayReportsSelector extends RmaJDialog
 		public void run()
 		{
 			_agp.setMessage("Creating report for "+_reportPlugin.getName());
-			_reportRv = _reportPlugin.createReport();
+			try
+			{
+				_reportRv = _reportPlugin.createReport();
+			}
+			catch ( Exception e )
+			{
+				Logger.getLogger(DisplayReportsSelector.class.getName()).info("Failed to run report "+_reportPlugin.getName()
+						+" Error:"+e);
+				_reportRv = false;
+			}
 		}
 
 		public boolean wasReportSuccessFul()
