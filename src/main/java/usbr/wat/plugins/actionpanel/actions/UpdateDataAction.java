@@ -11,6 +11,9 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+
 /**
  * @author Mark Ackerman
  *
@@ -18,17 +21,25 @@ import javax.swing.AbstractAction;
 @SuppressWarnings("serial")
 public class UpdateDataAction extends AbstractAction
 {
-	public UpdateDataAction()
+	private ActionsWindow _parent;
+	public UpdateDataAction(ActionsWindow parent)
 	{
 		super("Get/Update Data");
 		setEnabled(false);
+		_parent = parent;
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		// TODO Auto-generated method stub
-		System.out.println("actionPerformed TODO implement me");
-
+		updateData(_parent.getSimulationGroup());
+	}
+	/**
+	 * @param simulationGroup
+	 */
+	public boolean updateData(SimulationGroup simulationGroup)
+	{
+		System.out.println("Extract call goes here");
+		return false;
 	}
 
 }

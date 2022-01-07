@@ -19,6 +19,8 @@ import hec2.wat.model.WatSimulation;
 import hec2.wat.model.WatSimulationContainer;
 
 import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
+import usbr.wat.plugins.actionpanel.actions.UpdateDataAction;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -132,6 +134,8 @@ public class NewSimulationGroupCmd extends AbstractNewManagerCommand
 		newSim.setSimulationContainer(container);
 		container.addSimulation(newSim);
 		project.addManager(newSim);
+		
+		new UpdateDataAction(ActionPanelPlugin.getInstance().getActionsWindow()).updateData(simgroup);
 		
 		return newSim;
 	}
