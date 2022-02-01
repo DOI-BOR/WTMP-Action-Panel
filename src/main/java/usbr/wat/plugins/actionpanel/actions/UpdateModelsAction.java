@@ -9,6 +9,9 @@ package usbr.wat.plugins.actionpanel.actions;
 
 import java.awt.event.ActionEvent;
 
+import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.gitIntegration.StudyStorageDialog;
+
 /**
  * @author Mark Ackerman
  *
@@ -16,17 +19,26 @@ import java.awt.event.ActionEvent;
 @SuppressWarnings("serial")
 public class UpdateModelsAction extends BaseActionsPanelAction
 {
-	public UpdateModelsAction()
+	
+	private ActionsWindow _parent;
+	public UpdateModelsAction(ActionsWindow parent)
 	{
 		super("Get/Update Models");
-		setEnabled(false);
+		_parent = parent;
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		// TODO Auto-generated method stub
-		System.out.println("actionPerformed TODO implement me");
+		displayUpdateDialog();
 
+	}
+	/**
+	 * 
+	 */
+	private void displayUpdateDialog()
+	{
+		StudyStorageDialog dlg = new StudyStorageDialog(_parent);
+		dlg.setVisible(true);
 	}
 
 }

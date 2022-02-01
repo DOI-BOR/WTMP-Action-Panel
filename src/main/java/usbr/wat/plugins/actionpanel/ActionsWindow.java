@@ -77,6 +77,7 @@ public class ActionsWindow extends RmaJDialog
 	public ActionsWindow(Frame parent)
 	{
 		super(parent);
+		setSystemClosable(false);
 		buildControls();
 		addListeners();
 		loadPlugins();

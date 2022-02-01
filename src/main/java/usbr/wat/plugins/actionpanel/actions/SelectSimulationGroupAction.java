@@ -1,10 +1,10 @@
 /*
- * Copyright 2021  Hydrologic Engineering Center (HEC).
- * United States Army Corps of Engineers
- * All Rights Reserved.  HEC PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval
- * from HEC
- */
+* Copyright 2022 United States Bureau of Reclamation (USBR).
+* United States Department of the Interior
+* All Rights Reserved. USBR PROPRIETARY/CONFIDENTIAL.
+* Source may not be released without written approval
+* from USBR
+*/
 package usbr.wat.plugins.actionpanel.actions;
 
 import java.awt.event.ActionEvent;
@@ -26,6 +26,7 @@ public class SelectSimulationGroupAction extends AbstractAction
 	public SelectSimulationGroupAction(ActionsWindow parent)
 	{
 		super("Select Simulation Group...");
+		setEnabled(false);
 		_parent = parent;
 	}
 	@Override

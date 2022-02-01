@@ -1,10 +1,10 @@
 /*
- * Copyright 2021  Hydrologic Engineering Center (HEC).
- * United States Army Corps of Engineers
- * All Rights Reserved.  HEC PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval
- * from HEC
- */
+* Copyright 2022 United States Bureau of Reclamation (USBR).
+* United States Department of the Interior
+* All Rights Reserved. USBR PROPRIETARY/CONFIDENTIAL.
+* Source may not be released without written approval
+* from USBR
+*/
 package usbr.wat.plugins.actionpanel;
 
 import java.awt.GridBagConstraints;
@@ -13,10 +13,14 @@ import java.awt.GridBagLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
+import com.rma.event.ProjectAdapter;
+import com.rma.event.ProjectEvent;
+import com.rma.model.Project;
+
 import rma.swing.RmaInsets;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
-import usbr.wat.plugins.actionpanel.actions.EditInterativeSimulationAction;
 import usbr.wat.plugins.actionpanel.actions.DisplayReportSelectorAction;
+import usbr.wat.plugins.actionpanel.actions.EditInterativeSimulationAction;
 import usbr.wat.plugins.actionpanel.actions.EditSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.NewSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.PostResultsAction;
@@ -46,6 +50,8 @@ public class ActionsPanel extends JPanel
 	private EditSimulationGroupAction _editSimulationAction;
 	private DeleteSimulationGroupAction _deleteSimulationAction;
 	private EditInterativeSimulationAction _editInterativeSimAction;
+	private NewSimulationGroupAction _newSimGroupAction;
+	private SelectSimulationGroupAction _selectSimGroupAction;
 
 	public ActionsPanel(ActionsWindow parent)
 	{
@@ -53,14 +59,18 @@ public class ActionsPanel extends JPanel
 		_parent = parent;
 		
 		buildControls();
+		addListeners();
 	}
+
+	
 
 	/**
 	 * 
 	 */
 	private void buildControls()
 	{
-		JButton button = new JButton(new NewSimulationGroupAction(_parent));
+		_newSimGroupAction = new NewSimulationGroupAction(_parent);
+		JButton button = new JButton(_newSimGroupAction);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -72,7 +82,8 @@ public class ActionsPanel extends JPanel
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(button, gbc);
 		
-		button = new JButton(new SelectSimulationGroupAction(_parent));
+		_selectSimGroupAction = new SelectSimulationGroupAction(_parent);
+		button = new JButton(_selectSimGroupAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -109,7 +120,7 @@ public class ActionsPanel extends JPanel
 		
 	
 		
-		_updateModelsAction = new UpdateModelsAction();
+		_updateModelsAction = new UpdateModelsAction(_parent);
 		button = new JButton(_updateModelsAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -205,13 +216,42 @@ public class ActionsPanel extends JPanel
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(button, gbc);
 	}
+	/**
+	 * 
+	 */
+	protected void addListeners()
+	{
+		Project.getCurrentProject().addStaticProjectListener(new ProjectAdapter()
+		{
 
+			@Override
+			public void projectClosed(ProjectEvent arg0)
+			{
+				_newSimGroupAction.setEnabled(false);
+				_selectSimGroupAction.setEnabled(false);
+				enableActions(false);
+			}
+
+			@Override
+			public void projectOpened(ProjectEvent arg0)
+			{
+				_newSimGroupAction.setEnabled(true);
+				_selectSimGroupAction.setEnabled(true);
+				_updateModelsAction.setEnabled(true);
+			}
+			
+		});
+	}
 	/**
 	 * @param sg
 	 */
 	public void setSimulationGroup(SimulationGroup sg)
 	{
 		boolean enabled = sg != null;
+		enableActions(enabled);
+	}
+	protected void enableActions(boolean enabled)
+	{
 		_reviewDataAction.setEnabled(enabled);
 		_editInterativeSimAction.setEnabled(enabled);
 		_runSimulationAction.setEnabled(enabled);
