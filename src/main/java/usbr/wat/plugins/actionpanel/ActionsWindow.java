@@ -10,6 +10,7 @@ package usbr.wat.plugins.actionpanel;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Desktop;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -32,6 +33,9 @@ import javax.swing.JSeparator;
 
 import com.rma.client.Browser;
 import com.rma.client.LookAndFeel;
+import com.rma.event.ProjectAdapter;
+import com.rma.event.ProjectEvent;
+import com.rma.model.Project;
 import com.rma.util.PlugInLoader;
 
 import hec.gui.NameDescriptionPanel;
@@ -48,6 +52,7 @@ import rma.swing.RmaJTable;
 import rma.swing.list.RmaListModel;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.actions.DisplayReportAction;
+import usbr.wat.plugins.actionpanel.gitIntegration.utils.GitRepoUtils;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -489,12 +494,27 @@ public class ActionsWindow extends RmaJDialog
 	 */
 	private void addListeners()
 	{
-		// TODO Auto-generated method stub
-		System.out.println("addListeners TODO implement me");
+		Project.addStaticProjectListener(new ProjectAdapter()
+		{
+			@Override
+			public void projectOpened(ProjectEvent e )
+			{
+				checkRepoOutofDateStatus();
+			}
+		});
 		
 	}
 	
 	
+	/**
+	 * 
+	 */
+	protected void checkRepoOutofDateStatus()
+	{
+		EventQueue.invokeLater(()->GitRepoUtils.checkRepoOutofDateStatus(Project.getCurrentProject().getProjectDirectory()));
+	}
+
+
 	public static void main(String[] args)
 	{
 		LookAndFeel.setLookAndFeel();
@@ -669,4 +689,5 @@ public class ActionsWindow extends RmaJDialog
 		}
 		
 	}
+	
 }

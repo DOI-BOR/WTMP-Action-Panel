@@ -518,6 +518,7 @@ public class DisplayReportsSelector extends RmaJDialog
 			{
 				Logger.getLogger(DisplayReportsSelector.class.getName()).info("Failed to run report "+_reportPlugin.getName()
 						+" Error:"+e);
+				e.printStackTrace();
 				_reportRv = false;
 			}
 		}
