@@ -81,6 +81,7 @@ public class ReportXmlFile
 	private static final String SIMS_ELEM = "Simulations";
 	private static final String SIM_ELEM = "Simulation";
 	private static final String SIM_NAME_ELEM = "Name";
+	private static final String ID_ELEM = "ID";
 	private static final String BASE_SIM_NAME_ELEM = "BaseName";
 	private static final String SIM_DIR_ELEM = "Directory";
 	private static final String SIM_DSS_FILE_ELEM = "DSSFile";
@@ -98,7 +99,11 @@ public class ReportXmlFile
 	
 	// report types
 	private static final String SINGLE_TYPE = "single";
-	private static final String COMPARISON_TYPE = "comparison";
+	private static final String COMPARISON_TYPE = "alternativecomparison";
+
+	// ID types
+	private static final String BASE_ALT = "base";
+	private static final String ALT_NUM = "alt_";
 	
 	
 	private String _fileName;
@@ -145,7 +150,7 @@ public class ReportXmlFile
 		root.addContent(simsElem);
 		for (int i = 0;i < _simulations.size(); i++ )
 		{
-			addSimulationInfo(simsElem, _simulations.get(i));
+			addSimulationInfo(simsElem, _simulations.get(i), i);
 		}
 		
 		RmaFile file = FileManagerImpl.getFileManager().getFile(_fileName);
@@ -157,12 +162,13 @@ public class ReportXmlFile
 	 * @param simsElem
 	 * @param watSimulation
 	 */
-	private void addSimulationInfo(Element parent,
-			WatSimulation sim)
+	private void addSimulationInfo(Element parent, WatSimulation sim, int simNumber)
 	{
 		Element simElem = new Element(SIM_ELEM);
 		parent.addContent(simElem);
 		XMLUtilities.addChildContent(simElem, SIM_NAME_ELEM, sim.getName());
+		XMLUtilities.addChildContent(simElem, ID_ELEM, (simNumber==0?BASE_ALT:ALT_NUM+simNumber));
+		
 		XMLUtilities.addChildContent(simElem, BASE_SIM_NAME_ELEM, getBaseSimulationName(sim.getName()));
 		XMLUtilities.addChildContent(simElem, SIM_DIR_ELEM, sim.getSimulationDirectory());
 		XMLUtilities.addChildContent(simElem, SIM_DSS_FILE_ELEM, sim.getSimulationDssFile());
