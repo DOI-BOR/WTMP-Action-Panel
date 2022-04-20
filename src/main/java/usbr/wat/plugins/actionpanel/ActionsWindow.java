@@ -26,10 +26,12 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.tree.MutableTreeNode;
 
 import com.rma.client.Browser;
 import com.rma.client.LookAndFeel;
@@ -267,6 +269,9 @@ public class ActionsWindow extends RmaJDialog
 				return getTableToolTipText(e);
 			}
 		};
+		JMenuItem showInProjectTreeMenu = new JMenuItem("Show In Study Tree");
+		showInProjectTreeMenu.addActionListener(e->showInProjectTreeAction());
+		_simulationTable.addPopupItem(showInProjectTreeMenu, 0);
 		_simulationTable.setColumnWidths(150,350,110,110);
 		_simulationTable.removePopupMenuSumOptions();
 		_simulationTable.setRowHeight(_simulationTable.getRowHeight()+5);
@@ -314,6 +319,29 @@ public class ActionsWindow extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5555;
 		_rightPanel.add(new JScrollPane(_statusList), gbc);
 	}
+	/**
+	 * @param e 
+	 * @return
+	 */
+	private void showInProjectTreeAction()
+	{
+		int row = _simulationTable.getSelectedRow();
+		if ( row < 0 )
+		{
+			return;
+		}
+		Object obj = _simulationTable.getValueAt(row, SIMULATION_COLUMN);
+		if ( obj instanceof WatSimulation )
+		{
+			MutableTreeNode simNode = Browser.getBrowserFrame().getProjectTree().getNodeForManager((WatSimulation)obj);
+			if ( simNode != null )
+			{
+				Browser.getBrowserFrame().getProjectTree().setSelectedNode(simNode);
+			}
+		}
+	}
+
+
 	/**
 	 * @param e
 	 * @return
@@ -499,12 +527,21 @@ public class ActionsWindow extends RmaJDialog
 			@Override
 			public void projectOpened(ProjectEvent e )
 			{
+				clearForm();
 				checkRepoOutofDateStatus();
 			}
 		});
 		
 	}
-	
+	@Override
+	public void clearForm()
+	{
+		super.clearForm();
+		_apLabel.setText("");
+		_apStartLabel.setText("");
+		_apEndLabel.setText("");
+		_simulationTable.deleteCells();
+	}
 	
 	/**
 	 * 
