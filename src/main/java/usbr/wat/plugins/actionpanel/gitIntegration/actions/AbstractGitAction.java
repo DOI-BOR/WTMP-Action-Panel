@@ -19,11 +19,13 @@ import java.util.logging.Logger;
 
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.RootPaneContainer;
 
 import hec.io.ProcessOutputLine;
 import hec.io.ProcessOutputReader;
 
+import rma.swing.RmaJTextArea;
 import rma.util.RMAIO;
 
 /**
@@ -137,8 +139,12 @@ public abstract class AbstractGitAction extends AbstractAction
 				// this might make too big a message and needs put in a panel with a text area
 				if ( _parent != null )
 				{
+					RmaJTextArea textArea = new RmaJTextArea(5, 80);
+					textArea.setEditable(false);
+					JScrollPane sp = new JScrollPane(textArea);
+					textArea.setText(msg);
 					
-					JOptionPane.showMessageDialog(_parent, msg, "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(_parent, sp, "Error", JOptionPane.ERROR_MESSAGE);
 				}
 				return false;
 			}
