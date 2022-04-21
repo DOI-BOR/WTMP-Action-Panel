@@ -16,6 +16,7 @@ import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.util.List;
 
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -55,6 +56,7 @@ public class ReposEditor extends RmaJDialog
 	private JButton _deleteRepoButton;
 	private JPanel _infoPanel;
 	private RepoInfo _currentRepo;
+	private AbstractAction _defaultAction;
 
 	/**
 	 * @param parent
@@ -194,7 +196,25 @@ public class ReposEditor extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		_infoPanel.add(label, gbc);
 		
-		_srcUrlFld = new RmaJTextField();
+		_defaultAction = new AbstractAction("Set Default Source URL")
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				setDefaultSourceUrl();
+			}
+		};
+		_srcUrlFld = new RmaJTextField()
+		{
+			@Override
+			public void setEditable(boolean editable) 
+			{
+				super.setEditable(editable);
+				_defaultAction.setEnabled(editable);
+			}
+		};
+
+		_srcUrlFld.addPopupAction(_defaultAction);
 		label.setLabelFor(_srcUrlFld);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -260,6 +280,15 @@ public class ReposEditor extends RmaJDialog
 		
 		_infoPanel.setEnabled(false);
 	}
+	/**
+	 * 
+	 */
+	protected void setDefaultSourceUrl()
+	{
+		_srcUrlFld.setText(DEFAULT_REPO_URL);
+	}
+
+
 	/**
 	 * 
 	 */
@@ -381,7 +410,7 @@ public class ReposEditor extends RmaJDialog
 	protected void checkForExistingRepo()
 	{
 		String localFolder = _destFolderFld.getPath();
-		if ( GitRepoUtils.hasGitRepo(localFolder))
+		if ( !localFolder.isEmpty() && GitRepoUtils.hasGitRepo(localFolder))
 		{
 			RepoInfo info = new RepoInfo();
 			info.setLocalPath(localFolder);
@@ -413,11 +442,11 @@ public class ReposEditor extends RmaJDialog
 	private void addRepoAction()
 	{
 		clearForm();
+		_reposCombo.setSelectedIndex(-1);
 		_infoPanel.setEnabled(true);
 		_repoNameFld.setEditable(true);
 		_srcUrlFld.setEditable(true);
 		_currentRepo = null;
-		_reposCombo.setSelectedIndex(-1);
 	}
 
 	/**

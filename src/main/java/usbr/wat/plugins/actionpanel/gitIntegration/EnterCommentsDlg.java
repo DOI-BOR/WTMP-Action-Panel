@@ -447,12 +447,9 @@ public class EnterCommentsDlg extends RmaJDialog
 	public String getComments()
 	{
 		StringBuilder builder = new StringBuilder();
-		String text = _descriptionFld.getText();
-		builder.append(text);
 		String comments = _textArea.getText();
 		if ( comments != null && !comments.isEmpty())
 		{
-			builder.append("\n\n");
 			builder.append(comments);
 		}
 		

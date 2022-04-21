@@ -193,15 +193,14 @@ public abstract class AbstractGitAction extends AbstractAction
 	private static String getErrorMessage(List<String>cmd, List<ProcessOutputLine> output)
 	{
 		StringBuilder builder = new StringBuilder();
-		builder.append("<html>Error Running: ");
+		builder.append("Error Running: ");
 		builder.append(cmd);
-		builder.append("<br>");
+		builder.append("\n");
 		for (int i = 0;i < output.size(); i++ )
 		{
-			builder.append("<br>");
+			builder.append("\n");
 			builder.append(output.get(i));
 		}
-		builder.append("<html>");
 		return builder.toString();
 	}
 	/**

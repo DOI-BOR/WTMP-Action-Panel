@@ -71,6 +71,8 @@ public class StudyStorageDialog extends RmaJDialog
 
 	private JMenuItem _browseLocalMenu;
 
+	private boolean _firstTime;
+
 	public StudyStorageDialog(Window parent)
 	{
 		super(parent, true);
@@ -232,7 +234,8 @@ public class StudyStorageDialog extends RmaJDialog
 		popup.add(_browseLocalMenu);
 		
 		((JPanel)getContentPane()).setComponentPopupMenu(popup);
-		
+	
+		_firstTime = true;
 	}
 
 	/**
@@ -469,9 +472,10 @@ public class StudyStorageDialog extends RmaJDialog
 	private void loadRepos()
 	{
 		List<RepoInfo> repos = GitRepoUtils.getReposList();
-		if ( repos.isEmpty() )
+		if ( repos.isEmpty() && _firstTime )
 		{
 			EventQueue.invokeLater(()->editReposAction(true));
+			_firstTime = false; // don't keep asking the user if they want to define a repo
 			return;
 		}
 		RmaListModel<RepoInfo>newModel = new RmaListModel<>(true, repos);

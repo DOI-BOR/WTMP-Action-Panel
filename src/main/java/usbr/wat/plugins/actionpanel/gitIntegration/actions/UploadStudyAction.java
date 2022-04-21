@@ -70,6 +70,8 @@ public class UploadStudyAction extends AbstractGitAction
 		List<String>cmd = new ArrayList<>();
 		cmd.add(UPLOAD_CMD);
 		cmd.add(LOCAL_FOLDER);
+		cmd.add(quoteString(info.getLocalPath()));
+		
 		List<String>modules = getSubModules();
 		if ( modules != null && modules.size() > 0 )
 		{
@@ -88,8 +90,7 @@ public class UploadStudyAction extends AbstractGitAction
 				}
 			}
 		}
-		cmd.add(quoteString(info.getLocalPath()));
-		if ( commentsFile==null )
+		if ( commentsFile!=null )
 		{
 			cmd.add(COMMENTS_FILE);
 			cmd.add(commentsFile);
@@ -162,8 +163,13 @@ public class UploadStudyAction extends AbstractGitAction
 		}
 		StringBuilder builder = new StringBuilder();
 		builder.append(_dlg.getDescription());
-		builder.append("\n");
-		builder.append(_dlg.getComments());
+		String comments = _dlg.getComments();
+		if ( comments != null && !comments.isEmpty())
+		{
+			builder.append("\n");
+			builder.append("\n");
+			builder.append(comments);
+		}
 				
 		return builder.toString();
 	}
