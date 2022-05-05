@@ -112,6 +112,7 @@ public class ShowChangesActions extends AbstractGitAction
 		}
 		List<String>cmd = new ArrayList<>();
 		cmd.add(FETCH_CMD);
+		cmd.add(ALL_MODULES);
 		cmd.add(CHANGES_CMD);
 		cmd.add(_changeType.toString());
 		cmd.add(LOCAL_FOLDER);
