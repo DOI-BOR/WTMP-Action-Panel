@@ -30,6 +30,7 @@ import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
@@ -41,10 +42,12 @@ import hec2.wat.model.WatSimulation;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaInsets;
+import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.io.OutputType;
 import usbr.wat.plugins.actionpanel.model.ReportPlugin;
 import usbr.wat.plugins.actionpanel.model.ReportsManager;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
@@ -71,6 +74,7 @@ public class DisplayReportsSelector extends RmaJDialog
 	private Component _glassPane;
 	private ActionsWindow _parent;
 	private boolean _isCanceled;
+	private RmaJComboBox<OutputType> _outputTypeCombo;
 
 	public DisplayReportsSelector(ActionsWindow parent)
 	{
@@ -100,7 +104,18 @@ public class DisplayReportsSelector extends RmaJDialog
 		((JComponent)getContentPane()).setBorder(BorderFactory.createTitledBorder("Available Reports"));
 	
 		String[] headers = new String[] {"Select", "Report", "Description"};
-		_reportTable = new RmaJTable(this, headers);
+		_reportTable = new RmaJTable(this, headers)
+		{
+			@Override
+			public void setValueAt(Object value, int row, int col)
+			{
+				super.setValueAt(value, row, col);
+				if ( col == 0 )
+				{
+					updateCreateReportButtonState();
+				}
+			}
+		};
 		_reportTable.setCheckBoxCellEditor(0);
 		_reportTable.setRowHeight(_reportTable.getRowHeight()+5);
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -114,9 +129,32 @@ public class DisplayReportsSelector extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(_reportTable.getScrollPane(), gbc);
 		
+		JLabel label = new JLabel("File Type:");
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1; 
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.WEST;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5505;
+		getContentPane().add(label, gbc);
+		
+		_outputTypeCombo = new RmaJComboBox<>(OutputType.values());
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.WEST;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5505;
+		getContentPane().add(_outputTypeCombo, gbc);
+		
 		_cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.OK_BUTTON|ButtonCmdPanel.CLOSE_BUTTON);
 		JButton button = _cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON);
 		button.setText("Create Reports");
+		button.setEnabled(false);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -129,6 +167,16 @@ public class DisplayReportsSelector extends RmaJDialog
 		
 		
 	}
+
+	/**
+	 * 
+	 */
+	protected void updateCreateReportButtonState()
+	{
+		_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled( !getSelectedReports().isEmpty());
+	}
+
+
 
 	/**
 	 * 
@@ -155,7 +203,6 @@ public class DisplayReportsSelector extends RmaJDialog
 						createReports();
 						break;
 					case ButtonCmdPanel.CLOSE_BUTTON :
-						_isCanceled = true;
 						setVisible(false);
 						break;
 				}
@@ -210,6 +257,8 @@ public class DisplayReportsSelector extends RmaJDialog
 			row.add(plugin.getDescription());
 			_reportTable.appendRow(row);
 		}
+		
+		updateCreateReportButtonState();
 	}
 
 
@@ -221,6 +270,14 @@ public class DisplayReportsSelector extends RmaJDialog
 	private boolean shouldBeSelected(ReportPlugin plugin)
 	{
 		Preferences node = WAT.getBrowserFrame().getPreferences().getProjectPreferenceNode().node(PREF_NODE);
+		
+		
+		String outputTypeName = node.get("ReportType", OutputType.PDF.name());
+		OutputType ot = OutputType.valueOf(outputTypeName);
+		_outputTypeCombo.setSelectedItem(ot);
+		
+		
+		
 		int idx = 0;
 		String selectedReportName;
 		String pluginName = plugin.getName();
@@ -237,32 +294,7 @@ public class DisplayReportsSelector extends RmaJDialog
 			}
 			idx++;
 		}
-		/*
-		String[] kidNodeNames;
-		try
-		{
-			kidNodeNames = node.childrenNames();
-		}
-		catch (BackingStoreException e)
-		{
-			Logger.getLogger(DisplayReportsSelector.class.getName()).info("Failed to get list of selected reports " + e);
-			return false;
-		}
-		if ( kidNodeNames != null )
-		{
-			String kidName;
-			for (int i = 0;i < kidNodeNames.length; i++ )
-			{
-				kidName = node.get(kidNodeNames[i], "");
-				if ( pluginName.equalsIgnoreCase(kidName))
-				{
-					return true;
-				}
-				
-			}
-		}
-		return false;
-		*/
+		
 	}
 
 
@@ -439,10 +471,7 @@ public class DisplayReportsSelector extends RmaJDialog
 		super.setVisible(visible);
 		if ( !visible)
 		{
-			if ( !_isCanceled)
-			{
-				saveSelectedReports();
-			}
+			saveSelectedReports();
 		}
 	}
 	private boolean checkSims()
@@ -485,6 +514,8 @@ public class DisplayReportsSelector extends RmaJDialog
 			String pluginName =selectedReports.get(i).getName();
 			node.put("SelectedReport"+i, pluginName);
 		}
+		OutputType ot = (OutputType)_outputTypeCombo.getSelectedItem();
+		node.put("ReportType", ot.name());
 	}
 
 	/**
@@ -513,7 +544,7 @@ public class DisplayReportsSelector extends RmaJDialog
 			_agp.setMessage("Creating report for "+_reportPlugin.getName());
 			try
 			{
-				_reportRv = _reportPlugin.createReport();
+				_reportRv = _reportPlugin.createReport((OutputType)_outputTypeCombo.getSelectedItem());
 			}
 			catch ( Exception e )
 			{

@@ -7,6 +7,8 @@
  */
 package usbr.wat.plugins.actionpanel.model;
 
+import usbr.wat.plugins.actionpanel.io.OutputType;
+
 /**
  * @author Mark Ackerman
  *
@@ -18,7 +20,7 @@ public interface ReportPlugin
 	 * @return 
 	 * 
 	 */
-	boolean createReport();
+	boolean createReport(OutputType outputType);
 
 	/**
 	 * @return

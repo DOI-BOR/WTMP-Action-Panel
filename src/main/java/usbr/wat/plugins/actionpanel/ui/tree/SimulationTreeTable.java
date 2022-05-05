@@ -22,6 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.table.TableCellRenderer;
@@ -76,19 +77,22 @@ public class SimulationTreeTable extends RmaJXTreeTable
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				Point pt = e.getPoint();
-				TreePath path = getPathForLocation((int)pt.getX(), (int)pt.getY());
-				if ( path == null )
+				if ( e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e) )
 				{
-					return;
+					Point pt = e.getPoint();
+					TreePath path = getPathForLocation((int)pt.getX(), (int)pt.getY());
+					if ( path == null )
+					{
+						return;
+					}
+					JPopupMenu popup = createPopupMenu();
+					Object lastComp = path.getLastPathComponent();
+					if ( lastComp instanceof ActionsTreeTableNode )
+					{
+						((ActionsTreeTableNode)lastComp).addPopupMenuItems(popup);
+					}
+					popup.show(SimulationTreeTable.this, pt.x, pt.y);
 				}
-				JPopupMenu popup = createPopupMenu();
-				Object lastComp = path.getLastPathComponent();
-				if ( lastComp instanceof ActionsTreeTableNode )
-				{
-					((ActionsTreeTableNode)lastComp).addPopupMenuItems(popup);
-				}
-				popup.show(SimulationTreeTable.this, pt.x, pt.y);
 				
 				
 			}

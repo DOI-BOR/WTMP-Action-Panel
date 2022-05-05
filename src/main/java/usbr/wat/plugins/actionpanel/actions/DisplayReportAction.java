@@ -18,8 +18,10 @@ import hec.io.FileManagerImpl;
 import hec2.wat.model.WatSimulation;
 
 import rma.util.RMAFilenameFilter;
+import rma.util.RMAFilenameFilterSet;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.io.OutputType;
 
 /**
  * display the report for the simulation
@@ -78,10 +80,22 @@ public class DisplayReportAction extends AbstractAction
 	 * @param rptFile
 	 * @return
 	 */
-	private String findLatestReportFile(String folder)
+	private static String findLatestReportFile(String folder)
 	{
-		RMAFilenameFilter filter = new RMAFilenameFilter("pdf");
-		List<String> reportFiles = FileManagerImpl.getFileManager().list(folder, filter, false);
+		OutputType[] outputTypes = OutputType.values();
+		RMAFilenameFilterSet filterSet = new RMAFilenameFilterSet("report file types");
+		for (int i = 0;i < outputTypes.length;i++ )
+		{
+			String ext = outputTypes[i].getFileExtension();
+			if ( ext.startsWith("."))
+			{
+				ext = ext.substring(1);
+			}
+			RMAFilenameFilter filter = new RMAFilenameFilter(ext);
+			filterSet.addFilter(filter);
+			
+		}
+		List<String> reportFiles = FileManagerImpl.getFileManager().list(folder, filterSet, false);
 		if ( reportFiles != null && !reportFiles.isEmpty())
 		{
 			Collections.sort(reportFiles);
