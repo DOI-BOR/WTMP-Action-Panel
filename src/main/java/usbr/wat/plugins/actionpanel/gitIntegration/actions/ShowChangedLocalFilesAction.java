@@ -68,8 +68,8 @@ public class ShowChangedLocalFilesAction extends AbstractGitAction
 		List<String>cmd = new ArrayList<>();
 		cmd.add(CHANGES_CMD);
 		cmd.add(LOCAL_FOLDER);
-		cmd.add(ALL_FLAG_CMD);
 		cmd.add(repo.getLocalPath());
+		cmd.add(ALL_FLAG_CMD);
 		
 		boolean rv = callGit(cmd);	
 		if ( rv )
