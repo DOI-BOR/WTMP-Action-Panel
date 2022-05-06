@@ -16,7 +16,12 @@ import java.awt.GridBagLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -49,7 +54,7 @@ public class DownloadConfirmDialog extends RmaJDialog
 
 	private RmaJList<String> _changesList;
 	private ButtonCmdPanel _cmdPanel;
-	protected boolean _canceled;
+	protected boolean _canceled = true;
 	private JLabel _fileChangesLabel;
 	private JButton _fileChangesBtn;
 	private List<String> _changedFiles = new ArrayList<>();
@@ -308,6 +313,9 @@ public class DownloadConfirmDialog extends RmaJDialog
 	 */
 	private void fillForm()
 	{
+		RmaListModel<String>newModel = new RmaListModel(false);
+		newModel.addElement("Checking for Changes...");
+		_changesList.setModel(newModel);
 		_submoduleTree.fillSubModules();
 		_treeScrollPane.setVisible(_submoduleTree.hasSubModules()); 
 		getChanges();
@@ -370,8 +378,16 @@ public class DownloadConfirmDialog extends RmaJDialog
 			List<String> changes = fetchAction.getChanges();
 			if ( changes != null )
 			{
+				checkForSubModuleCommitsBehind(changes);
 				RmaListModel<String>newModel = new RmaListModel(false, changes);
 				_changesList.setModel(newModel);
+			}
+			else
+			{
+				RmaListModel<String>newModel = new RmaListModel(false);
+				newModel.addElement("No Changes Detected.");
+				_changesList.setModel(newModel);
+				
 			}
 		}
 		finally
@@ -382,6 +398,61 @@ public class DownloadConfirmDialog extends RmaJDialog
 		
 	}
 	
+	/**
+	 * @param changes
+	 */
+	private void checkForSubModuleCommitsBehind(List<String> changes)
+	{
+		Map<String, Integer>subModuleCommitsBehindMap = new HashMap<>();
+		String line, subModule;
+		Integer cnt;
+		int idx;
+		for (int i = 0;i < changes.size(); i++ )
+		{
+			line = changes.get(i);
+			idx = line.indexOf(':');
+			if ( idx > -1 )
+			{
+				subModule = line.substring(0,idx).trim();
+				cnt = subModuleCommitsBehindMap.get(subModule);
+				if ( cnt == null )
+				{
+					cnt = 1;
+					subModuleCommitsBehindMap.put(subModule, cnt);
+				}
+				else
+				{
+					cnt++;
+					subModuleCommitsBehindMap.put(subModule, cnt);
+				}
+			}
+		}
+		updateTreeWithCommitsBehind(subModuleCommitsBehindMap);
+	}
+
+
+
+	/**
+	 * @param subModuleCommitsBehindMap
+	 */
+	private void updateTreeWithCommitsBehind( Map<String, Integer> subModuleCommitsBehindMap)
+	{
+		Set<Entry<String, Integer>> entries = subModuleCommitsBehindMap.entrySet();
+		Iterator<Entry<String, Integer>> iter = entries.iterator();
+		Entry<String, Integer> entry;
+		String subModule;
+		int cnt;
+		while (iter.hasNext())
+		{
+			entry = iter.next();
+			subModule = entry.getKey();
+			cnt = entry.getValue();
+			_submoduleTree.setCommitsBehind(subModule, cnt);
+		}
+	}
+
+
+
 	private void getChangedFiles()
 	{
 		getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));

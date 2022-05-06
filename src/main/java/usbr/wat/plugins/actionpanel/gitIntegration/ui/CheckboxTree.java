@@ -7,6 +7,8 @@
  */
 package usbr.wat.plugins.actionpanel.gitIntegration.ui;
 
+import java.awt.Point;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -52,8 +54,26 @@ public class CheckboxTree extends JTree
 		setRootVisible(false);
 		setCellRenderer(new CheckBoxTreeRenderer());
 		addMouseListener(new NodeSelectionListener(this));
+		setToolTipText("");
 	}
 
+	@Override
+	public String getToolTipText(MouseEvent e)
+	{
+		Point pt = e.getPoint();
+		TreePath path = getPathForLocation(pt.x, pt.y);
+		if ( path == null )
+		{
+			return null;
+		}
+		SubModuleNode node = (SubModuleNode) path.getLastPathComponent();
+		int commitsBehind = node.getCommitsBehind();
+		if ( commitsBehind > 0 )
+		{
+			return node.getSubModuleName().concat(" is ").concat(String.valueOf(commitsBehind)).concat(" commit behind");
+		}
+		return node.getSubModuleName().concat(" is up to date");
+	}
 	/**
 	 * @return
 	 */
@@ -104,13 +124,13 @@ public class CheckboxTree extends JTree
 		RepoInfo repo = _repo;
 		if ( repo != null )
 		{
-			DefaultCheckBoxNode parent = new DefaultCheckBoxNode(AbstractGitAction.STUDY_MODULE, this);
+			DefaultCheckBoxNode parent = new SubModuleNode(AbstractGitAction.STUDY_MODULE, this);
 			parent.setSelected(true);
 			_root.add(parent);
 			_hasSubModules = !subModules.isEmpty();
 			for (int i = 0; i < subModules.size();i++)
 			{
-				DefaultCheckBoxNode node = new DefaultCheckBoxNode(subModules.get(i), this);
+				DefaultCheckBoxNode node = new SubModuleNode(subModules.get(i), this);
 				node.setSelected(true);
 				_root.add(node);
 			}
@@ -157,4 +177,72 @@ public class CheckboxTree extends JTree
 	{
 		return _hasSubModules;
 	}
+	public void setCommitsBehind(String submodule, int commitsBehind)
+	{
+		SubModuleNode node = findNode(submodule);
+		if ( node != null )
+		{
+			node.setCommitsBehind(commitsBehind);
+		}
+	}
+	
+	/**
+	 * @param submodule
+	 * @return
+	 */
+	private SubModuleNode findNode(String submodule)
+	{
+		int count = _root.getChildCount();
+		for (int i  = 0;i < count; i++ )
+		{
+			SubModuleNode node = (SubModuleNode) _root.getChildAt(i);
+			if ( submodule.equals(node.getSubModuleName()))
+			{
+				return node;
+			}
+		}
+		return null;
+	}
+
+	class SubModuleNode extends DefaultCheckBoxNode
+	{
+		private int _commitsBehind;
+
+		SubModuleNode(String subModule, JTree tree)
+		{
+			super(subModule, tree);
+		}
+		
+		/**
+		 * @return
+		 */
+		public int getCommitsBehind()
+		{
+			return _commitsBehind;
+		}
+
+		public void setCommitsBehind(int commitsBehind)
+		{
+			_commitsBehind = commitsBehind;
+			((DefaultTreeModel)getModel()).nodeChanged(this);
+		}
+		
+		@Override
+		public String toString()
+		{
+			if ( _commitsBehind > 0 )
+			{
+				return "<html>"+super.toString().concat("<font color=\"red\"> (").concat(String.valueOf(_commitsBehind)).concat("\u2193").concat(")</font></html>");
+			}
+			return super.toString();
+		}
+		
+		public String getSubModuleName()
+		{
+			return (String)super.getUserObject();
+		}
+		
+	}
+	
+
 }

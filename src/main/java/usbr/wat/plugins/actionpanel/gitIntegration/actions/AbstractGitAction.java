@@ -55,7 +55,7 @@ public abstract class AbstractGitAction extends AbstractAction
 	protected static final String DO_NOTHING = "--donothing";
 
 
-	public static final Object STUDY_MODULE = "Study";
+	public static final String STUDY_MODULE = "Study";
 	
 	
 

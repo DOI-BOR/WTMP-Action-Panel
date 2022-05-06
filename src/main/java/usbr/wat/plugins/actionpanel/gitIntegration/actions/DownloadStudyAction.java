@@ -60,7 +60,7 @@ public class DownloadStudyAction extends AbstractGitAction
 			JOptionPane.showMessageDialog(getParent(), "Download Complete",
 					"Download", JOptionPane.INFORMATION_MESSAGE);
 		}
-		else if ( !_confirmDlg.isCanceled() )  
+		else if ( _confirmDlg != null && !_confirmDlg.isCanceled() )  
 		{ // download failed, user didn't cancel confirm dialog
 			JOptionPane.showMessageDialog(getParent(), "Download Failed",
 					"Download", JOptionPane.WARNING_MESSAGE);
