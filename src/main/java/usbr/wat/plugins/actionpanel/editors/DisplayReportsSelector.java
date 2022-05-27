@@ -32,6 +32,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
 import hec.util.AnimatedWaitGlassPane;
@@ -42,12 +43,14 @@ import hec2.wat.model.WatSimulation;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaInsets;
+import rma.swing.RmaJCheckBox;
 import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.io.OutputType;
+import usbr.wat.plugins.actionpanel.io.ReportOptions;
 import usbr.wat.plugins.actionpanel.model.ReportPlugin;
 import usbr.wat.plugins.actionpanel.model.ReportsManager;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
@@ -75,6 +78,7 @@ public class DisplayReportsSelector extends RmaJDialog
 	private ActionsWindow _parent;
 	private boolean _isCanceled;
 	private RmaJComboBox<OutputType> _outputTypeCombo;
+	private RmaJCheckBox _printHeaderFooterCheck;
 
 	public DisplayReportsSelector(ActionsWindow parent)
 	{
@@ -129,6 +133,28 @@ public class DisplayReportsSelector extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(_reportTable.getScrollPane(), gbc);
 		
+		JPanel optionsPanel = new JPanel(new GridBagLayout());
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		getContentPane().add(optionsPanel, gbc);
+		
+		JPanel typePanel = new JPanel(new GridBagLayout());
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		optionsPanel.add(typePanel, gbc);
+		
 		JLabel label = new JLabel("File Type:");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -138,18 +164,29 @@ public class DisplayReportsSelector extends RmaJDialog
 		gbc.anchor    = GridBagConstraints.WEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
-		getContentPane().add(label, gbc);
+		typePanel.add(label, gbc);
 		
 		_outputTypeCombo = new RmaJComboBox<>(OutputType.values());
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.0;
+		gbc.weightx   = 0.001;
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.WEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
-		getContentPane().add(_outputTypeCombo, gbc);
+		typePanel.add(_outputTypeCombo, gbc);
+		
+		_printHeaderFooterCheck = new RmaJCheckBox("Print Headers and Footers");
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.WEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		optionsPanel.add(_printHeaderFooterCheck, gbc);
 		
 		_cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.OK_BUTTON|ButtonCmdPanel.CLOSE_BUTTON);
 		JButton button = _cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON);
@@ -275,6 +312,9 @@ public class DisplayReportsSelector extends RmaJDialog
 		String outputTypeName = node.get("ReportType", OutputType.PDF.name());
 		OutputType ot = OutputType.valueOf(outputTypeName);
 		_outputTypeCombo.setSelectedItem(ot);
+		
+		boolean printHeaderFooter = node.getBoolean("PrintHeaderFooter", true);
+		_printHeaderFooterCheck.setSelected(printHeaderFooter);
 		
 		
 		
@@ -516,6 +556,9 @@ public class DisplayReportsSelector extends RmaJDialog
 		}
 		OutputType ot = (OutputType)_outputTypeCombo.getSelectedItem();
 		node.put("ReportType", ot.name());
+		
+		boolean printHeaderFooter = _printHeaderFooterCheck.isSelected();
+		node.putBoolean("PrintHeaderFooter", printHeaderFooter);
 	}
 
 	/**
@@ -542,9 +585,12 @@ public class DisplayReportsSelector extends RmaJDialog
 		public void run()
 		{
 			_agp.setMessage("Creating report for "+_reportPlugin.getName());
+			ReportOptions options = new ReportOptions();
+			options.setOutputType((OutputType)_outputTypeCombo.getSelectedItem());
+			options.setPrintHeadersFooters(_printHeaderFooterCheck.isSelected());
 			try
 			{
-				_reportRv = _reportPlugin.createReport((OutputType)_outputTypeCombo.getSelectedItem());
+				_reportRv = _reportPlugin.createReport(options);
 			}
 			catch ( Exception e )
 			{

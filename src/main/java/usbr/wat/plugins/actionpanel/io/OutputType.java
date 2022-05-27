@@ -13,6 +13,7 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.export.HtmlExporter;
 import net.sf.jasperreports.engine.export.JRPdfExporter;
 import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter;
+import net.sf.jasperreports.export.DocxReportConfiguration;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
@@ -60,7 +61,10 @@ public enum OutputType
 		public JRExporter buildExporter(JasperPrint jp, String partial)
 		{
 			String filename = getFilename(partial);
-			JRDocxExporter exporter = new JRDocxExporter(DefaultJasperReportsContext.getInstance());
+			DefaultJasperReportsContext context = DefaultJasperReportsContext.getInstance();
+			context.setProperty(DocxReportConfiguration.PROPERTY_FRAMES_AS_NESTED_TABLES, "false");
+			JRDocxExporter exporter = new JRDocxExporter(context);
+
 			exporter.setExporterInput(new SimpleExporterInput(jp));
 			exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(filename));
 			//exporter.setParameter(JRExporterParameter.JASPER_PRINT, jp);
