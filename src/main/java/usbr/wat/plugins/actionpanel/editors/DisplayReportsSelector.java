@@ -16,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
@@ -34,6 +35,8 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
+
+import com.rma.io.FileManagerImpl;
 
 import hec.util.AnimatedWaitGlassPane;
 
@@ -440,7 +443,7 @@ public class DisplayReportsSelector extends RmaJDialog
 					_agp.setMessage("Reports Complete");
 					try
 					{
-						threadPool.awaitTermination(30, TimeUnit.SECONDS);
+						threadPool.awaitTermination(10, TimeUnit.SECONDS);
 					}
 					catch (InterruptedException e)
 					{
@@ -525,9 +528,25 @@ public class DisplayReportsSelector extends RmaJDialog
 		}
 		
 		List<SimulationReportInfo> sims = _parent.getSimulationReportInfos();
+		
+		SimulationReportInfo sri;
+		String folder;
+	
+		Iterator<SimulationReportInfo> iter = sims.iterator();
+		while ( iter.hasNext())
+		{
+			sri = iter.next();
+			folder = sri.getSimFolder();
+			if ( !FileManagerImpl.getFileManager().fileExists(folder))
+			{
+				JOptionPane.showMessageDialog(_parent, "Simulation "+sri.getSimulation().getName()+" has no results so no report can be created for it.","No Results", JOptionPane.INFORMATION_MESSAGE);
+				iter.remove();
+			}
+		}
+	
 		if ( sims.isEmpty())
 		{
-			JOptionPane.showMessageDialog(_parent,"Please select the simulations/results that you want to create reports for",
+			JOptionPane.showMessageDialog(_parent,"There are no Simulations with results selected to create reports for",
 					"No Simulations Selected", JOptionPane.INFORMATION_MESSAGE);
 			return false;
 		}
