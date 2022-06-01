@@ -630,6 +630,18 @@ public class ActionsWindow extends RmaJDialog
 			{
 				SimulationTreeTableModel newModel = new SimulationTreeTableModel(sg);
 				_simulationTable.setTreeTableModel(newModel);
+				_simulationTable.clearColors();
+				int rowCnt = _simulationTable.getRowCount();
+				for (int r = 0; r < rowCnt; r++ )
+				{
+					Object val = _simulationTable.getValueAt(r, SimulationTreeTableModel.SIMULATION_COLUMN);
+					if ( val instanceof WatSimulation )
+					{
+						WatSimulation sim = (WatSimulation) val;
+						Color color = getSimForegroundColor(sim);
+						_simulationTable.setRowForeground(r, color);
+					}
+				}
 
 				_nameDescPanel.setName(sg.getName());
 				_nameDescPanel.setDescription(sg.getDescription());
@@ -763,12 +775,19 @@ public class ActionsWindow extends RmaJDialog
 		}
 		WatSimulation sim;
 		Color fgColor ;
+		Object val;
+		_simulationTable.clearColors();
 		for(int r = 0;r < _simulationTable.getRowCount();r++)
 		{
-			sim = (WatSimulation) _simulationTable.getValueAt(r, SimulationTreeTableModel.SIMULATION_COLUMN);
-			fgColor = getSimForegroundColor(sim);
-			_simulationTable.setRowForeground(r, fgColor);
+			val = _simulationTable.getValueAt(r, SimulationTreeTableModel.SIMULATION_COLUMN);
+			if ( val instanceof WatSimulation )
+			{
+				sim = (WatSimulation) val;
+				fgColor = getSimForegroundColor(sim);
+				_simulationTable.setRowForeground(r, fgColor);
+			}
 		}
+		_simulationTable.repaint();
 		
 	}
 

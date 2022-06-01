@@ -64,7 +64,7 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		super(createTreeModel());
 		adPopupListener();
 		setRenderers();
-		//setHighlighters(_tableRowHighlighter); // for now
+		setHighlighters(_tableRowHighlighter); // for now
 		
 	}
 	/**
@@ -339,18 +339,30 @@ public class SimulationTreeTable extends RmaJXTreeTable
         @Override
         protected Component doHighlight(Component component, ComponentAdapter componentAdapter) 
         {
-        	if ( componentAdapter.column > 1 && !componentAdapter.isSelected())
+        	if ( !componentAdapter.isSelected())
         	{
         		Object obj = getValueAt(componentAdapter.row, SimulationTreeTableModel.SIMULATION_COLUMN);
         		
-        		if ( !(obj instanceof WatSimulation) )
+        		if ( obj instanceof WatSimulation )
         		{
         			component.setBackground(_oddRowBackground);
-        			return component;
+        		}
+        		else
+        		{
+        			component.setBackground(UIManager.getColor("Table.background"));
+        		}
+        		Color fg = getRowForeground(componentAdapter.row);
+        		if ( fg != null )
+        		{
+        			component.setForeground(fg);
         		}
         	}
+        	else if ( componentAdapter.isSelected() )
+        	{
+        		component.setBackground(UIManager.getColor("Table.selectionBackground"));
+        		component.setForeground(UIManager.getColor("Table.selectionForeground"));
+        	}
         	
-       		component.setBackground(UIManager.getColor("Table.background"));
         	return component;
         }
 	}
