@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -44,7 +46,9 @@ public class CheckboxTree extends JTree
 	public CheckboxTree(TreeModel model, StudyStorageDialog studyStorageDialog)
 	{
 		this(model, studyStorageDialog.getSelectedRepo());
+		addPopupMenu();
 	}
+	
 	
 	public CheckboxTree(TreeModel model, RepoInfo repo)
 	{
@@ -55,7 +59,26 @@ public class CheckboxTree extends JTree
 		setCellRenderer(new CheckBoxTreeRenderer());
 		addMouseListener(new NodeSelectionListener(this));
 		setToolTipText("");
+		addPopupMenu();
 	}
+	
+	/**
+	 * 
+	 */
+	private void addPopupMenu()
+	{
+		JPopupMenu popup = new JPopupMenu();
+		JMenuItem selectAllMenu = new JMenuItem("Select All");
+		selectAllMenu.addActionListener(e->setAllNodesSelected(true));
+		popup.add(selectAllMenu);
+		JMenuItem unSelectAllMenu = new JMenuItem("Unselect All");
+		unSelectAllMenu.addActionListener(e->setAllNodesSelected(false));
+		popup.add(unSelectAllMenu);
+		
+		setComponentPopupMenu(popup);
+		
+	}
+
 
 	@Override
 	public String getToolTipText(MouseEvent e)
@@ -112,7 +135,32 @@ public class CheckboxTree extends JTree
 			
 		}
 	}
-	
+	public void setAllNodesSelected(boolean selected)
+	{
+		setAllNodesSelected(selected, _root);
+	}
+
+	/**
+	 * @param selected
+	 * @param root
+	 */
+	private void setAllNodesSelected(boolean selected,
+			DefaultMutableTreeNode parent)
+	{
+		int cnt = parent.getChildCount();
+		DefaultCheckBoxNode child;
+		Object obj;
+		for (int i = 0;i < cnt; i++ )
+		{
+			child = (DefaultCheckBoxNode) parent.getChildAt(i);
+			child.setSelected(selected);
+			if ( !child.isLeaf())
+			{
+				setAllNodesSelected(selected, child);
+			}
+			
+		}
+	}
 
 	/**
 	 * 
