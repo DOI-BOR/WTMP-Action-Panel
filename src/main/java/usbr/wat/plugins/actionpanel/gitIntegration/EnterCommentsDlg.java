@@ -28,8 +28,6 @@ import javax.swing.JSeparator;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
-import com.rma.model.Project;
-
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaInsets;
@@ -375,9 +373,14 @@ public class EnterCommentsDlg extends RmaJDialog
 	 */
 	private void okToPush()
 	{
+		RepoInfo repo = _studyStorageDialog.getSelectedRepo();
+		if ( repo == null )
+		{
+			return;
+		}
 		List<String>cmd = new ArrayList<>();
 		cmd.add(AbstractGitAction.LOCAL_FOLDER);
-		cmd.add(Project.getCurrentProject().getProjectDirectory());
+		cmd.add(repo.getLocalPath());
 		cmd.add(FetchAction.FETCH_CMD);
 		cmd.add(AbstractGitAction.ALL_MODULES);
 		OkToPushAction okToPush = new OkToPushAction(cmd, _studyStorageDialog);
