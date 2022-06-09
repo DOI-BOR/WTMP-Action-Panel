@@ -174,6 +174,7 @@ public class ResultsData extends NamedType
 			if ( rv )
 			{
 				setName(newName);
+				_folder = newPath.toString();
 				saveDataToFolder(newPath.toString());
 			}
 			return rv;

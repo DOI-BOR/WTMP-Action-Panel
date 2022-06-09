@@ -59,14 +59,14 @@ public class DisplayReportAction extends AbstractAction
 		{
 			
 			WatSimulation sim = sims.get(i);
-			displayReportAction(sim);
+			displayReportAction(sim.getSimulationDirectory());
 		}
 	}
-	public void displayReportAction(WatSimulation sim)
+	public void displayReportAction(String simulationDirectory)
 	{
-		if ( sim != null )
+		if ( simulationDirectory != null )
 		{
-			String rptDir = RMAIO.concatPath(sim.getSimulationDirectory(), BaseReportAction.REPORT_DIR);
+			String rptDir = RMAIO.concatPath(simulationDirectory, BaseReportAction.REPORT_DIR);
 			String latestFile = findLatestReportFile(rptDir);
 			if ( latestFile != null )
 			{

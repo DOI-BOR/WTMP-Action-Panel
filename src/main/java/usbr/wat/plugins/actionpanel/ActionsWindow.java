@@ -513,13 +513,22 @@ public class ActionsWindow extends RmaJDialog
 		{
 			return;
 		}
-		WatSimulation sim = (WatSimulation) _simulationTable.getValueAt(row, SimulationTreeTableModel.SIMULATION_COLUMN);	
-		displayReport(sim);
+		Object obj = _simulationTable.getValueAt(row, SimulationTreeTableModel.SIMULATION_COLUMN);	
+		if ( obj instanceof WatSimulation )
+		{
+			WatSimulation sim = (WatSimulation) obj;
+			displayReport(sim.getSimulationDirectory());
+		}
+		else if ( obj instanceof ResultsData )
+		{
+			ResultsData rd = (ResultsData)obj;
+			displayReport(rd.getFolder());
+		}
 	}
-	public void displayReport(WatSimulation sim )
+	public void displayReport(String simulationDirectory )
 	{
 		DisplayReportAction action = new DisplayReportAction(this);
-		action.displayReportAction(sim);
+		action.displayReportAction(simulationDirectory);
 	}
 
 	/**
