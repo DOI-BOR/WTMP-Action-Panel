@@ -8,6 +8,7 @@
 package usbr.wat.plugins.actionpanel.gitIntegration.actions;
 
 import java.awt.Cursor;
+import java.awt.EventQueue;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -60,6 +61,12 @@ public class DownloadStudyAction extends AbstractGitAction
 		{
 			JOptionPane.showMessageDialog(getParent(), "Download Complete",
 					"Download", JOptionPane.INFORMATION_MESSAGE);
+			Window parent = getParent();
+			if ( parent instanceof StudyStorageDialog )
+			{
+				StudyStorageDialog ssd = (StudyStorageDialog) parent;
+				EventQueue.invokeLater(()->ssd.refreshChangesAction());
+			}
 		}
 		else if ( _confirmDlg != null && !_confirmDlg.isCanceled() )  
 		{ // download failed, user didn't cancel confirm dialog

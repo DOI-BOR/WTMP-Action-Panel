@@ -371,11 +371,8 @@ public class StudyStorageDialog extends RmaJDialog
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				if ( _refreshChanges )
-				{
-					List<String>changes = getChanges();
-					displayChanges(changes);
-				}
+				refreshChangesAction();
+				
 			}
 		};
 		if ( _timer != null )
@@ -418,12 +415,22 @@ public class StudyStorageDialog extends RmaJDialog
 		worker.execute();
 	}
 
-
+	/**
+	 * 
+	 */
+	public void refreshChangesAction()
+	{
+		if ( _refreshChanges )
+		{
+			List<String>changes = getChanges();
+			displayChanges(changes);
+		}	
+	}
 
 	/**
 	 * @param changes
 	 */
-	protected void displayChanges(List<String> changes)
+	protected synchronized void displayChanges(List<String> changes)
 	{
 		if ( changes == null )
 		{
@@ -459,7 +466,7 @@ public class StudyStorageDialog extends RmaJDialog
 	/**
 	 * @return
 	 */
-	protected List<String> getChanges()
+	protected synchronized List<String> getChanges()
 	{
 		RepoInfo repo = getSelectedRepo();
 		ShowChangesActions action = new ShowChangesActions(_parent, repo, ShowChangesActions.ChangeType.Commits);
