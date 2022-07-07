@@ -680,17 +680,16 @@ public class DisplayReportsSelector extends RmaJDialog
 				return null;
 			}
 			Object pathObj = path.getLastPathComponent();
-			if ( pathObj instanceof ReportObject )
+			if ( pathObj instanceof CheckBoxNode )
 			{
-				ReportObject ro = (ReportObject) pathObj;
-				SimulationReportInfo sri = ro.getSimulationReportInfo();
-				return sri.getDescription();
+				Object checkBoxObj = ((CheckBoxNode)pathObj).getUserObject();
+				if ( checkBoxObj instanceof ReportPlugin )
+				{
+					ReportPlugin ro = (ReportPlugin) checkBoxObj;
+					return ro.getDescription();
+				}
 			}
-			else
-			{
-				SimulationReportInfo sri = (SimulationReportInfo) pathObj;
-				return sri.getDescription();
-			}
+			return null;
 		}
 		public void expandAll(boolean expand) 
 		{
@@ -777,8 +776,8 @@ public class DisplayReportsSelector extends RmaJDialog
 		@Override
 		public void setSelected(boolean selected)
 		{
-			updateCreateReportButtonState();
 			super.setSelected(selected);
+			updateCreateReportButtonState();
 		}
 		
 		
