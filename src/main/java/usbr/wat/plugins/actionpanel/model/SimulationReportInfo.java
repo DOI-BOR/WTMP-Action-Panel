@@ -17,6 +17,7 @@ import hec2.wat.model.WatSimulation;
 public class SimulationReportInfo
 {
 	private String _name;
+	private String _shortName;
 	private String _description;
 	private WatSimulation _sim;
 	private String _simFolder;
@@ -149,4 +150,17 @@ public class SimulationReportInfo
 	{
 		return _isSimulation;
 	}
+
+	/**
+	 * @param name
+	 */
+	public void setShortName(String name)
+	{
+		_shortName = name;
+	}
+	public String getShortName()
+	{
+		return _shortName;
+	}
+	
 }

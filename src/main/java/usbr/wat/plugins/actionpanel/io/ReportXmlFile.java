@@ -167,7 +167,7 @@ public class ReportXmlFile
 	{
 		Element simElem = new Element(SIM_ELEM);
 		parent.addContent(simElem);
-		XMLUtilities.addChildContent(simElem, SIM_NAME_ELEM, info.getName());
+		XMLUtilities.addChildContent(simElem, SIM_NAME_ELEM, info.getShortName());
 		XMLUtilities.addChildContent(simElem, ID_ELEM, (simNumber==0?BASE_ALT:ALT_NUM+simNumber));
 		
 		XMLUtilities.addChildContent(simElem, BASE_SIM_NAME_ELEM, getBaseSimulationName(info.getSimulation().getName()));
