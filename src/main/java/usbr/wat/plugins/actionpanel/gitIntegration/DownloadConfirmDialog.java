@@ -63,23 +63,37 @@ public class DownloadConfirmDialog extends RmaJDialog
 	private RepoInfo _repo;
 	private CheckboxTree _submoduleTree;
 	private JScrollPane _treeScrollPane;
+	private boolean _isRestore;
 
 	/**
 	 * @param studyStorageDialog
 	 */
 	public DownloadConfirmDialog(Window parent,RepoInfo repo)
 	{
+		this(parent, repo, false);
+		
+	}
+
+	
+
+	/**
+	 * @param parent
+	 * @param repo
+	 * @param b
+	 */
+	public DownloadConfirmDialog(Window parent, RepoInfo repo, boolean isRestore)
+	{
 		super(parent, true);
 		_repo = repo;
+		_isRestore = isRestore;
 		buildControls();
 		addListeners();
 		setSize(600,600);
 		pack();
 		setLocationRelativeTo(getParent());
-		
 	}
 
-	
+
 
 	/**
 	 * 
@@ -87,8 +101,14 @@ public class DownloadConfirmDialog extends RmaJDialog
 	private void buildControls()
 	{
 		getContentPane().setLayout(new GridBagLayout());
-		
-		setTitle("Download Changes");
+		if ( _isRestore )
+		{
+			setTitle("Restore");
+		}
+		else
+		{
+			setTitle("Download Changes");
+		}
 	
 		JPanel panel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -137,7 +157,7 @@ public class DownloadConfirmDialog extends RmaJDialog
 		panel.add(label, gbc);	
 		
 		_remoteUrlFld = new RmaJTextField();
-		_remoteUrlFld.setToolTipText("The Repo's URL being uploaded to");
+		_remoteUrlFld.setToolTipText("The Repo's URL being downloaded from");
 		_remoteUrlFld.setEditable(false);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -229,7 +249,16 @@ public class DownloadConfirmDialog extends RmaJDialog
 		getContentPane().add(_fileChangesBtn, gbc);
 		
 		
-		label = new JLabel("Downloading will update the files in the Study, possibly overwriting changes");
+		String s;
+		if ( _isRestore )
+		{
+			s = "Restoring will update the files in the Study to the last successful download, possibly overwriting changes";
+		}
+		else
+		{
+			s = "Downloading will update the files in the Study, possibly overwriting changes";
+		}
+		label = new JLabel(s);
 		Font f = label.getFont();
 		f = f.deriveFont(Font.BOLD);
 		label.setFont(f);
@@ -245,7 +274,14 @@ public class DownloadConfirmDialog extends RmaJDialog
 		
 		
 		_cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.OK_CANCEL_BUTTONS);
-		_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setText("Download");
+		if ( _isRestore )
+		{
+			_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setText("Restore");
+		}
+		else
+		{
+			_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setText("Download");
+		}
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -297,7 +333,7 @@ public class DownloadConfirmDialog extends RmaJDialog
 			List<String>submodules = getSelectedSubmodules();
 			if ( submodules.size() == 0 )
 			{
-				String msg = "Please select which area of the study to download";
+				String msg = "Please select which area of the study to "+ (_isRestore?"restore":"download");
 				String title = "No area selected";
 				JOptionPane.showMessageDialog(this, msg, title, JOptionPane.INFORMATION_MESSAGE);
 				return false;	

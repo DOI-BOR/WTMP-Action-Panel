@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 
 import rma.swing.RmaInsets;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.DownloadStudyAction;
+import usbr.wat.plugins.actionpanel.gitIntegration.actions.RestoreStudyAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.UploadStudyAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.model.RepoInfo;
 
@@ -30,9 +31,11 @@ public class RepoButtonPanel extends JPanel
 	private JButton _downloadStudyButton;
 	private UploadStudyAction _uploadStudyAction;
 	private JButton _uploadStudyButton;
+	private JButton _restoreStudyButton;
 	private OpenStudyAction _openStudyAction;
 	private Window _parent;
 	private StudyStorageDialog _studyStorageDialog;
+	private RestoreStudyAction _restoreStudyAction;
 
 	public RepoButtonPanel(Window parent, StudyStorageDialog studyStorageDialog)
 	{
@@ -73,6 +76,18 @@ public class RepoButtonPanel extends JPanel
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(_uploadStudyButton, gbc);
 		
+		_restoreStudyAction = new RestoreStudyAction(_studyStorageDialog);
+		_restoreStudyButton = new JButton(_restoreStudyAction);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		add(_restoreStudyButton, gbc);
+		
 		_openStudyAction = new OpenStudyAction(_studyStorageDialog);
 		_uploadStudyButton =  new JButton(_openStudyAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -82,12 +97,13 @@ public class RepoButtonPanel extends JPanel
 		gbc.weighty   = 0.001;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
+		gbc.insets    = RmaInsets.insets(10,5,0,5);
 		add(_uploadStudyButton, gbc);
 		
 	}
 	public void setRepoInfo(RepoInfo repo)
 	{
 		_downloadStudyAction.setRepoInfo(repo);
+		_restoreStudyAction.setRepoInfo(repo);
 	}
 }
