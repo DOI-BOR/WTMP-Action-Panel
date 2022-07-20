@@ -136,6 +136,7 @@ public class RestoreStudyAction extends AbstractStudyGitAction
 		{
 
 			getParent().setCursor(Cursor.getDefaultCursor());
+			openStudy();
 		}
 	}
 	
