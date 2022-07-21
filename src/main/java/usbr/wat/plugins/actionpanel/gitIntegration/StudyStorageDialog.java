@@ -456,7 +456,7 @@ public class StudyStorageDialog extends RmaJDialog
 		}
 		else
 		{
-			_msgLabel.setText("Local copy is upto date");
+			_msgLabel.setText("Local copy is up to date");
 			_msgLabel.setToolTipText(null);
 		}
 	}
