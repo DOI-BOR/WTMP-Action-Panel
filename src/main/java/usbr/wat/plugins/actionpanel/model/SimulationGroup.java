@@ -4,6 +4,7 @@ package usbr.wat.plugins.actionpanel.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -290,7 +291,22 @@ public class SimulationGroup extends AbstractXMLManager
 		getSimulations();
 		if ( simToDel != null )
 		{
-			return _sims.remove(simToDel);
+			boolean rv = _sims.remove(simToDel);
+			if ( rv )
+			{
+				String name = simToDel.getName();
+				SimulationInfo simInfo;
+				Iterator<SimulationInfo> iter = _simulationInfo.iterator();
+				while (iter.hasNext() )
+				{
+					simInfo = iter.next();
+					if ( simInfo.simName.equals(name))
+					{
+						iter.remove();
+					}
+				}
+			}
+			return rv;
 		}
 		return false;
 	}

@@ -37,8 +37,11 @@ import com.rma.client.Browser;
 import com.rma.client.LookAndFeel;
 import com.rma.event.ProjectAdapter;
 import com.rma.event.ProjectEvent;
+import com.rma.event.ProjectManagerListener;
+import com.rma.factories.ProjectNodeFactory;
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
+import com.rma.model.ManagerProxy;
 import com.rma.model.Project;
 import com.rma.util.PlugInLoader;
 
@@ -54,11 +57,14 @@ import rma.swing.RmaJList;
 import rma.swing.list.RmaListModel;
 import rma.util.RMAFilenameFilter;
 import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.DisplayReportAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.utils.GitRepoUtils;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
+import usbr.wat.plugins.actionpanel.ui.ActionsProjectTab;
+import usbr.wat.plugins.actionpanel.ui.SimulationGroupNode;
 import usbr.wat.plugins.actionpanel.ui.tree.ResultsTreeTableNode;
 import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTable;
 import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTableModel;
@@ -71,6 +77,11 @@ import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTableNode;
 @SuppressWarnings("serial")
 public class ActionsWindow extends RmaJDialog
 {
+	static 
+	{
+		ProjectNodeFactory.addObjectToNodeMapping(SimulationGroup.class, SimulationGroupNode.class);
+		System.setProperty("UseSimNameInRunsFolder", "true");
+	}
 	private static final Color NOT_COMPUTED_COLOR = Color.BLUE;
 	private static final Color COMPUTED_COLOR = Color.GREEN.darker();
 	private static final Color COMPUTED_ERROR_COLOR = Color.RED;
@@ -86,6 +97,8 @@ public class ActionsWindow extends RmaJDialog
 	private JLabel _apEndLabel;
 	private SimulationGroup _sg;
 	private SimulationActionsPanel _simActionsPanel;
+	private ProjectSimulationListener _projectSimulationListener;
+	private ActionsProjectTab _actionsProjTab;
 
 	public ActionsWindow(Frame parent)
 	{
@@ -97,8 +110,11 @@ public class ActionsWindow extends RmaJDialog
 		pack();
 		setSize(950, 550);
 		setLocationRelativeTo(Browser.getBrowserFrame());
+		
+		addTabToProjectPane();
 	}
 
+	
 	
 	/**
 	 * 
@@ -356,6 +372,18 @@ public class ActionsWindow extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5555;
 		_rightPanel.add(new JScrollPane(_statusList), gbc);
 	}
+	
+	/**
+	 * 
+	 */
+	private void addTabToProjectPane()
+	{
+		_actionsProjTab = new ActionsProjectTab();
+		Browser.getBrowserFrame().getTabbedPane().insertTab("WTMP", null, _actionsProjTab, "WTMP Tab", 1);
+		
+	}
+
+
 	/**
 	 * @return
 	 */
@@ -587,13 +615,30 @@ public class ActionsWindow extends RmaJDialog
 	 */
 	private void addListeners()
 	{
+		Project.addStaticManagerContainer(SimGroupContainerNode.class);  
+		
+		_projectSimulationListener = new ProjectSimulationListener();
 		Project.addStaticProjectListener(new ProjectAdapter()
 		{
 			@Override
+			public void projectLoaded(ProjectEvent e)
+			{
+			}
+			@Override
 			public void projectOpened(ProjectEvent e )
 			{
+				Project prj = e.getProject();
+				if ( !prj.isNoProject())
+				{
+					prj.addManagerListener(_projectSimulationListener);
+				}
 				clearForm();
 				checkRepoOutofDateStatus();
+			}
+			@Override
+			public void  projectClosed(ProjectEvent e ) 
+			{
+				e.getProject().removeManagerListener(_projectSimulationListener);
 			}
 		});
 		
@@ -637,20 +682,8 @@ public class ActionsWindow extends RmaJDialog
 			_sg = sg;
 			if ( sg != null )
 			{
-				SimulationTreeTableModel newModel = new SimulationTreeTableModel(sg);
-				_simulationTable.setTreeTableModel(newModel);
-				_simulationTable.clearColors();
-				int rowCnt = _simulationTable.getRowCount();
-				for (int r = 0; r < rowCnt; r++ )
-				{
-					Object val = _simulationTable.getValueAt(r, SimulationTreeTableModel.SIMULATION_COLUMN);
-					if ( val instanceof WatSimulation )
-					{
-						WatSimulation sim = (WatSimulation) val;
-						Color color = getSimForegroundColor(sim);
-						_simulationTable.setRowForeground(r, color);
-					}
-				}
+				setSimulationTable(sg);
+				
 
 				_nameDescPanel.setName(sg.getName());
 				_nameDescPanel.setDescription(sg.getDescription());
@@ -703,6 +736,29 @@ public class ActionsWindow extends RmaJDialog
 		}
 	}
 	
+	/**
+	 * @param sg
+	 */
+	private void setSimulationTable(SimulationGroup sg)
+	{
+		SimulationTreeTableModel newModel = new SimulationTreeTableModel(sg);
+		_simulationTable.setTreeTableModel(newModel);
+		_simulationTable.clearColors();
+		int rowCnt = _simulationTable.getRowCount();
+		for (int r = 0; r < rowCnt; r++ )
+		{
+			Object val = _simulationTable.getValueAt(r, SimulationTreeTableModel.SIMULATION_COLUMN);
+			if ( val instanceof WatSimulation )
+			{
+				WatSimulation sim = (WatSimulation) val;
+				Color color = getSimForegroundColor(sim);
+				_simulationTable.setRowForeground(r, color);
+			}
+		}
+		_simulationTable.revalidate();
+	}
+
+
 	/**
 	 * @param sim
 	 * @return
@@ -896,6 +952,70 @@ public class ActionsWindow extends RmaJDialog
 			}
 		}
 		return "";
+	}
+	
+	public class ProjectSimulationListener implements ProjectManagerListener
+	{
+		public ProjectSimulationListener()
+		{
+			super();
+		}
+
+		@Override
+		public void managerAdded(ManagerProxy proxy)
+		{
+			// do nothing
+		}
+
+		@Override
+		public void managerDeleted(ManagerProxy proxy)
+		{
+			if ( proxy == null )
+			{
+				return;
+			}
+			String name = proxy.getName();
+			SimulationGroup simGroup = getSimulationGroup();
+			WatSimulation sim;
+			if ( simGroup != null )
+			{
+				boolean deleted = false;
+				List<WatSimulation> sims = simGroup.getSimulations();
+				for (int i = 0;i < sims.size(); i++ )
+				{
+					sim = sims.get(i);
+					if ( name.equals(sim.getName()))
+					{
+						simGroup.removeSimulation(sim);
+						simGroup.setModified(true);
+						deleted = true;
+					}
+				}
+				if ( deleted )
+				{
+					setSimulationTable(simGroup);
+					if ( simGroup.getSimulations().isEmpty() )
+					{
+						String msg = "There are no more simulations in the Simulation Group.  Would you like to delete the Simulation Group?";
+						String title = "Delete Simulation Group?";
+						int opt = JOptionPane.showConfirmDialog(ActionsWindow.this, msg, title, JOptionPane.YES_NO_OPTION);
+						if ( opt == JOptionPane.YES_OPTION )
+						{
+							if ( new DeleteSimulationGroupAction(ActionsWindow.this).deleteSimulationGroup(simGroup))
+							{
+								setSimulationGroup(null);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		@Override
+		public Class<?> getManagerClass()
+		{
+			return WatSimulation.class;
+		}
 	}
 	
 }

@@ -562,8 +562,8 @@ public class NewSimulationGroupDialog extends RmaJDialog
 			JOptionPane.showMessageDialog(this, "No Simulations have been selected. Please select at least one Simulation",
 					"No Simulations", JOptionPane.INFORMATION_MESSAGE);
 			return false;
-			
 		}
+		
 		
 		return true;
 	}

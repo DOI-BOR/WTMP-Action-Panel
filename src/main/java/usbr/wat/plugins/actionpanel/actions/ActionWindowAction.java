@@ -22,7 +22,7 @@ public class ActionWindowAction extends AbstractAction
 {
 	public ActionWindowAction()
 	{
-		super("USBR Actions Window");
+		super("WTMP Actions Window");
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
