@@ -65,7 +65,13 @@ public class OkToPushAction extends AbstractGitAction
 			List<ProcessOutputLine> output = parseOutput(getOutput());
 			List<String> lines =  getOutputLines(output);
 			String msg = getErrorMessage(null, lines);
-			showErrorMsg("Can't Upload to Server", msg);
+			String title ="Can't Upload to Server";
+			int idx = _cmdBeingRun.indexOf(SUB_MODULE);
+			if ( idx > -1 )
+			{
+				title ="Can't Upload "+_cmdBeingRun.get(idx+1)+" to Server";
+			}
+			showErrorMsg(title, msg);
 			return false;
 		}
 		return true;

@@ -365,33 +365,42 @@ public class EnterCommentsDlg extends RmaJDialog
 	private void getChanges()
 	{
 		EventQueue.invokeLater(()-> getChangedFiles());
-		EventQueue.invokeLater(()-> okToPush());
 	}
 
 	/**
 	 * @return
 	 */
-	private void okToPush()
+	private boolean okToPush()
 	{
 		RepoInfo repo = _studyStorageDialog.getSelectedRepo();
 		if ( repo == null )
 		{
-			return;
+			return false;
 		}
-		List<String>cmd = new ArrayList<>();
-		cmd.add(AbstractGitAction.LOCAL_FOLDER);
-		cmd.add(repo.getLocalPath());
-		cmd.add(FetchAction.FETCH_CMD);
-		cmd.add(AbstractGitAction.ALL_MODULES);
-		OkToPushAction okToPush = new OkToPushAction(cmd, _studyStorageDialog);
-		if ( !okToPush.isOkToPush())
+		List<String> subModules = getSelectedSubmodules();
+		boolean rv = true;
+		for (int i = 0;i < subModules.size(); i++ )
 		{
-			_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled(false);
+			List<String>cmd = new ArrayList<>();
+			cmd.add(AbstractGitAction.LOCAL_FOLDER);
+			cmd.add(repo.getLocalPath());
+			cmd.add(FetchAction.FETCH_CMD);
+			cmd.add(AbstractGitAction.SUB_MODULE);
+			cmd.add(subModules.get(i));
+			OkToPushAction okToPush = new OkToPushAction(cmd, _studyStorageDialog);
+			if ( !okToPush.isOkToPush())
+			{
+				//_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled(false);
+				rv = false;
+			}
+			/*
+			else
+			{
+				_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled(true);
+			}
+			*/
 		}
-		else
-		{
-			_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled(true);
-		}
+		return rv;
 		
 	}
 
@@ -454,6 +463,11 @@ public class EnterCommentsDlg extends RmaJDialog
 				JOptionPane.showMessageDialog(this, msg, title, JOptionPane.INFORMATION_MESSAGE);
 				return false;	
 			}
+		}
+		
+		if ( !okToPush())
+		{
+			return false;
 		}
 				
 		/*   should we force the user to enter more than a one liner?
