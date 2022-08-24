@@ -42,6 +42,7 @@ public class CheckboxTree extends JTree
 	private DefaultMutableTreeNode _root;
 	private RepoInfo _repo;
 	private boolean _hasSubModules;
+	private boolean _disallowSelectionForNodesBehind;
 
 	public CheckboxTree(TreeModel model, StudyStorageDialog studyStorageDialog)
 	{
@@ -234,6 +235,10 @@ public class CheckboxTree extends JTree
 		}
 	}
 	
+	public void setDisallowSelectionForNodesBehind(boolean disallow)
+	{
+		_disallowSelectionForNodesBehind = disallow;
+	}
 	/**
 	 * @param submodule
 	 * @return
@@ -260,7 +265,15 @@ public class CheckboxTree extends JTree
 		{
 			super(subModule, tree);
 		}
-		
+		@Override
+		public void setSelected(boolean selected)
+		{
+			if (_disallowSelectionForNodesBehind && _commitsBehind > 0 && selected )
+			{
+				return;
+			}
+			super.setSelected(selected);
+		}
 		/**
 		 * @return
 		 */
@@ -271,7 +284,13 @@ public class CheckboxTree extends JTree
 
 		public void setCommitsBehind(int commitsBehind)
 		{
+			if (_disallowSelectionForNodesBehind && commitsBehind > 0 )
+			{
+				super.setSelected(false);
+				setEnabled(false);
+			}
 			_commitsBehind = commitsBehind;
+			
 			((DefaultTreeModel)getModel()).nodeChanged(this);
 		}
 		

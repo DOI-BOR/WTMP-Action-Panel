@@ -12,11 +12,18 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Executors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -38,6 +45,7 @@ import usbr.wat.plugins.actionpanel.gitIntegration.actions.AbstractGitAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.FetchAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.OkToPushAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.ShowChangedLocalFilesAction;
+import usbr.wat.plugins.actionpanel.gitIntegration.actions.ShowChangesActions;
 import usbr.wat.plugins.actionpanel.gitIntegration.model.RepoInfo;
 import usbr.wat.plugins.actionpanel.gitIntegration.ui.CheckboxTree;
 
@@ -192,6 +200,7 @@ public class EnterCommentsDlg extends RmaJDialog
 				return d;
 			}
 		};
+		_submoduleTree.setDisallowSelectionForNodesBehind(true);
 		_submoduleTree.setRowHeight(_submoduleTree.getRowHeight()+5);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -365,6 +374,8 @@ public class EnterCommentsDlg extends RmaJDialog
 	private void getChanges()
 	{
 		EventQueue.invokeLater(()-> getChangedFiles());
+		Executors.newSingleThreadExecutor().execute(()->getChangesForTree());
+		//EventQueue.invokeLater(()-> getChangesForTree());
 	}
 
 	/**
@@ -379,27 +390,27 @@ public class EnterCommentsDlg extends RmaJDialog
 		}
 		List<String> subModules = getSelectedSubmodules();
 		boolean rv = true;
+		List<String>cmd = new ArrayList<>();
+		cmd.add(FetchAction.FETCH_CMD);
+		cmd.add(AbstractGitAction.LOCAL_FOLDER);
+		cmd.add(repo.getLocalPath());
 		for (int i = 0;i < subModules.size(); i++ )
 		{
-			List<String>cmd = new ArrayList<>();
-			cmd.add(AbstractGitAction.LOCAL_FOLDER);
-			cmd.add(repo.getLocalPath());
-			cmd.add(FetchAction.FETCH_CMD);
 			cmd.add(AbstractGitAction.SUB_MODULE);
 			cmd.add(subModules.get(i));
-			OkToPushAction okToPush = new OkToPushAction(cmd, _studyStorageDialog);
-			if ( !okToPush.isOkToPush())
-			{
-				//_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled(false);
-				rv = false;
-			}
-			/*
+		}
+		OkToPushAction okToPush = new OkToPushAction(cmd, this);
+		if ( !okToPush.isOkToPush())
+		{
+			//_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled(false);
+			rv = false;
+		}
+		/*
 			else
 			{
 				_cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON).setEnabled(true);
 			}
-			*/
-		}
+		 */
 		return rv;
 		
 	}
@@ -435,6 +446,63 @@ public class EnterCommentsDlg extends RmaJDialog
 		finally
 		{
 			getContentPane().setCursor(Cursor.getDefaultCursor());
+		}
+	}
+	private void getChangesForTree()
+	{
+		RepoInfo repo = _studyStorageDialog.getSelectedRepo();
+		ShowChangesActions fetchAction = new ShowChangesActions((Window)getParent(), repo, ShowChangesActions.ChangeType.Commits);
+		List<String> changes = fetchAction.getChanges();
+		if ( changes != null )
+		{
+			checkForSubModuleCommitsBehind(changes);
+		}
+	}
+	
+	private void checkForSubModuleCommitsBehind(List<String> changes)
+	{
+		Map<String, Integer>subModuleCommitsBehindMap = new HashMap<>();
+		String line, subModule;
+		Integer cnt;
+		int idx;
+		for (int i = 0;i < changes.size(); i++ )
+		{
+			line = changes.get(i);
+			idx = line.indexOf(':');
+			if ( idx > -1 )
+			{
+				subModule = line.substring(0,idx).trim();
+				cnt = subModuleCommitsBehindMap.get(subModule);
+				if ( cnt == null )
+				{
+					cnt = 1;
+					subModuleCommitsBehindMap.put(subModule, cnt);
+				}
+				else
+				{
+					cnt++;
+					subModuleCommitsBehindMap.put(subModule, cnt);
+				}
+			}
+		}
+		EventQueue.invokeLater(()->updateTreeWithCommitsBehind(subModuleCommitsBehindMap));
+	}
+	/**
+	 * @param subModuleCommitsBehindMap
+	 */
+	private void updateTreeWithCommitsBehind( Map<String, Integer> subModuleCommitsBehindMap)
+	{
+		Set<Entry<String, Integer>> entries = subModuleCommitsBehindMap.entrySet();
+		Iterator<Entry<String, Integer>> iter = entries.iterator();
+		Entry<String, Integer> entry;
+		String subModule;
+		int cnt;
+		while (iter.hasNext())
+		{
+			entry = iter.next();
+			subModule = entry.getKey();
+			cnt = entry.getValue();
+			_submoduleTree.setCommitsBehind(subModule, cnt);
 		}
 	}
 	/**
