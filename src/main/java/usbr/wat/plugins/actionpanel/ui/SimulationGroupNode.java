@@ -29,6 +29,7 @@ import com.rma.ui.IconNode;
 import com.rma.ui.ManagerNode;
 import com.rma.ui.PopupMenuTreeNode;
 import com.rma.ui.ProjectPaneActionNode;
+import com.rma.ui.ProjectTree;
 
 import hec.heclib.util.HecTime;
 import hec.model.RunTimeWindow;
@@ -122,19 +123,29 @@ public class SimulationGroupNode extends ManagerNode
 	private void addSimulations(List<WatSimulation>sims)
 	{
 		WatSimulation sim;
-		ManagerProxy proxy;
 		for (int i = 0;i < sims.size(); i++ )
 		{ 
 			sim = sims.get(i);
-			MutableTreeNode node = ProjectNodeFactory.getProjectNode(sim, this);
-			if ( node instanceof ManagerNode )
-			{
-				proxy = Project.getCurrentProject().getManagerProxy(sim);
-				((ManagerNode)node).setManagerProxy(proxy);
-				add(node);
-			}
+			addSimulation(sim);
 		}
 	}
+	/**
+	 * @param sim
+	 * @return 
+	 */
+	private MutableTreeNode addSimulation(WatSimulation sim)
+	{
+		MutableTreeNode node = ProjectNodeFactory.getProjectNode(sim, this);
+		if ( node instanceof ManagerNode )
+		{
+			ManagerProxy proxy = Project.getCurrentProject().getManagerProxy(sim);
+			((ManagerNode)node).setManagerProxy(proxy);
+			add(node);
+			return node;
+		}
+		return null;
+	}
+	
 	public List getContentNodes()
 	{
 		List contentNodes = new ArrayList<>();
@@ -257,9 +268,34 @@ public class SimulationGroupNode extends ManagerNode
 			@Override
 			public void managerAdded(ManagerProxy proxy)
 			{
-				// TODO Auto-generated method stub
-				System.out.println("managerAdded TODO implement me");
+				WatSimulation sim = (WatSimulation) proxy.getManager();
 				
+				int cnt = getParent().getChildCount();
+				SimulationGroupNode sgNode;
+				List<WatSimulation> sgSims;
+				
+				for (int i = 1; i < cnt; i++ ) // first child should be this
+				{
+					TreeNode node = getParent().getChildAt(i);
+					if ( node instanceof SimulationGroupNode )
+					{
+						sgNode = (SimulationGroupNode) node;
+						sgSims = sgNode.getSimulations();
+						if ( sgSims.contains(sim))
+						{
+							return;
+						}
+					}
+				}
+				MutableTreeNode node = addSimulation(sim);
+				if ( node != null )
+				{
+					add(node);
+					ProjectTree tree = Browser.getBrowserFrame().getProjectTree();
+					tree.nodesWereInserted(SimulationGroupNode.this, new TreeNode[] {node});
+					tree.nodeChanged(SimulationGroupNode.this);
+					tree.expandNode(SimulationGroupNode.this);
+				}
 			}
 
 			@Override

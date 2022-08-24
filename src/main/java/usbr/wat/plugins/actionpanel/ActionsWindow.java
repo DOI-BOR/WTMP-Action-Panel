@@ -81,6 +81,7 @@ public class ActionsWindow extends RmaJDialog
 	{
 		ProjectNodeFactory.addObjectToNodeMapping(SimulationGroup.class, SimulationGroupNode.class);
 		System.setProperty("UseSimNameInRunsFolder", "true");
+		System.setProperty("SimNode.AllowSimsToExceedAPs", "true");
 	}
 	private static final Color NOT_COMPUTED_COLOR = Color.BLUE;
 	private static final Color COMPUTED_COLOR = Color.GREEN.darker();
