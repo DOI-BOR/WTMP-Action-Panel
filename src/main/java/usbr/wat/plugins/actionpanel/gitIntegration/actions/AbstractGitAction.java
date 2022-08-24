@@ -8,6 +8,8 @@
 package usbr.wat.plugins.actionpanel.gitIntegration.actions;
 
 import java.awt.Cursor;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +17,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,9 @@ import javax.swing.RootPaneContainer;
 import hec.io.ProcessOutputLine;
 import hec.io.ProcessOutputReader;
 
+import rma.swing.ButtonCmdPanel;
+import rma.swing.RmaInsets;
+import rma.swing.RmaJDialog;
 import rma.swing.RmaJTextArea;
 import rma.util.RMAIO;
 
@@ -100,6 +106,15 @@ public abstract class AbstractGitAction extends AbstractAction
 		String exe = getExe();
 		cmd.add(0,exe);
 		
+		boolean echoOutput = Boolean.getBoolean(DEBUG_OUTPUT_PROP);
+		if ( echoOutput)
+		{
+			_logger.setLevel(Level.FINE);
+		}
+		else
+		{
+			_logger.setLevel(Level.INFO);
+		}
 		if ( Boolean.getBoolean(DO_NOTHING_PROP))
 		{
 			cmd.add(2, DO_NOTHING);
@@ -119,7 +134,6 @@ public abstract class AbstractGitAction extends AbstractAction
 			JOptionPane.showMessageDialog(_parent, "Failed to launch Git command " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
-		boolean echoOutput = Boolean.getBoolean(DEBUG_OUTPUT_PROP);
 		
 		InputStream iStream = proc.getInputStream();
 		InputStream eStream = proc.getErrorStream();
@@ -134,9 +148,9 @@ public abstract class AbstractGitAction extends AbstractAction
 		try
 		{
 			int rv = proc.waitFor();
+			_logger.fine(cmd.get(0)+" exit code="+rv);
 			if ( rv != 0 )
 			{
-				_logger.info(cmd.get(0)+" exit code="+rv);
 				showErrorMsg(cmd, _output);
 				
 				return false;
@@ -210,8 +224,37 @@ public abstract class AbstractGitAction extends AbstractAction
 		textArea.setEditable(false);
 		JScrollPane sp = new JScrollPane(textArea);
 		textArea.setText(msg);
+	
+		RmaJDialog dlg = new RmaJDialog(_parent, title, true);
+		dlg.getContentPane().setLayout(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 1.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.BOTH;
+		gbc.insets    = RmaInsets.INSETS5505;
+		dlg.getContentPane().add(sp, gbc);
 		
-		JOptionPane.showMessageDialog(_parent, sp, title, JOptionPane.ERROR_MESSAGE);
+		ButtonCmdPanel cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.CLOSE_BUTTON);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.SOUTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5555;
+		dlg.getContentPane().add(cmdPanel, gbc);
+	
+		cmdPanel.addCmdPanelListener(e->dlg.setVisible(false));
+		
+		dlg.pack();
+		dlg.setLocationRelativeTo(_parent);
+		dlg.setVisible(true);
+		//JOptionPane.showMessageDialog(_parent, sp, title, JOptionPane.ERROR_MESSAGE);
 	}
 
 	public void setShowFailedCallMessage(boolean showMsg)

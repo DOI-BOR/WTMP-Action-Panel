@@ -28,14 +28,17 @@ import usbr.wat.plugins.actionpanel.gitIntegration.model.RepoInfo;
 public class RepoButtonPanel extends JPanel
 {
 	private DownloadStudyAction _downloadStudyAction;
-	private JButton _downloadStudyButton;
 	private UploadStudyAction _uploadStudyAction;
+	private OpenStudyAction _openStudyAction;
+	private RestoreStudyAction _restoreStudyAction;
+	
+	private JButton _downloadStudyButton;
 	private JButton _uploadStudyButton;
 	private JButton _restoreStudyButton;
-	private OpenStudyAction _openStudyAction;
+	private JButton _openStudyButton;
+	
 	private Window _parent;
 	private StudyStorageDialog _studyStorageDialog;
-	private RestoreStudyAction _restoreStudyAction;
 
 	public RepoButtonPanel(Window parent, StudyStorageDialog studyStorageDialog)
 	{
@@ -43,7 +46,10 @@ public class RepoButtonPanel extends JPanel
 		_parent = parent;
 		_studyStorageDialog = studyStorageDialog;
 		buildControls();
+		setButtonsEnabled(false);
 	}
+
+	
 
 	/**
 	 * 
@@ -89,7 +95,7 @@ public class RepoButtonPanel extends JPanel
 		add(_restoreStudyButton, gbc);
 		
 		_openStudyAction = new OpenStudyAction(_studyStorageDialog);
-		_uploadStudyButton =  new JButton(_openStudyAction);
+		_openStudyButton = new JButton(_openStudyAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -98,12 +104,24 @@ public class RepoButtonPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.insets(10,5,0,5);
-		add(_uploadStudyButton, gbc);
+		add(_openStudyButton, gbc);
 		
+	}
+	
+	/**
+	 * @param b
+	 */
+	private void setButtonsEnabled(boolean enabled)
+	{
+		_uploadStudyAction.setEnabled(enabled);
+		_downloadStudyButton.setEnabled(enabled);
+		_restoreStudyButton.setEnabled(enabled);
+		_openStudyAction.setEnabled(enabled);
 	}
 	public void setRepoInfo(RepoInfo repo)
 	{
 		_downloadStudyAction.setRepoInfo(repo);
 		_restoreStudyAction.setRepoInfo(repo);
+		setButtonsEnabled( repo != null );
 	}
 }

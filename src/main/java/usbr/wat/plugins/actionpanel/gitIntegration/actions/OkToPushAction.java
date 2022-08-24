@@ -7,14 +7,13 @@
  */
 package usbr.wat.plugins.actionpanel.gitIntegration.actions;
 
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import hec.io.ProcessOutputLine;
-
-import usbr.wat.plugins.actionpanel.gitIntegration.StudyStorageDialog;
 
 /**
  * check to see if its ok to push changes to the server
@@ -34,9 +33,9 @@ public class OkToPushAction extends AbstractGitAction
 	 * @param cmd
 	 * @param studyStorageDialog 
 	 */
-	public OkToPushAction(List<String> cmd, StudyStorageDialog studyStorageDialog)
+	public OkToPushAction(List<String> cmd, Window parent)
 	{
-		super("Check if Upload is Ok", studyStorageDialog);
+		super("Check if Upload is Ok", parent);
 		_cmdBeingRun = new ArrayList<>();
 		_cmdBeingRun.addAll(cmd);
 	}
@@ -53,10 +52,10 @@ public class OkToPushAction extends AbstractGitAction
 	public boolean isOkToPush()
 	{
 		_cmdBeingRun.remove(UploadStudyAction.UPLOAD_CMD);
-		_cmdBeingRun.add(0,OK_TO_PUSH_CMD);
+		_cmdBeingRun.add(OK_TO_PUSH_CMD);
 		if (!_cmdBeingRun.contains(FetchAction.FETCH_CMD))
 		{
-			_cmdBeingRun.add(1,FetchAction.FETCH_CMD);
+			_cmdBeingRun.add(0,FetchAction.FETCH_CMD);
 		}
 		setShowFailedCallMessage(false);
 		boolean rv =  callGit(_cmdBeingRun);
@@ -66,11 +65,7 @@ public class OkToPushAction extends AbstractGitAction
 			List<String> lines =  getOutputLines(output);
 			String msg = getErrorMessage(null, lines);
 			String title ="Can't Upload to Server";
-			int idx = _cmdBeingRun.indexOf(SUB_MODULE);
-			if ( idx > -1 )
-			{
-				title ="Can't Upload "+_cmdBeingRun.get(idx+1)+" to Server";
-			}
+			
 			showErrorMsg(title, msg);
 			return false;
 		}
