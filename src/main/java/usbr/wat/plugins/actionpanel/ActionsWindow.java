@@ -60,10 +60,12 @@ import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.DisplayReportAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.utils.GitRepoUtils;
+import usbr.wat.plugins.actionpanel.model.MissingManagersChecker;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
 import usbr.wat.plugins.actionpanel.ui.ActionsProjectTab;
+import usbr.wat.plugins.actionpanel.ui.MetaDataEditor;
 import usbr.wat.plugins.actionpanel.ui.SimulationGroupNode;
 import usbr.wat.plugins.actionpanel.ui.tree.ResultsTreeTableNode;
 import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTable;
@@ -632,6 +634,7 @@ public class ActionsWindow extends RmaJDialog
 				Project prj = e.getProject();
 				if ( !prj.isNoProject())
 				{
+					checkForMissingManagers(e.getProject());
 					prj.addManagerListener(_projectSimulationListener);
 					prj.addManagerListener(_projectSimulationGroupListener);
 				}
@@ -647,6 +650,17 @@ public class ActionsWindow extends RmaJDialog
 		});
 		
 	}
+	/**
+	 * 
+	 */
+	protected void checkForMissingManagers(Project project)
+	{
+		MissingManagersChecker checker = new MissingManagersChecker();
+		checker.checkForMissingManagers(project);
+	}
+
+
+
 	@Override
 	public void clearForm()
 	{
@@ -1053,6 +1067,24 @@ public class ActionsWindow extends RmaJDialog
 		public Class<?> getManagerClass()
 		{
 			return WatSimulation.class;
+		}
+	}
+	/**
+	 * @return
+	 */
+	public void editSimulationMetaData()
+	{
+		int row = _simulationTable.getSelectedRow();
+		if ( row < 0 )
+		{
+			return;
+		}
+		Object obj = _simulationTable.getValueAt(row, SimulationTreeTableModel.SIMULATION_COLUMN);
+		if ( obj instanceof WatSimulation )
+		{
+			MetaDataEditor editor = new MetaDataEditor(this);
+			editor.fillForm((WatSimulation)obj);
+			editor.setVisible(true);
 		}
 	}
 	
