@@ -124,6 +124,9 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		JMenuItem showInProjectTreeMenu = new JMenuItem("Show In Study Tree");
 		showInProjectTreeMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().showInProjectTreeAction());
 		popup.add(showInProjectTreeMenu);
+		JMenuItem editMetaDataMenu = new JMenuItem("Edit MetaData...");
+		editMetaDataMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().editSimulationMetaData());
+		popup.add(editMetaDataMenu);
 		return popup;
 	}
 	/**
