@@ -95,7 +95,7 @@ public class DownloadStudyAction extends AbstractStudyGitAction
 			getParent().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));	
 			
 			List<String>cmd = new ArrayList<>();
-			String gitCmd = null;
+			boolean isClone = false;
 			String gitFolder = RMAIO.concatPath(_repo.getLocalPath(), GitRepoUtils.GIT_FOLDER);
 			if ( FileManagerImpl.getFileManager().fileExists(gitFolder))
 			{   // folder exists, so its a download.
@@ -136,10 +136,11 @@ public class DownloadStudyAction extends AbstractStudyGitAction
 			else
 			{ // no folder so its a clone
 				cmd.add(CLONE_CMD);
+				isClone = true;
 			}
 			cmd.add(LOCAL_FOLDER);
 			cmd.add(_repo.getLocalPath());
-			if ( CLONE_CMD.equals(gitCmd))
+			if ( isClone )
 			{
 				cmd.add(REMOTE);
 				cmd.add(quoteString(_repo.getSourceUrl()));
