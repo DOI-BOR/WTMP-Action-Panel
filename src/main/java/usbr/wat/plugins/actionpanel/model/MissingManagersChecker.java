@@ -36,6 +36,7 @@ public class MissingManagersChecker
 	private static final String ALTS_FOLDER = "alts";
 	private static final String APS_FOLDER = "aps";
 	private static final String WAT_DIR = "wat";
+	private static final String SIM_GROUPS_FOLDER = "simGroups";
 	
 	private Project _project;
 	private Logger _logger = Logger.getLogger(MissingManagersChecker.class.getName());
@@ -63,10 +64,42 @@ public class MissingManagersChecker
 		checkForAndAddAnalysisPeriods();
 		checkForAndAddAlternatives();
 		checkForAndAddSimulations();
+		checkForAndAddSimulationGroups();
 	}
 	
 	
 	
+	/**
+	 * 
+	 */
+	private void checkForAndAddSimulationGroups()
+	{
+		String folderToCheck = getWatFolder(SIM_GROUPS_FOLDER);
+		RMAFilenameFilter simGroupFilter = new RMAFilenameFilter("simgrp");
+		List<String> simGroupFiles = FileManagerImpl.getFileManager().list(folderToCheck,simGroupFilter);
+		
+		String path;
+		ManagerProxy proxy;
+		for (int i = 0;i < simGroupFiles.size(); i++ )
+		{
+			path = simGroupFiles.get(i);
+			proxy = _project.getManagerProxyByPath(path, SimulationGroup.class);
+			if ( proxy == null )
+			{
+				addSimulationGroup(path);
+			}
+		}	
+	}
+
+	/**
+	 * @param path
+	 */
+	private void addSimulationGroup(String path)
+	{
+		SimulationGroup simGroup = new SimulationGroup();
+		addManager(simGroup, path);
+	}
+
 	/**
 	 * 
 	 */
