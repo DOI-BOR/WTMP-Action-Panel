@@ -295,7 +295,10 @@ public class DownloadConfirmDialog extends RmaJDialog
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
-		bottomPanel.add(_softoverwriteCheck, gbc);
+		if ( !_isRestore )
+		{
+			bottomPanel.add(_softoverwriteCheck, gbc);
+		}
 		
 		
 		_cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.OK_CANCEL_BUTTONS);
