@@ -139,6 +139,10 @@ public class SelectSimulationGroupDialog extends RmaJDialog
 		for(int i = 0;i < simGroups.size(); i++ )
 		{
 			sg = simGroups.get(i);
+			if ( sg.isTransitory())
+			{ // not in group simgroup
+				continue;
+			}
 			row = new Vector<>();
 			row.add(sg);
 			row.add(sg.getDescription());
