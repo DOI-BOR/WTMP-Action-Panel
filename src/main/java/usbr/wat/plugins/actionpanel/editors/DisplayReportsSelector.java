@@ -398,6 +398,7 @@ public class DisplayReportsSelector extends RmaJDialog
 
 			SwingWorker<Void, Future<ReportCreator>> worker = new SwingWorker<Void, Future<ReportCreator>>()
 			{
+				private boolean _successful = true;
 				@Override
 				public Void doInBackground()
 				{
@@ -436,17 +437,20 @@ public class DisplayReportsSelector extends RmaJDialog
 								if ( !rc.wasReportSuccessFul())
 								{
 									_agp.setMessage("Failed to create report "+rc.getReportPlugin()); 
+									_successful = false;
 								}
 							}
 							else
 							{
 								_agp.setMessage("Failed to create report ");
+								_successful = false;
 							}
 						}
 						catch (InterruptedException | ExecutionException e)
 						{
 							// TODO Auto-generated catch block
 							e.printStackTrace();
+							_successful = false;
 						}
 						
 					}
@@ -470,6 +474,11 @@ public class DisplayReportsSelector extends RmaJDialog
 					finally
 					{
 						resetGlassPane();
+					}
+					if ( _successful )
+					{
+						JOptionPane.showMessageDialog(DisplayReportsSelector.this, 
+							"Reports created successfully", "Complete", JOptionPane.INFORMATION_MESSAGE);
 					}
 				}
 			};

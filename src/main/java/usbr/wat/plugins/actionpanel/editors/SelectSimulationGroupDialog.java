@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.swing.ListSelectionModel;
+import javax.swing.table.TableRowSorter;
 
 import com.rma.model.Project;
 
@@ -24,6 +25,7 @@ import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
+import rma.util.RMASort;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
@@ -133,6 +135,7 @@ public class SelectSimulationGroupDialog extends RmaJDialog
 		
 		Project proj = Project.getCurrentProject();
 		List<SimulationGroup> simGroups = proj.getManagerListForType(SimulationGroup.class);
+		RMASort.quickSort(simGroups);
 		SimulationGroup sg;
 		Vector<Object> row;
 		WatAnalysisPeriod ap;
@@ -163,6 +166,7 @@ public class SelectSimulationGroupDialog extends RmaJDialog
 		{
 			_simGroupTable.setSelectedIndices(0);
 		}
+		_simGroupTable.setRowSorter(new TableRowSorter(_simGroupTable.getModel()));
 	}
 
 	public boolean isCanceled()

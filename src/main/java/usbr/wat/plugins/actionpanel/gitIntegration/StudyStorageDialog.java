@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JLabel;
@@ -35,6 +36,7 @@ import javax.swing.Timer;
 
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
+import rma.swing.RmaImage;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDialog;
@@ -72,6 +74,8 @@ public class StudyStorageDialog extends RmaJDialog
 	private JMenuItem _browseLocalMenu;
 
 	private boolean _firstTime;
+
+	protected Icon _spinnyIcon = RmaImage.getImageIcon("Images/sync1.gif");
 
 	public StudyStorageDialog(Window parent)
 	{
@@ -390,6 +394,8 @@ public class StudyStorageDialog extends RmaJDialog
 			@Override
 			protected List<String> doInBackground() throws Exception
 			{
+				_msgLabel.setIcon(_spinnyIcon);
+				_msgLabel.setText("Updating...");
 				return getChanges();
 				
 			}
@@ -432,8 +438,10 @@ public class StudyStorageDialog extends RmaJDialog
 	 */
 	protected synchronized void displayChanges(List<String> changes)
 	{
+		_msgLabel.setIcon(null);
 		if ( changes == null )
 		{
+			
 			_msgLabel.setText("No Local Repository detected.");
 		}
 		else if ( changes.size() == 1 )
