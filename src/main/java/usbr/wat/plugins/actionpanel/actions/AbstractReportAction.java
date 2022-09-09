@@ -65,6 +65,7 @@ public abstract class AbstractReportAction extends AbstractAction
 	public static final String ANALYSIS_END_TIME_PARAM = "analysisEndTime";
 	public static final String SIMULATION_LAST_COMPUTED_DATE_PARAM = "simulationDate";
 	public static final String PRINT_HEADER_FOOTER_PARAM = "printHeaderAndFooter";
+	private static final String REPORT_DIR_PARAM = "REPORT_DIR";
 	
 	private List<String> _errMsgs= new ArrayList<>();
 	
@@ -199,6 +200,7 @@ public abstract class AbstractReportAction extends AbstractAction
 		params.put(ANALYSIS_START_TIME_PARAM, sim.getSimulation().getRunTimeWindow().getStartTime().toString());
 		params.put(ANALYSIS_END_TIME_PARAM, sim.getSimulation().getRunTimeWindow().getEndTime().toString());
 		params.put(PRINT_HEADER_FOOTER_PARAM, options.shouldPrintHeadersFooters());
+		params.put(REPORT_DIR_PARAM, sim.getSimulation().getRunDirectory());
 		Date date = new Date(sim.getLastComputedDate());
 		SimpleDateFormat fmt = new SimpleDateFormat("MMMM dd, yyyy HH:mm");
 
