@@ -410,6 +410,26 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		
 		List<String>origExistingSimNames = getOriginalNames(existingSimNames);
 		
+		Set<String>removedSet = new HashSet<>(origExistingSimNames);
+		removedSet.removeAll(selectedSimNames);
+		if ( !removedSet.isEmpty() ) 
+		{
+			StringBuilder msg = new StringBuilder();
+			msg.append("The following Simulations are being removed from the Simulation Group "+_simGroup.getName()+":\n");
+			Iterator<String> iter = removedSet.iterator();
+			while (iter.hasNext())
+			{
+				msg.append("\n");
+				msg.append(iter.next());
+			}
+			msg.append("\n\nThis will remove any results that have the simulation may have produced.\nDo you want to continue?");
+			
+			int opt = JOptionPane.showConfirmDialog(this, msg, "Confirm Removal", JOptionPane.YES_NO_OPTION);
+			if ( opt != JOptionPane.YES_OPTION )
+			{
+				return false;
+			}
+		}
 		Set<String>set = new HashSet<>(selectedSimNames);
 		set.removeAll(origExistingSimNames);
 		//whats left in the set are any new simulations
