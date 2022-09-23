@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,6 +68,7 @@ import rma.swing.tree.CheckBoxTreeRenderer;
 import rma.swing.tree.LabelIconObject;
 import rma.swing.tree.NodeSelectionListener;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.actions.DisplayReportAction;
 import usbr.wat.plugins.actionpanel.io.OutputType;
 import usbr.wat.plugins.actionpanel.io.ReportOptions;
 import usbr.wat.plugins.actionpanel.model.ReportPlugin;
@@ -428,15 +430,15 @@ public class DisplayReportsSelector extends RmaJDialog
 					}
 					for (int i = 0;i < chunks.size(); i++ )
 					{
-						ReportCreator rc;
+						ReportCreator rv;
 						try
 						{
-							rc = chunks.get(i).get();
-							if ( rc != null )
+							rv = chunks.get(i).get();
+							if ( rv != null )
 							{
-								if ( !rc.wasReportSuccessFul())
+								if ( !rv.wasReportSuccessFul())
 								{
-									_agp.setMessage("Failed to create report "+rc.getReportPlugin()); 
+									_agp.setMessage("Failed to create report "+rv.getReportPlugin().getName());
 									_successful = false;
 								}
 							}
@@ -448,7 +450,6 @@ public class DisplayReportsSelector extends RmaJDialog
 						}
 						catch (InterruptedException | ExecutionException e)
 						{
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 							_successful = false;
 						}
@@ -477,8 +478,13 @@ public class DisplayReportsSelector extends RmaJDialog
 					}
 					if ( _successful )
 					{
-						JOptionPane.showMessageDialog(DisplayReportsSelector.this, 
-							"Reports created successfully", "Complete", JOptionPane.INFORMATION_MESSAGE);
+						int opt = JOptionPane.showOptionDialog(DisplayReportsSelector.this, "Reports Created Successfull",
+								"Complete",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE,null, new Object[] {"Close", "Display Reports"}, "Close");
+						if ( opt == 1 )
+						{
+							DisplayReportAction action = new DisplayReportAction(_parent);
+							action.displayReportAction();
+						}
 					}
 				}
 			};
@@ -616,7 +622,7 @@ public class DisplayReportsSelector extends RmaJDialog
 	 *
 	 */
 	public class ReportCreator
-		implements Runnable
+		implements Callable
 	{
 
 		private ReportPlugin _reportPlugin;
@@ -635,9 +641,10 @@ public class DisplayReportsSelector extends RmaJDialog
 		}
 
 		@Override
-		public void run()
+		public Object call() throws Exception
 		{
 			_agp.setMessage("Creating report for "+_reportPlugin.getName());
+			
 			ReportOptions options = new ReportOptions();
 			options.setOutputType((OutputType)_outputTypeCombo.getSelectedItem());
 			options.setPrintHeadersFooters(_printHeaderFooterCheck.isSelected());
@@ -652,6 +659,7 @@ public class DisplayReportsSelector extends RmaJDialog
 				e.printStackTrace();
 				_reportRv = false;
 			}
+			return this;
 		}
 
 		public boolean wasReportSuccessFul()
@@ -666,6 +674,7 @@ public class DisplayReportsSelector extends RmaJDialog
 		{
 			return _reportPlugin;
 		}
+
 
 	}
 	

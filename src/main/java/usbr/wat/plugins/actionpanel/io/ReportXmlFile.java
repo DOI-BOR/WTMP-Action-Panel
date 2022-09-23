@@ -30,6 +30,7 @@ import hec2.wat.plugin.ceQualW2.CeQualW2Plugin;
 import hec2.wat.plugin.ceQualW2.model.CeQualW2Alt;
 
 import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.actions.AbstractReportAction;
 import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
 
 /**
@@ -105,6 +106,8 @@ public class ReportXmlFile
 	// ID types
 	private static final String BASE_ALT = "base";
 	private static final String ALT_NUM = "alt_";
+	private static final String INSTALL_DIR_ELEM = "InstallDirectory";
+	private static final String WRITE_DIR_ELEM = "WriteDirectory";
 	
 	
 	private String _fileName;
@@ -144,8 +147,8 @@ public class ReportXmlFile
 		}
 
 		XMLUtilities.addChildContent(root, REPORT_TYPE_ELEM, rptType);
-	
-		addProjectInfo(root);
+		SimulationReportInfo baseSimulation = _simulationInfos.get(0);
+		addProjectInfo(root, baseSimulation.getSimFolder());
 		
 		Element simsElem  = new Element(SIMS_ELEM);
 		root.addContent(simsElem);
@@ -258,7 +261,7 @@ public class ReportXmlFile
 	/**
 	 * @param root
 	 */
-	private void addProjectInfo(Element parent)
+	private void addProjectInfo(Element parent, String baseSimDir)
 	{
 		Element prjInfoElem = new Element(STUDY_ELEM);
 		parent.addContent(prjInfoElem);
@@ -270,6 +273,12 @@ public class ReportXmlFile
 		{
 			XMLUtilities.addChildContent(prjInfoElem, OBS_DIR_ELEM, _obsDir);
 		}
+		String installDir = System.getProperty("user.dir");
+		installDir= RMAIO.getDirectoryFromPath(installDir);
+		
+		XMLUtilities.addChildContent(prjInfoElem, INSTALL_DIR_ELEM, installDir);
+		String simReportsDir = RMAIO.concatPath(baseSimDir, AbstractReportAction.REPORT_DIR);
+		XMLUtilities.addChildContent(prjInfoElem, WRITE_DIR_ELEM, simReportsDir);
 	}
 	
 }
