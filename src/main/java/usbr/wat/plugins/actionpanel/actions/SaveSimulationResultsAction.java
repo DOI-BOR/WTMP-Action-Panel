@@ -7,6 +7,7 @@
  */
 package usbr.wat.plugins.actionpanel.actions;
 
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -14,6 +15,7 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 
 import com.rma.io.CopyDirProgressCallbackImpl;
 import com.rma.io.CopyListener;
@@ -90,32 +92,53 @@ public class SaveSimulationResultsAction extends AbstractAction
 		{
 			return;
 		}
-		_currentSim = sim;
-		String runDir = sim.getRunDirectory();
-		if ( !FileManagerImpl.getFileManager().fileExists(runDir))
+		_parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		String origTitle = UIManager.getString("ProgressMonitor.progressText");
+		if( origTitle == null )
 		{
-			JOptionPane.showMessageDialog(_parent, "No Results found for "+sim.getName(), "No Results", JOptionPane.INFORMATION_MESSAGE);
-			return;
+			origTitle = "Progress";
 		}
-		String resultsParentDir = RMAIO.concatPath(runDir, RESULTS_DIR);
-		if ( !FileManagerImpl.getFileManager().fileExists(resultsParentDir))
+		try
 		{
-			FileManagerImpl.getFileManager().createDirectory(resultsParentDir);
-		}
-		ResultsData resultsData = getResultsData(sim);
-		if ( resultsData == null )
-		{
-			return;
-		}
-		String resultsDir = RMAIO.concatPath(resultsParentDir,RMAIO.userNameToFileName(resultsData.getName()));
+			UIManager.put("ProgressMonitor.progressText", "Saving Results");
+			long t1 = System.currentTimeMillis();
+			System.out.println("saveResults:start...");
+			_currentSim = sim;
+			String runDir = sim.getRunDirectory();
+			if ( !FileManagerImpl.getFileManager().fileExists(runDir))
+			{
+				JOptionPane.showMessageDialog(_parent, "No Results found for "+sim.getName(), "No Results", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			String resultsParentDir = RMAIO.concatPath(runDir, RESULTS_DIR);
+			if ( !FileManagerImpl.getFileManager().fileExists(resultsParentDir))
+			{
+				FileManagerImpl.getFileManager().createDirectory(resultsParentDir);
+			}
+			ResultsData resultsData = getResultsData(sim);
+			if ( resultsData == null )
+			{
+				return;
+			}
+			String resultsDir = RMAIO.concatPath(resultsParentDir,RMAIO.userNameToFileName(resultsData.getName()));
 
-		FileManagerImpl.getFileManager().createDirectory(resultsDir);
-		
-		SimpleFileFilter excludeFilter = new SimpleFileFilter(RESULTS_DIR);
-		_currentResultsDir = resultsDir;
-		CopyDirProgressCallbackImpl callback = new CopyDirProgressCallbackImpl(10, runDir, 
-				resultsDir, "Copying Results", "Copying Results for "+resultsData.getName(), excludeFilter, this);
-		_currentResultsData = resultsData;
+			FileManagerImpl.getFileManager().createDirectory(resultsDir);
+
+			SimpleFileFilter excludeFilter = new SimpleFileFilter(RESULTS_DIR);
+			_currentResultsDir = resultsDir;
+			
+			long t2 = System.currentTimeMillis();
+			System.out.println("saveResults:alling copy handler after "+(t2-t1)+" ms");
+			
+			CopyDirProgressCallbackImpl callback = new CopyDirProgressCallbackImpl(10, runDir, 
+					resultsDir, "Copying Results", "Copying Results for "+resultsData.getName(), excludeFilter, this);
+			_currentResultsData = resultsData;
+		}
+		finally
+		{
+			//UIManager.put("ProgressMonitor.progressText", origTitle);
+			_parent.setCursor(Cursor.getDefaultCursor());
+		}
 	}
 
 	/**
