@@ -98,6 +98,7 @@ public abstract class AbstractReportAction extends AbstractAction
 	public static final String XML_DATA_OUTPUT = "USBRAutomatedReportOutput.xml";
 	private static final String WAT_INSTALL_DIR_PARAM = "Install_Dir";
 	private static final String DATA_ADAPTER_FILE_PARAM = "DataAdapterLocation";
+	private static final String SIM_REPORT_DIR_PARAM = "RUN_DIR";
 	
 	private List<String> _errMsgs= new ArrayList<>();
 	
@@ -234,6 +235,9 @@ public abstract class AbstractReportAction extends AbstractAction
 		params.put(PRINT_HEADER_FOOTER_PARAM, options.shouldPrintHeadersFooters());
 		String reportDir = RMAIO.concatPath(Project.getCurrentProject().getProjectDirectory(),REPORT_DIR);
 		params.put(REPORT_DIR_PARAM, reportDir);
+		
+		String simReportDir = RMAIO.concatPath(sim.getSimFolder(), REPORT_DIR);
+		params.put(SIM_REPORT_DIR_PARAM, simReportDir);
 		
 		String installDir= System.getProperty("user.dir");
 		installDir = RMAIO.getDirectoryFromPath(installDir);
