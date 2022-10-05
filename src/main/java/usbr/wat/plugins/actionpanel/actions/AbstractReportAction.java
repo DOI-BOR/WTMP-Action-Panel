@@ -411,7 +411,6 @@ public abstract class AbstractReportAction extends AbstractAction
 		long t1 = System.currentTimeMillis();
 		RMAFilenameFilter filter= new RMAFilenameFilter(JASPER_SOURCE_FILE_EXT);
 		filter.setAcceptDirectories(false);
-		installDir = RMAIO.getDirectoryFromPath(installDir);
 		String jasperInstallFolder = RMAIO.concatPath(installDir, jasperRelDir);
 		String jasperStudyFolder = RMAIO.concatPath(studyDir, jasperRelDir); // reports/JasperC
 		List<String>jasperFiles;
