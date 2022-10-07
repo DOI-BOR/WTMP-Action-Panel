@@ -22,6 +22,7 @@ import usbr.wat.plugins.actionpanel.editors.DisplayReportsSelector;
 public class DisplayReportSelectorAction extends AbstractAction
 {
 	private ActionsWindow _parent;
+	private DisplayReportsSelector _selector;
 	public DisplayReportSelectorAction(ActionsWindow parent)
 	{
 		super("Create Report...");
@@ -38,8 +39,11 @@ public class DisplayReportSelectorAction extends AbstractAction
 	 */
 	private void displayReportSelector()
 	{
-		DisplayReportsSelector selector = new DisplayReportsSelector(_parent);
-		selector.setVisible(true);
+		if ( _selector == null )
+		{
+			_selector = new DisplayReportsSelector(_parent);
+		}
+		_selector.setVisible(true);
 	}
 
 }

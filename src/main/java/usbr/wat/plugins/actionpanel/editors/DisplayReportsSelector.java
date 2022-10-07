@@ -106,7 +106,7 @@ public class DisplayReportsSelector extends RmaJDialog
 
 	public DisplayReportsSelector(ActionsWindow parent)
 	{
-		super(parent, true);
+		super(parent, false);
 		_parent =parent;
 		buildControls();
 		addListeners();
@@ -398,7 +398,7 @@ public class DisplayReportsSelector extends RmaJDialog
 			ExecutorService threadPool = Executors.newFixedThreadPool(maxThreads);
 		
 
-			SwingWorker<Void, Future<ReportCreator>> worker = new SwingWorker<Void, Future<ReportCreator>>()
+			SwingWorker<Void, ReportCreator> worker = new SwingWorker<Void, ReportCreator>()
 			{
 				private boolean _successful = true;
 				@Override
@@ -406,54 +406,64 @@ public class DisplayReportsSelector extends RmaJDialog
 				{
 					Set<Entry<ReportPlugin, List<SimulationReportInfo>>> info = pluginReports.entrySet();
 					Iterator<Entry<ReportPlugin, List<SimulationReportInfo>>> iter = info.iterator();
+					List<Future<ReportCreator>>futures = new ArrayList();
 					while (iter.hasNext())
 					{
 						Entry<ReportPlugin, List<SimulationReportInfo>> next = iter.next();
 						Future<ReportCreator> future = createReport(next.getKey(), next.getValue());
-						publish(future);
+						if ( future != null )
+						{
+							futures.add(future);
+						}
+						
 					}
+					ReportCreator rv;
+					for (int i = 0;i < futures.size(); i++ )
+					{
+						try
+						{
+							rv = futures.get(i).get();
+							publish(rv);
+						}
+						catch (InterruptedException | ExecutionException e)
+						{
+							e.printStackTrace();
+						}
+					}
+					
 
 					return null;
 				}
 				private Future<ReportCreator> createReport( ReportPlugin reportPlugin, List<SimulationReportInfo> sris)
 				{
 					ReportCreator rc = new ReportCreator(reportPlugin, sris); 
-					Future< ? > future = threadPool.submit(rc);
-					return (Future<ReportCreator>) future;
+					Future<ReportCreator> future = threadPool.submit(rc);
+					return future;
 				}
 				@Override
-				public void process(List<Future<ReportCreator>> chunks)
+				public void process(List<ReportCreator> chunks)
 				{
 					if ( chunks == null || chunks.isEmpty())
 					{
 						return;
 					}
+					ReportCreator rv;
 					for (int i = 0;i < chunks.size(); i++ )
 					{
-						ReportCreator rv;
-						try
+						rv = chunks.get(i);
+						if ( rv != null )
 						{
-							rv = chunks.get(i).get();
-							if ( rv != null )
+							if ( !rv.wasReportSuccessFul())
 							{
-								if ( !rv.wasReportSuccessFul())
-								{
-									_agp.setMessage("Failed to create report "+rv.getReportPlugin().getName());
-									_successful = false;
-								}
-							}
-							else
-							{
-								_agp.setMessage("Failed to create report ");
+								_agp.setMessage("Failed to create report "+rv.getReportPlugin().getName());
 								_successful = false;
 							}
 						}
-						catch (InterruptedException | ExecutionException e)
+						else
 						{
-							e.printStackTrace();
+							_agp.setMessage("Failed to create report ");
 							_successful = false;
 						}
-						
 					}
 				}
 				@Override
@@ -478,7 +488,7 @@ public class DisplayReportsSelector extends RmaJDialog
 					}
 					if ( _successful )
 					{
-						int opt = JOptionPane.showOptionDialog(DisplayReportsSelector.this, "Reports Created Successfull",
+						int opt = JOptionPane.showOptionDialog(DisplayReportsSelector.this, "Reports Created Successfully",
 								"Complete",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE,null, new Object[] {"Close", "Display Reports"}, "Close");
 						if ( opt == 1 )
 						{
