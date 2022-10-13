@@ -12,6 +12,8 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
+
 import org.python.core.Py;
 import org.python.core.PyCode;
 import org.python.core.PyException;
@@ -21,6 +23,7 @@ import org.python.core.PyStringMap;
 import org.python.core.PySystemState;
 import org.python.util.PythonInterpreter;
 
+import com.rma.client.Browser;
 import com.rma.io.DssFileManagerImpl;
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
@@ -59,7 +62,7 @@ public class ActionComputable
 {
 
 	private static final String SAVE_SUFFEX = "-save";
-	private static final String ITERATION_DSS_FILE = "iterationResults.dss";
+	public static final String ITERATION_DSS_FILE = "iterationResults.dss";
 	private static final String DSSFILE = "DSS File";
 	public static final String METHOD_SIGNATURE = "runIteration(modelAlternative, currentIteration, maxIteration)";
 	
@@ -134,6 +137,10 @@ public class ActionComputable
 			return false;
 		}
 		// save off the original DSS data
+		if ( _debug )
+		{
+			JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Saving Original Data ");
+		}
 		List<DSSIdentifier>savedDssPaths = saveDssPaths();
 		if ( savedDssPaths == null )
 		{
@@ -155,6 +162,11 @@ public class ActionComputable
 			{
 				currentMember = members[m];
 				_sim.addComputeMessage("Computing Iteration Member "+currentMember);
+				System.out.println("Computing Iteration Member "+currentMember+" for "+_sim );
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Running Pre Scripts for ensemble member "+currentMember);
+				}
 				if ( !runPreScripts(currentMember))
 				{
 					return false;
@@ -162,6 +174,10 @@ public class ActionComputable
 				if ( _canceled )
 				{
 					return false;
+				}
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying in data for Ensemble member "+currentMember);
 				}
 				// copy in the new iteration data
 				if ( !copyDssMembers(currentMember))
@@ -175,9 +191,12 @@ public class ActionComputable
 				// close any DSS files we might have had open
 				HecDSSFileDataManager dm = new HecDSSFileDataManager();
 				dm.closeAllFiles();
-				
-				_sim.setRecomputeAll(_computeDialog.shouldRecomputeAll());
+				_sim.setRecomputeAll(true);
 				// compute
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Computing Ensemble member "+currentMember);
+				}
 				if ( !_sim.compute())
 				{
 					if (Boolean.getBoolean("ActionComputable.ContinueOnError"))
@@ -204,10 +223,18 @@ public class ActionComputable
 						}
 					}
 				}
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying results for ensemble member "+currentMember);
+				}
 				copyDssResultsToCollectionsDss(currentMember);
 				if ( _canceled )
 				{
 					return false;
+				}
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Running Post Scripts ensemble member "+currentMember);
 				}
 				if ( !runPostScripts(currentMember))
 				{
@@ -226,6 +253,10 @@ public class ActionComputable
 		finally
 		{
 			// restore the saved off DSS paths
+			if ( _debug )
+			{
+				JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Restoring original DSS data");
+			}
 			restoreDssPaths(savedDssPaths);
 			_preCodeMap.clear();
 			_postCodeMap.clear();
@@ -647,7 +678,7 @@ public class ActionComputable
 	/**
 	 * @param dataLoc
 	 */
-	private static DSSIdentifier saveDssPath(DataLocation dataLoc)
+	private DSSIdentifier saveDssPath(DataLocation dataLoc)
 	{
 		Vector<String> srcList= new Vector<>();
 		Vector<String> destList= new Vector<>();
@@ -658,14 +689,20 @@ public class ActionComputable
 			DssDataLocation dssDl = (DssDataLocation) linkedToDl;
 			String dssPath = dssDl.getDssPath();
 			String dssFile = dssDl.get_dssFile();
-			fillInSrcAndDestList(dssFile, dssPath, srcList, destList);
+			String dssFileAbs = Project.getCurrentProject().getAbsolutePath(dssFile);
+			fillInSrcAndDestList(dssFileAbs, dssPath, srcList, destList);
+			_sim.addComputeMessage("Found "+srcList+" records for "+dssPath);
 
-			int rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFile, srcList, destList);
+			int rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFileAbs, srcList, destList);
 			
 			if  (rv == srcList.size())  // renamed all the records
 			{
-				DSSIdentifier dssId = new DSSIdentifier(dssFile, dssPath);
+				DSSIdentifier dssId = new DSSIdentifier(dssFileAbs, dssPath);
 				return dssId;
+			}
+			else
+			{
+				_sim.addWarningMessage("Failed to save off all DSS records for "+dssPath+".  Expected to save " + srcList.size()+" saved "+rv);
 			}
 		}
 		return null;
@@ -781,7 +818,7 @@ public class ActionComputable
 						if ( rv != 0 )
 						{
 							copySuccessful= false;
-							Logger.getLogger(ActionComputable.class.getName()).warning("Falied to write DSS record for "+dataLoc+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
+							Logger.getLogger(ActionComputable.class.getName()).warning("Failed to write DSS record for "+dataLoc+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
 							_sim.addErrorMessage("Falied to write DSS record for "+dataLoc+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
 						}
 						else
@@ -817,11 +854,18 @@ public class ActionComputable
 			path = dssId.getDSSPath();
 			dssFile = dssId.getFileName();
 			fillInSrcAndDestList(dssFile, path, destList, srcList);
-
-			int rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFile, srcList, destList);
+			int rv = DssFileManagerImpl.getDssFileManager().delete(dssFile, destList);
+			if ( rv != 0 )
+			{
+				_sim.addWarningMessage("Failed to delete DSS records for "+dssId);
+			}
+			
+			_sim.addComputeMessage("Restoring "+srcList+" to "+destList);
+			rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFile, srcList, destList);
 			if ( rv != srcList.size() )
 			{
 				_sim.addWarningMessage("Failed to restore DSS records for "+dssId);
+				_sim.addWarningMessage("Expected " + srcList.size()+" records to be restored. Restored "+rv+" Records.");
 			}
 		}
 	}

@@ -18,15 +18,24 @@ import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import com.rma.editors.DSSListSelector;
 import com.rma.editors.DSSListSelectorParent;
+import com.rma.io.DssFileManagerImpl;
 import com.rma.model.Project;
 
+import hec.gfx2d.G2dDialog;
 import hec.gui.AbstractEditorPanel;
 import hec.heclib.dss.DSSPathname;
+import hec.heclib.dss.HecTimeSeries;
+import hec.heclib.util.HecTime;
 import hec.io.DSSIdentifier;
+import hec.io.TimeSeriesCollectionContainer;
+import hec.io.TimeSeriesContainer;
 import hec.lang.NamedType;
+import hec.util.NumericComparator;
 
 import hec2.model.DataLocation;
 import hec2.model.DssDataLocation;
@@ -37,6 +46,7 @@ import hec2.wat.plugin.WatPlugin;
 import hec2.wat.plugin.WatPluginManager;
 import hec2.wat.util.WatI18n;
 
+import rma.swing.RmaImage;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
@@ -52,10 +62,11 @@ import usbr.wat.plugins.actionpanel.model.ModelAltIterationSettings;
 public class IterationBcPanel extends AbstractEditorPanel
 {
 	public static final String TAB_NAME = "Boundary Conditions";
-	public static final int DATALOCATION_COL = 0;
-	public static final int PARAMETER_COL =1;
-	public static final int MODEL_DSS_COL = 2;
-	public static final int DSSID_COL = 3;
+	public static final int INDEX_COL = 0;
+	public static final int DATALOCATION_COL = 1;
+	public static final int PARAMETER_COL = 2;
+	public static final int MODEL_DSS_COL = 3;
+	public static final int DSSID_COL = 4;
 	
 	
 	private RmaJTable _bcTable;
@@ -66,6 +77,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 	private int _editingRow;
 	private BcEntryDialog _bcEditor;
 	private JButton _clearDssBtn;
+	private JButton _plotBtn;
 	/**
 	 * @param editIterationSettingsDialog
 	 */
@@ -83,7 +95,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 	 */
 	protected void buildControls()
 	{
-		String[] headers = new String[] {"Location", "Parameter", "Model DSS Record", "Selected DSS Record"};
+		String[] headers = new String[] {"Index", "Location", "Parameter", "Model DSS Record", "Selected DSS Record"};
 		_bcTable = new RmaJTable(this, headers)
 		{
 			@Override
@@ -96,9 +108,11 @@ public class IterationBcPanel extends AbstractEditorPanel
 			{
 			}
 		};
+		_bcTable.setIntegerCellEditor(INDEX_COL);
 		_bcTable.removePopupMenuSumOptions();
 		_bcTable.setAddRemoveEnabled(false);
 		_bcTable.setRowHeight(_bcTable.getRowHeight()+5);
+		_bcTable.setColumnWidths(75,220, 135, 260, 260);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -131,6 +145,17 @@ public class IterationBcPanel extends AbstractEditorPanel
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(panel, gbc);
+		
+		_plotBtn = new JButton(RmaImage.getImageIcon("Images/plot18.gif"));
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1; //GridBagConstraints.REMAINDER;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTH;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5505;
+		panel.add(_plotBtn, gbc);
 		
 		_selectDssBtn = new JButton("Browse DSS");
 		_selectDssBtn.setEnabled(false);
@@ -180,8 +205,66 @@ public class IterationBcPanel extends AbstractEditorPanel
 				tableDoubleClickAction(e.getPoint());
 			}
 		});
+		_plotBtn.addActionListener(e->plotRecords());
 		
 	}
+	/**
+	 * @return
+	 */
+	private void plotRecords()
+	{
+		int[] rows = _bcTable.getSelectedRows();
+		DataLocation dl;
+		DSSIdentifier origDssId, iterDssId;
+		TimeSeriesContainer origTs;
+		for (int r = 0; r < rows.length;r++ )
+		{
+			dl = (DataLocation) _bcTable.getValueAt(rows[r], DATALOCATION_COL);
+			origDssId = (DSSIdentifier) _bcTable.getValueAt(rows[r], MODEL_DSS_COL);
+			iterDssId = (DSSIdentifier) _bcTable.getValueAt(rows[r], DSSID_COL);
+			origDssId = new DSSIdentifier(Project.getCurrentProject().getAbsolutePath(origDssId.getFileName()), origDssId.getDSSPath());
+			origTs = DssFileManagerImpl.getDssFileManager().readTS(origDssId, true);
+			Vector data = new Vector();
+			data.add(origTs);
+			if ( iterDssId.getDSSPath() != null && !iterDssId.getDSSPath().isEmpty())
+			{
+				DSSIdentifier dss2 = new DSSIdentifier(Project.getCurrentProject().getAbsolutePath(iterDssId.getFileName()), iterDssId.getDSSPath());
+				HecTime[] times = DssFileManagerImpl.getDssFileManager().getTSTimeRange(dss2, 0);
+				if(times!=null && times.length==2)
+				{
+					HecTimeSeries hecTs= new HecTimeSeries(dss2.getFileName());
+					hecTs.setTimeWindow(times[0], times[1]);
+					hecTs.setPathname(iterDssId.getDSSPath());
+					TimeSeriesCollectionContainer tscc = new TimeSeriesCollectionContainer();
+
+					if ( hecTs.read(tscc, true, false) == 0 )
+					{
+						TimeSeriesContainer[] tscs = tscc.get();
+						if ( tscs != null )
+						{
+							for(int i = 0;i < tscs.length;i++ )
+							{
+								data.add(tscs[i]);
+							}
+						}
+					}
+				}
+			}
+		
+			G2dDialog g2dDlg = new G2dDialog( null, dl.getName(), false, data);
+			RmaJDialog dlg = new RmaJDialog(SwingUtilities.windowForComponent(this), dl.getName(), true);
+			dlg.pack();
+			dlg.setSize(500,500);
+			dlg.setJMenuBar(g2dDlg.getJMenuBar());
+			dlg.setContentPane(g2dDlg.getContentPane());
+			
+			dlg.setLocationRelativeTo(this);
+			dlg.setVisible(true);
+		}
+	}
+
+
+
 	/**
 	 * @return
 	 */
@@ -243,6 +326,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 		boolean enabled = row > -1 && isEnabled();
 		_selectDssBtn.setEnabled(enabled);
 		_clearDssBtn.setEnabled(enabled);
+		_plotBtn.setEnabled(enabled);
 	}
 
 
@@ -268,6 +352,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 	@Override
 	public void fillPanel(NamedType obj)
 	{
+		_bcTable.setRowSorter(null);
 		_bcTable.deleteCells();
 		if ( obj instanceof ModelAltIterationSettings )
 		{
@@ -284,7 +369,8 @@ public class IterationBcPanel extends AbstractEditorPanel
 				 if (  dl2 instanceof DssDataLocation )
 				 {
 					 linkedToDl = (DssDataLocation) dl2;
-					 row = new Vector(4);
+					 row = new Vector(5);
+					 row.add(i+1);
 					 row.add(dl);
 					 row.add(dl.getParameter());
 					 dssId = new DSSIdentifier(linkedToDl.get_dssFile(), linkedToDl.getDssPath());
@@ -306,6 +392,11 @@ public class IterationBcPanel extends AbstractEditorPanel
 				
 		}
 		tableRowSelected();
+		TableModel tm = _bcTable.getModel();
+		TableRowSorter<TableModel> trs = new TableRowSorter<>(tm);
+		trs.setComparator(INDEX_COL, new NumericComparator(0.0));
+		_bcTable.setRowSorter(trs);
+		setModified(false);
 	}
 	@Override
 	public boolean savePanel(NamedType obj)
@@ -370,7 +461,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 		{
 			_listSelector = new DSSListSelector(this, "Select DSS Pathname", DSSListSelector.BROWSER,false, false);
 			_listSelector.setPathSelectionMode(DSSListSelector.SINGLE_PATH_SELECTION);
-			Object dlObj = _bcTable.getValueAt(_bcTable.getSelectedRow(), 0);
+			Object dlObj = _bcTable.getValueAt(_bcTable.getSelectedRow(), DATALOCATION_COL);
 			String dssFile = _lastDssFile;
 			if ( dlObj instanceof DataLocation )
 			{
@@ -469,7 +560,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 					for (int i = 0;i < rows.length;i++ )
 					{
 						DSSIdentifier dssId = new DSSIdentifier(dssFile, dssPathname.getPathname());
-						_bcTable.setValueAt(dssId, rows[i], 3);
+						_bcTable.setValueAt(dssId, rows[i], DSSID_COL);
 						if ( _bcEditor != null && _bcEditor.isVisible())
 						{
 							_bcEditor.setSelectedDssId(dssId);

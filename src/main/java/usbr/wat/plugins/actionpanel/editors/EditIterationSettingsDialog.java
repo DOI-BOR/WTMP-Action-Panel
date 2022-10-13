@@ -77,6 +77,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		buildControls();
 		addListeners();
 		pack();
+		setSize(800,700);
 		setLocationRelativeTo(getParent());
 	}
 
@@ -502,7 +503,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	/**
 	 * 
 	 */
-	private void saveSimInfo()
+	private boolean saveSimInfo()
 	{
 		if ( isValidForm())
 		{
@@ -530,7 +531,9 @@ public class EditIterationSettingsDialog extends RmaJDialog
 			
 			_simGroup.setModified(true);
 			setModified(false);
+			return true;
 		}
+		return false;
 		
 	}
 
@@ -596,7 +599,10 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	 */
 	protected boolean saveForm()
 	{
-		saveSimInfo();
+		if(!saveSimInfo())
+		{
+			return false;
+		}
 		setModified(false);
 		return true;
 		
@@ -664,7 +670,11 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		List<WatSimulation>simList = new ArrayList<>(sims);
 		RmaListModel<WatSimulation> newModel = new RmaListModel<>(true, simList);
 		_simCombo.setModel(newModel);
-		setModified(false);
+		if ( simList.size() == 1 )
+		{
+			_simCombo.setSelectedIndex(0);
+		}
+		EventQueue.invokeLater(()->setModified(false));
 	}
 
 	/**
