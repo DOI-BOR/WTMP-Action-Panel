@@ -37,4 +37,9 @@ public interface ReportPlugin
 	boolean isComparisonReport();
 	boolean isIterationReport();
 
+	/**
+	 * @return
+	 */
+	String getMavenPath();
+
 }

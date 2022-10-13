@@ -12,12 +12,16 @@ import java.awt.GridBagLayout;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+
+import org.jdesktop.swingx.JXDropButton;
 
 import com.rma.event.ProjectAdapter;
 import com.rma.event.ProjectEvent;
 import com.rma.model.Project;
 
 import rma.swing.RmaInsets;
+import usbr.wat.plugins.actionpanel.actions.AboutAction;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.EditInterativeSimulationAction;
 import usbr.wat.plugins.actionpanel.actions.EditSimulationGroupAction;
@@ -28,6 +32,7 @@ import usbr.wat.plugins.actionpanel.actions.SelectAlternativesAction;
 import usbr.wat.plugins.actionpanel.actions.SelectSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.UpdateDataAction;
 import usbr.wat.plugins.actionpanel.actions.UpdateModelsAction;
+import usbr.wat.plugins.actionpanel.actions.ViewIterationResultsAction;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -48,6 +53,7 @@ public class ActionsPanel extends JPanel
 	private EditInterativeSimulationAction _editInterativeSimAction;
 	private NewSimulationGroupAction _newSimGroupAction;
 	private SelectSimulationGroupAction _selectSimGroupAction;
+	private AboutAction _aboutAction;
 
 	public ActionsPanel(ActionsWindow parent)
 	{
@@ -165,7 +171,11 @@ public class ActionsPanel extends JPanel
 		add(button, gbc);
 		
 		_editInterativeSimAction = new EditInterativeSimulationAction(_parent);
-		button = new JButton(_editInterativeSimAction);
+		JXDropButton jxbutton = new JXDropButton(_editInterativeSimAction);
+		JPopupMenu popup = new JPopupMenu();
+		popup.add(new ViewIterationResultsAction(_parent));
+		
+		jxbutton.setPopupMenu(popup);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -174,7 +184,7 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(button, gbc);		
+		add(jxbutton, gbc);		
 		
 		
 		
@@ -186,6 +196,19 @@ public class ActionsPanel extends JPanel
 		gbc.weightx   = 0.0;
 		gbc.weighty   = 0.001;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		add(button, gbc);
+		
+		
+		_aboutAction = new AboutAction();
+		button = new JButton(_aboutAction);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.001;
+		gbc.anchor    = GridBagConstraints.SOUTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(button, gbc);
