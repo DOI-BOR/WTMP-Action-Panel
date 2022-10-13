@@ -231,7 +231,7 @@ public class BcEntryDialog extends RmaJDialog
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
 		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
+		gbc.weighty   = 0.001;
 		gbc.anchor    = GridBagConstraints.NORTH;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
@@ -397,7 +397,7 @@ public class BcEntryDialog extends RmaJDialog
 			DataLocation dl;
 			for(int r = 0;r<rowCnt; r++ )
 			{
-				dl = (DataLocation) bcTable.getValueAt(r, 0);
+				dl = (DataLocation) bcTable.getValueAt(r, IterationBcPanel.DATALOCATION_COL);
 				dlList.add(new DataLocationNamedType(dl));
 			}
 			_selectorPanel.setSelectionList(dlList);
