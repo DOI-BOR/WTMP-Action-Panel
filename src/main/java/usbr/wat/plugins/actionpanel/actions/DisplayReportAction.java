@@ -98,8 +98,18 @@ public class DisplayReportAction extends AbstractAction
 		List<String> reportFiles = FileManagerImpl.getFileManager().list(folder, filterSet, false);
 		if ( reportFiles != null && !reportFiles.isEmpty())
 		{
+			int offset = 1;
 			Collections.sort(reportFiles);
-			return reportFiles.get(reportFiles.size()-1);
+			String fullPath, fileName;
+			do
+			{
+				fullPath = reportFiles.get(reportFiles.size()-offset);
+				fileName = RMAIO.getFileFromPath(fullPath);
+				offset++;
+			}
+			while ( fileName.startsWith("~$"));
+			
+			return fullPath;
 		}
 		return null;
 				
