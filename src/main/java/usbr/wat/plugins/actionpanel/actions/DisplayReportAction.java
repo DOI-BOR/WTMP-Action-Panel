@@ -92,6 +92,7 @@ public class DisplayReportAction extends AbstractAction
 				ext = ext.substring(1);
 			}
 			RMAFilenameFilter filter = new RMAFilenameFilter(ext);
+			filter.setAcceptDirectories(false);
 			filterSet.addFilter(filter);
 			
 		}
