@@ -73,7 +73,7 @@ public abstract class AbstractReportAction extends AbstractAction
 	implements ReportPlugin, MessageListener 
 {
 	
-	private Logger _logger = Logger.getLogger(AbstractReportAction.class.getName());
+	private static Logger _logger = Logger.getLogger(AbstractReportAction.class.getName());
 	
 	public static final String REPORT_DIR = "reports";
 	public static final String JASPER_DIR = "jasper";
@@ -149,7 +149,7 @@ public abstract class AbstractReportAction extends AbstractAction
 	/**
 	 * @return
 	 */
-	protected String getDirectoryToUse()
+	public static String getDirectoryToUse()
 	{
 		String dir = System.getProperty("WAT.InstallDir", null);
 		if ( dir == null || dir.isEmpty())

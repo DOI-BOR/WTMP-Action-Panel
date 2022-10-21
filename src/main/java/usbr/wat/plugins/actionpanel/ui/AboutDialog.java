@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -33,12 +34,18 @@ import org.jdom.input.SAXBuilder;
 
 import com.rma.swing.UrlLabel;
 
+import hec.io.ProcessOutputLine;
+import hec.io.ProcessOutputReader;
+
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaImage;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
+import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.actions.AbstractReportAction;
+import usbr.wat.plugins.actionpanel.gitIntegration.actions.VersionAction;
 import usbr.wat.plugins.actionpanel.model.ReportPlugin;
 import usbr.wat.plugins.actionpanel.model.ReportsManager;
 
@@ -73,11 +80,16 @@ public class AboutDialog extends RmaJDialog
 		buildControls();
 		addListeners();
 		fillPluginTable();
+		fillExeTable();
 		pack();
 		setLocationRelativeTo(getParent());
 	}
 
 	
+
+	
+
+
 
 	/**
 	 * 
@@ -222,6 +234,11 @@ public class AboutDialog extends RmaJDialog
 				d.height = getRowHeight()*4;
 				return d;
 			}
+			@Override
+			public boolean isCellEditable(int row, int col)
+			{
+				return false;
+			}
 		};
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -244,6 +261,104 @@ public class AboutDialog extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5555;
 		getContentPane().add(_cmdPanel, gbc);
 	}
+	/**
+	 * 
+	 */
+	private void fillExeTable()
+	{
+		VersionAction action = new VersionAction();
+		String version = action.versionAction();
+		addToTable(VersionAction.GIT_PYTHON_EXE, version);
+		
+		String dir = AbstractReportAction.getDirectoryToUse();
+		String reportExe = RMAIO.concatPath(dir, AbstractReportAction.PYTHON_REPORT_BAT);
+		List<String>cmd = new ArrayList<>(2);
+		cmd.add(reportExe);
+		cmd.add("--version");
+		version = runExe(cmd);
+		addToTable(AbstractReportAction.PYTHON_REPORT_BAT, version);
+	}
+	/**
+	 * @param cmd
+	 * @return
+	 */
+	private String runExe(List<String> cmd)
+	{
+		System.out.println("runExe:cmd is "+cmd);
+		ProcessBuilder builder = new ProcessBuilder(cmd);
+		Process proc;
+		try
+		{
+			proc = builder.start();
+		}
+		catch (IOException e)
+		{
+			return "Unknown";
+		}
+		InputStream iStream = proc.getInputStream();
+		InputStream eStream = proc.getErrorStream();
+		BufferedReader iReader = new BufferedReader(new InputStreamReader(iStream));
+		BufferedReader eReader = new BufferedReader(new InputStreamReader(iStream));
+		
+		Vector output = new Vector<>();
+		ProcessOutputReader outputReader = new ProcessOutputReader(iReader, output,"git stdout", true,false);
+		ProcessOutputReader errorReader = new ProcessOutputReader(eReader, output,"git stderr", true,true);
+		
+	
+		try
+		{
+			int rv = proc.waitFor();
+			if ( true)
+			{
+				System.out.println(cmd.get(0)+" exit code="+rv);
+			}
+			if ( rv != 0 )
+			{
+				if ( !output.isEmpty() )
+				{
+					return ((ProcessOutputLine)output.get(0)).getLine();
+				}
+			}
+			else
+			{
+				if ( !output.isEmpty() )
+				{
+					return ((ProcessOutputLine)output.get(0)).getLine();
+				}
+			}
+		}
+		catch (InterruptedException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				Thread.sleep(500);
+			}
+			catch (InterruptedException e)
+			{
+			}
+			if ( outputReader != null )
+			{
+				outputReader.close();
+			}
+			if ( errorReader != null )
+			{
+				errorReader.close();
+			}
+		}
+		return "unknown";
+	}
+
+
+
+
+
+
+
 	/**
 	 * 
 	 */

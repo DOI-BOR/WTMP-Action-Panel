@@ -55,7 +55,7 @@ public abstract class AbstractGitAction extends AbstractAction
 	private static final String PYTHON_EXE_PROP = "UsbrGit.Python.exe";
 	
 	private static final String EXE_FOLDER = "../tools"; // folder the .exe lives in relative to where the WAT.exe is
-	protected static final String GIT_PYTHON_EXE = "WAT_GIT_Tool_v2.exe";
+	public static final String GIT_PYTHON_EXE = "WAT_GIT_Tool_v2.exe";
 	
 	public static final String LOCAL_FOLDER = "--folder";
 	
