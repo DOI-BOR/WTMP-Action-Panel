@@ -69,7 +69,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 	public static final int DSSID_COL = 4;
 	
 	
-	private RmaJTable _bcTable;
+	protected RmaJTable _bcTable;
 	private JButton _selectDssBtn;
 	private ModelAltIterationSettings _modelAltSettings;
 	private boolean _listSelectorOpened;
@@ -78,12 +78,14 @@ public class IterationBcPanel extends AbstractEditorPanel
 	private BcEntryDialog _bcEditor;
 	private JButton _clearDssBtn;
 	private JButton _plotBtn;
+	protected EditIterationSettingsDialog _parent;
 	/**
 	 * @param editIterationSettingsDialog
 	 */
-	public IterationBcPanel(EditIterationSettingsDialog editIterationSettingsDialog)
+	public IterationBcPanel(EditIterationSettingsDialog parent)
 	{
 		super(new GridBagLayout());
+		_parent = parent;
 		buildControls();
 		addListeners();
 	}
@@ -149,7 +151,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 		_plotBtn = new JButton(RmaImage.getImageIcon("Images/plot18.gif"));
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1; //GridBagConstraints.REMAINDER;
+		gbc.gridwidth = 1; 
 		gbc.weightx   = 1.0;
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.NORTH;
@@ -188,7 +190,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 	/**
 	 * 
 	 */
-	private void addListeners()
+	protected void addListeners()
 	{
 		_selectDssBtn.addActionListener(e->browseDSSAction( SwingUtilities.windowForComponent(this)));
 		_clearDssBtn.addActionListener(e->clearSelectedRowsAction());
@@ -430,7 +432,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 				{
 					fileName = dssId.getFileName();
 					dssPath  = dssId.getDSSPath();
-					if ( fileName != null && !fileName.trim().isEmpty() && dssPath != null && !dssPath.trim().isEmpty())
+					if ( fileName != null && dssPath != null /*&& !fileName.trim().isEmpty()  && !dssPath.trim().isEmpty()*/)
 					{
 						modelAltSettings.setDssIdentifierFor(dl, dssId);
 					}
@@ -475,7 +477,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 			_listSelector = new DSSListSelector(this, "Select DSS Pathname", DSSListSelector.BROWSER,false, false);
 			_listSelector.setPathSelectionMode(DSSListSelector.SINGLE_PATH_SELECTION);
 			Object dlObj = _bcTable.getValueAt(_bcTable.getSelectedRow(), DATALOCATION_COL);
-			String dssFile = _lastDssFile;
+			String dssFile = _lastDssFile, cPart = null;
 			if ( dlObj instanceof DataLocation )
 			{
 				DataLocation dl = (DataLocation) dlObj;
@@ -489,6 +491,9 @@ public class IterationBcPanel extends AbstractEditorPanel
 						dssFile = Project.getCurrentProject().getAbsolutePath(dssFile);
 					}
 				}
+				String dssPath = dl.getDssPath();
+				DSSPathname dssPathname = new DSSPathname(dssPath);
+				cPart = dssPathname.cPart();
 
 			}
 			if ( dssFile != null )
@@ -507,6 +512,10 @@ public class IterationBcPanel extends AbstractEditorPanel
 				{
 					_listSelector.setDssFilename(_lastDssFile);
 				}
+			}
+			if ( cPart != null )
+			{
+				_listSelector.getSelectionAndFilterPanel().setFilter("///"+cPart+"////");
 			}
 			_listSelector.addWindowListener(new WindowAdapter()
 			{

@@ -47,6 +47,7 @@ import com.rma.util.PlugInLoader;
 
 import hec.gui.NameDescriptionPanel;
 
+import hec2.wat.WAT;
 import hec2.wat.model.WatAnalysisPeriod;
 import hec2.wat.model.WatSimulation;
 
@@ -446,7 +447,7 @@ public class ActionsWindow extends RmaJDialog
 				if ( lastComp instanceof SimulationTreeTableNode )
 				{
 					SimulationTreeTableNode simNode = (SimulationTreeTableNode) lastComp;
-					return simNode.getToolTipText();
+					return simNode.getToolTipText(getSimulationGroup());
 				}
 				else if ( lastComp instanceof ResultsTreeTableNode )
 				{
@@ -1087,6 +1088,31 @@ public class ActionsWindow extends RmaJDialog
 			MetaDataEditor editor = new MetaDataEditor(this);
 			editor.fillForm((WatSimulation)obj);
 			editor.setVisible(true);
+		}
+	}
+
+
+
+	/**
+	 * @return
+	 */
+	public void displayComputeLog()
+	{
+		int row = _simulationTable.getSelectedRow();
+		if ( row < 0 )
+		{
+			return;
+		}
+		Object obj = _simulationTable.getValueAt(row, SimulationTreeTableModel.SIMULATION_COLUMN);
+		if ( obj instanceof WatSimulation )
+		{
+			WatSimulation sim = (WatSimulation) obj;
+			String logFile = sim.getLogFile();
+			if ( FileManagerImpl.getFileManager().fileExists(logFile))
+			{
+				RmaFile f = FileManagerImpl.getFileManager().getFile(logFile);
+				WAT.getWatFrame().openComputeLog(f);	
+			}
 		}
 	}
 	

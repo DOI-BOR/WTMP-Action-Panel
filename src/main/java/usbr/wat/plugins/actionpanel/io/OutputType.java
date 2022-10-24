@@ -143,4 +143,28 @@ public enum OutputType
 	 * @return
 	 */
 	public abstract String getFileExtension();
+
+	/**
+	 * @param outputExt
+	 * @return
+	 */
+	public static OutputType getOutputType(String outputExt)
+	{
+		if ( outputExt == null )
+		{
+			return OutputType.PDF;
+		}
+		if ( outputExt.equalsIgnoreCase(Doc.getFileExtension()) )
+		{
+			return Doc;
+		}
+		else if ( outputExt.equalsIgnoreCase(Html.getFileExtension()) )
+		{
+			return Html;
+		}
+		else
+		{
+			return PDF;
+		}
+	}
 }

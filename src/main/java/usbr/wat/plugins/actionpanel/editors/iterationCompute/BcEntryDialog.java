@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -21,18 +22,28 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
 
+import com.rma.io.DssFileManagerImpl;
+import com.rma.model.Project;
+
+import hec.gfx2d.G2dDialog;
 import hec.gui.SelectorPanel;
+import hec.heclib.dss.HecTimeSeries;
+import hec.heclib.util.HecTime;
 import hec.io.DSSIdentifier;
+import hec.io.TimeSeriesCollectionContainer;
+import hec.io.TimeSeriesContainer;
 import hec.lang.NamedType;
 
 import hec2.model.DataLocation;
 
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
+import rma.swing.RmaImage;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
+import rma.util.RMASort;
 
 
 /**
@@ -56,6 +67,7 @@ public class BcEntryDialog extends RmaJDialog
 	private RmaJTextField _parameterFld;
 	private boolean _fillingForm;
 	private boolean _selectionChanging;
+	private JButton _plotBtn;
 
 	/**
 	 * @param iterationBcPanel
@@ -69,9 +81,10 @@ public class BcEntryDialog extends RmaJDialog
 		_panel = iterationBcPanel;
 		_bcTable = bcTable;
 		buildControls();
-		addListeners();
 		fillForm(bcTable);
 		_selectorPanel.setSelectedIndex(tableRow);
+		fillForm(tableRow);
+		addListeners();
 		pack();
 		setSize(580, 310);
 		setLocationRelativeTo(getParent());
@@ -237,6 +250,17 @@ public class BcEntryDialog extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(panel, gbc);
 		
+		_plotBtn = new JButton(RmaImage.getImageIcon("Images/plot18.gif"));
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1; 
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTH;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5505;
+		panel.add(_plotBtn, gbc);
+		
 		_browseDssBtn = new JButton("Browse DSS");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -281,6 +305,7 @@ public class BcEntryDialog extends RmaJDialog
 		_browseDssBtn.addActionListener(e->browseDssAction());
 		_clearDssBtn.addActionListener(e->clearDssAction());
 		_bcTable.getSelectionModel().addListSelectionListener(e->tableRowSelected());
+		_plotBtn.addActionListener(e->plotRecords());	
 		
 		_cmdPanel.addCmdPanelListener(new ButtonCmdPanelListener()
 		{
@@ -295,7 +320,56 @@ public class BcEntryDialog extends RmaJDialog
 			}
 		});
 	}
-	
+	/**
+	 * @return
+	 */
+	private void plotRecords()
+	{
+		DataLocationNamedType dl;
+		DSSIdentifier origDssId, iterDssId;
+		TimeSeriesContainer origTs;
+		dl = (DataLocationNamedType) _selectorPanel.getSelectedItem();
+		origDssId = new DSSIdentifier(_modelDssFileFld.getText(), _modelDssPathFld.getText());
+		iterDssId = new DSSIdentifier(_iterationDssFileFld.getText(), _iterationDssPathFld.getText());
+
+		origTs = DssFileManagerImpl.getDssFileManager().readTS(origDssId, true);
+		Vector data = new Vector();
+		data.add(origTs);
+		if ( iterDssId.getDSSPath() != null && !iterDssId.getDSSPath().isEmpty())
+		{
+			DSSIdentifier dss2 = new DSSIdentifier(Project.getCurrentProject().getAbsolutePath(iterDssId.getFileName()), iterDssId.getDSSPath());
+			HecTime[] times = DssFileManagerImpl.getDssFileManager().getTSTimeRange(dss2, 0);
+			if(times!=null && times.length==2)
+			{
+				HecTimeSeries hecTs= new HecTimeSeries(dss2.getFileName());
+				hecTs.setTimeWindow(times[0], times[1]);
+				hecTs.setPathname(iterDssId.getDSSPath());
+				TimeSeriesCollectionContainer tscc = new TimeSeriesCollectionContainer();
+
+				if ( hecTs.read(tscc, true, false) == 0 )
+				{
+					TimeSeriesContainer[] tscs = tscc.get();
+					if ( tscs != null )
+					{
+						for(int i = 0;i < tscs.length;i++ )
+						{
+							data.add(tscs[i]);
+						}
+					}
+				}
+			}
+		}
+
+		G2dDialog g2dDlg = new G2dDialog( null, dl.getName(), false, data);
+		RmaJDialog dlg = new RmaJDialog(SwingUtilities.windowForComponent(this), dl.getName(), true);
+		dlg.pack();
+		dlg.setSize(500,500);
+		dlg.setJMenuBar(g2dDlg.getJMenuBar());
+		dlg.setContentPane(g2dDlg.getContentPane());
+
+		dlg.setLocationRelativeTo(this);
+		dlg.setVisible(true);
+	}	
 	/**
 	 * @return
 	 */
@@ -352,7 +426,7 @@ public class BcEntryDialog extends RmaJDialog
 		_selectionChanging = true;
 		try
 		{
-			_bcTable.setSelectedIndices(idx);
+			//_bcTable.setSelectedIndices(idx);
 		}
 		finally
 		{
@@ -379,7 +453,7 @@ public class BcEntryDialog extends RmaJDialog
 		_modelDssFileFld.setText(modelDssId.getFileName());
 		_modelDssPathFld.setText(modelDssId.getDSSPath());
 		_iterationDssFileFld.setText(selectedDssId.getFileName());
-		_iterationDssPathFld.setText(selectedDssId.getDSSPath());
+		_iterationDssPathFld.setText(Project.getCurrentProject().getAbsolutePath(selectedDssId.getDSSPath()));
 		setModified(false);
 	}
 
@@ -394,12 +468,16 @@ public class BcEntryDialog extends RmaJDialog
 		{
 			int rowCnt = bcTable.getRowCount();
 			List<DataLocationNamedType> dlList = new ArrayList<>(rowCnt);
+			List<Integer>rowNum = new ArrayList<>(rowCnt);
 			DataLocation dl;
 			for(int r = 0;r<rowCnt; r++ )
 			{
+				int x = _bcTable.convertRowIndexToModel(r);
+				rowNum.add(x);
 				dl = (DataLocation) bcTable.getValueAt(r, IterationBcPanel.DATALOCATION_COL);
 				dlList.add(new DataLocationNamedType(dl));
 			}
+			RMASort.quickSort(rowNum, dlList);
 			_selectorPanel.setSelectionList(dlList);
 		}
 		finally

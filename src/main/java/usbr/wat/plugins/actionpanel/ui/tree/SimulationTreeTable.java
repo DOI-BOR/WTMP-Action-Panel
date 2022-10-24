@@ -127,6 +127,9 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		JMenuItem editMetaDataMenu = new JMenuItem("Edit MetaData...");
 		editMetaDataMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().editSimulationMetaData());
 		popup.add(editMetaDataMenu);
+		JMenuItem displayLogMenu = new JMenuItem("View Compute Log...");
+		displayLogMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().displayComputeLog());
+		popup.add(displayLogMenu);
 		return popup;
 	}
 	/**

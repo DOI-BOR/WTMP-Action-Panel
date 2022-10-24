@@ -37,6 +37,9 @@ import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecDSSFileDataManager;
 import hec.heclib.dss.HecDSSUtilities;
 import hec.heclib.dss.HecDataManager;
+import hec.heclib.util.HecTime;
+import hec.hecmath.HecMathException;
+import hec.hecmath.TimeSeriesMath;
 import hec.io.DSSIdentifier;
 import hec.io.TimeSeriesContainer;
 import hec.model.RunTimeWindow;
@@ -68,6 +71,7 @@ public class ActionComputable
 	
 	private WatSimulation _sim;
 	private IterationSettings _iterSettings;
+	private PositionAnalysisSettings _posAnalysisSettings;
 	private String _iterDssFile;
 	private PythonInterpreter _interp;
 	private boolean _debug;
@@ -76,15 +80,19 @@ public class ActionComputable
 	private String _currentScriptText;
 	private UsgsComputeSelectorDialog _computeDialog;
 	private boolean _canceled;
+	private ComputeType _computeType;
 	/**
 	 * @param sim
 	 * @param iterSettings
+	 * @param posAnalysisSettings 
 	 */
-	public ActionComputable(WatSimulation sim, IterationSettings iterSettings)
+	public ActionComputable(WatSimulation sim, IterationSettings iterSettings, PositionAnalysisSettings posAnalysisSettings, ComputeType computeType)
 	{
 		super();
 		_sim = sim;
 		_iterSettings = iterSettings;
+		_posAnalysisSettings = posAnalysisSettings;
+		_computeType = computeType;
 	}
 
 	@Override
@@ -115,12 +123,158 @@ public class ActionComputable
 	@Override
 	public boolean compute()
 	{
-		if ( _iterSettings == null || !_iterSettings.isIterative())
+		if ( _computeType == ComputeType.Iterative )
+		{
+			return iterativeCompute();
+		}
+		else if ( _computeType == ComputeType.PositionAnalysis )
+		{
+			return positionAnalysisCompute();
+			
+		}
+		else //ComputeType.Standard
 		{
 			_sim.setRecomputeAll(_computeDialog.shouldRecomputeAll());
 			return _sim.compute();
 		}
-		return iterativeCompute();
+	}
+	
+
+	/**
+	 * @return
+	 */
+	private boolean positionAnalysisCompute()
+	{
+		_debug = Boolean.getBoolean("ActionComputable.debugCompute");
+		int[] members = _posAnalysisSettings.getMembersToCompute();
+		if ( members == null || members.length == 0 )
+		{
+			_sim.addErrorMessage("No Iteration Members selected to compute");
+			_sim.computeComplete(false);
+			return false;
+		}
+		// save off the original DSS data
+		if ( _debug )
+		{
+			JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Saving Original Data ");
+		}
+		
+		List<DSSIdentifier>savedDssPaths = saveDssPaths(_posAnalysisSettings);
+		if ( savedDssPaths == null )
+		{
+			return false;
+		}
+		_preCodeMap.clear();
+		_postCodeMap.clear();
+		ComputeProgressListener progressListener = _sim.getComputeProgressListener();
+		List<ComputeProgressListener> listeners = null;
+		if ( progressListener instanceof ComputeProgressListener2 )
+		{
+			ComputeProgressListener2 pl2 = (ComputeProgressListener2) progressListener;
+			listeners = pl2.getListeners();
+		}
+		try
+		{
+			int currentMember;
+			for(int m = 0; m < members.length;m ++ )
+			{
+				currentMember = members[m];
+				_sim.addComputeMessage("Computing Iteration Member "+currentMember);
+				System.out.println("Computing Iteration Member "+currentMember+" for "+_sim );
+				if ( _canceled )
+				{
+					return false;
+				}
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying in data for Ensemble member "+currentMember);
+				}
+				// copy in the new iteration data
+				if ( !copyDssMembersForTimeWindow(currentMember, _posAnalysisSettings))
+				{
+					return false;
+				}
+				if ( _canceled )
+				{
+					return false;
+				}
+				// close any DSS files we might have had open
+				HecDSSFileDataManager dm = new HecDSSFileDataManager();
+				dm.closeAllFiles();
+				_sim.setRecomputeAll(true);
+				// compute
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Computing Ensemble member "+currentMember);
+				}
+				// now compute
+				if ( !_sim.compute())
+				{
+					if (Boolean.getBoolean("ActionComputable.ContinueOnError"))
+					{
+						continue;
+					}
+					return false;
+				}
+				//copy the output from the simulation dss file to the iteration dss file
+				if ( _canceled )
+				{
+					return false;
+				}
+				if ( listeners != null )
+				{ //listeners got removed by the sim at the end of its compute, so put them back
+					for (int l = 0; l < listeners.size(); l++ )
+					{
+						_sim.addComputeListener(listeners.get(l));
+						if ( listeners.get(l) instanceof ComputeProgressPanel )
+						{
+							((ComputeProgressPanel)listeners.get(l)).setModelPosition(0);
+							//((ComputeProgressPanel)listeners.get(l)).clearMessageText();
+							
+						}
+					}
+				}
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying results for ensemble member "+currentMember);
+				}
+				copyDssResultsToCollectionsDss(currentMember, _posAnalysisSettings);
+				if ( _canceled )
+				{
+					return false;
+				}
+				if ( _debug )
+				{
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Running Post Scripts ensemble member "+currentMember);
+				}
+			}
+		}
+		catch(Exception e )
+		{
+			_sim.addErrorMessage("Exception during iterative compute " + e);
+			Logger.getLogger(ActionComputable.class.getName()).warning("Exception during iterative compute "+e );
+			e.printStackTrace();
+			return false;
+		}
+		finally
+		{
+			// restore the saved off DSS paths
+			if ( _debug )
+			{
+				JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Restoring original DSS data");
+			}
+			restoreDssPaths(savedDssPaths);
+			_preCodeMap.clear();
+			_postCodeMap.clear();
+			for (int l = 0; l < listeners.size(); l++ )
+			{
+				_sim.removeComputeProgressListener(progressListener);
+			}
+			
+		}
+		
+		
+		return true;
 	}
 
 	/**
@@ -141,7 +295,7 @@ public class ActionComputable
 		{
 			JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Saving Original Data ");
 		}
-		List<DSSIdentifier>savedDssPaths = saveDssPaths();
+		List<DSSIdentifier>savedDssPaths = saveDssPaths(_iterSettings);
 		if ( savedDssPaths == null )
 		{
 			return false;
@@ -180,7 +334,7 @@ public class ActionComputable
 					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying in data for Ensemble member "+currentMember);
 				}
 				// copy in the new iteration data
-				if ( !copyDssMembers(currentMember))
+				if ( !copyDssMembers(currentMember, _iterSettings))
 				{
 					return false;
 				}
@@ -227,7 +381,7 @@ public class ActionComputable
 				{
 					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying results for ensemble member "+currentMember);
 				}
-				copyDssResultsToCollectionsDss(currentMember);
+				copyDssResultsToCollectionsDss(currentMember, _iterSettings);
 				if ( _canceled )
 				{
 					return false;
@@ -628,7 +782,7 @@ public class ActionComputable
 	/**
 	 * @return
 	 */
-	private List<DSSIdentifier> saveDssPaths()
+	private List<DSSIdentifier> saveDssPaths(BaseComputeSettings computeSettings)
 	{
 		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
 		ModelAlternative modelAlt;
@@ -647,7 +801,7 @@ public class ActionComputable
 				continue;
 			}
 			modelAlt.setVariantName(variantName);
-			maSettings = _iterSettings.getModelAltSettings(modelAlt);
+			maSettings = computeSettings.getModelAltSettings(modelAlt);
 			if ( maSettings == null )
 			{
 				continue;
@@ -746,13 +900,12 @@ public class ActionComputable
 		Vector pathnames = DssFileManagerImpl.getDssFileManager().searchDSSPaths(dssId);
 		return pathnames;
 	}
-
 	/**
-	 * copy in the new iteration data
-	 * @param m 
+	 * 
+	 * @param member
 	 * @return
 	 */
-	private boolean copyDssMembers(int member)
+	private boolean copyDssMembersForTimeWindow(int member, BaseComputeSettings computeSettings)
 	{
 		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
 		ModelAlternative modelAlt;
@@ -765,9 +918,248 @@ public class ActionComputable
 		String dssPath, fileName;
 		DssDataLocation dssDl;
 		boolean copySuccessful = true;
+		int startingYear = findStartingYear(computeSettings);
+		_sim.addComputeMessage("Common start year for modified BCs:" +startingYear);
+		
 		RunTimeWindow rtw = _sim.getRunTimeWindow();
-		srcDssId.setStartTime(rtw.getStartTime());
-		srcDssId.setEndTime(rtw.getEndTime());
+		HecTime startTime = (HecTime) rtw.getStartTime().clone();
+		int year = startingYear;
+		year+=member;
+		startTime.setYearMonthDay(year, startTime.month(), startTime.day());
+		int startDaysToSubtract = -Integer.getInteger("PAC.StartDaysToSubtract", 0);
+		startTime.addDays(startDaysToSubtract);
+		
+		HecTime endTime = (HecTime) rtw.getEndTime().clone();
+		
+		year = startingYear;
+		year+=member; // 0 based.  first member doesn't add to the year.
+		endTime.setYearMonthDay(year, endTime.month(), endTime.day());	
+		int endDaysToAdd = Integer.getInteger("PAC.EndDaysToAdd", 1);
+		endTime.addDays(endDaysToAdd); // sometimes DSS read misses a day of data.
+		
+		for (int i = 0;i < modelAlts.size() && !_canceled;i ++ )
+		{
+			modelAlt = modelAlts.get(i);
+			if ( modelAlt == null )
+			{
+				continue;
+			}
+			maSettings = computeSettings.getModelAltSettings(modelAlt);
+			if ( maSettings == null )
+			{
+				continue;
+			}
+			dataLocs = maSettings.getDataLocations();
+			if ( dataLocs == null )
+			{
+				continue;
+			}
+			for(int d = 0;d < dataLocs.size() && !_canceled; d++ )
+			{
+				dataLoc = dataLocs.get(d);
+				dssId = maSettings.getDSSIdentifierFor(dataLoc);
+				if ( dssId == null || dssId.getDSSPath() == null || dssId.getDSSPath().isEmpty())
+				{
+					continue;
+				}
+				linkedDl = dataLoc.getLinkedToLocation();
+		
+				if ( linkedDl instanceof DssDataLocation )
+				{
+					dssDl = (DssDataLocation) linkedDl;
+					dssPath = dssId.getDSSPath();
+					fileName = Project.getCurrentProject().getAbsolutePath(dssId.getFileName());
+					srcDssId.setFileName(fileName);
+					srcDssId.setDSSPath(dssPath);
+					srcDssId.setStartTime(startTime);
+					srcDssId.setEndTime(endTime);
+					_sim.addComputeMessage("Copying over Position Analysis DSS records for time window "+srcDssId.getStartTime()+" to "+srcDssId.getEndTime());
+					TimeSeriesContainer srcTsc = DssFileManagerImpl.getDssFileManager().readTS(srcDssId, true);
+					if ( srcTsc != null && srcTsc.numberValues > 0 )
+					{
+						_sim.addComputeMessage("Read data for " + srcDssId+" start="+srcTsc.getStartTime()+" end="+srcTsc.getEndTime()+" num values="+srcTsc.numberValues);
+						srcTsc.fileName = dssDl.get_dssFile();
+						srcTsc.fullName = dssDl.getDssPath();
+						//no time shift the data back to the original time window
+						srcTsc = shiftInTime(srcTsc, startTime, rtw);
+						if ( srcTsc == null )
+						{
+							_sim.addErrorMessage("Failed to shift DSS record for "+dataLoc+", "+srcTsc.fileName+" : "+srcTsc.fullName+" to original time" );
+							return false;
+							
+						}
+						outputTimeSeries(srcTsc);
+						int rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
+						if ( rv != 0 )
+						{
+							copySuccessful= false;
+							Logger.getLogger(ActionComputable.class.getName()).warning("Failed to write DSS record for "+dataLoc+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
+							_sim.addErrorMessage("Failed to write DSS record for "+dataLoc+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
+						}
+						else
+						{
+							/// save off the source DSS data into the collection dss file with the F part appended with -PA
+							srcTsc.fileName = getCollectionsOutputDssFile(computeSettings.getCollectionDssFilename()); 
+							pathname.setPathname(srcTsc.fullName);
+							pathname.setCollectionSequence(member);
+							pathname.setFPart(pathname.getFPart()+"-PA");
+							srcTsc.fullName = pathname.getPathname();
+							rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
+							_sim.addComputeMessage("   Copied " + srcDssId+ " to "+dssDl.get_dssFile()+":"+dssDl.getDssPath());
+						}
+					}
+					else
+					{
+						_sim.addErrorMessage("No Data Found for "+srcDssId+" for Time Window "+srcDssId.getStartTime()+" to "+srcDssId.getEndTime());
+					}
+				}
+				
+			}
+		}
+		return copySuccessful;
+	}
+	/**
+	 * find the common starting year for all the Time Series that are getting changed
+	 * @param computeSettings 
+	 * @return
+	 */
+	private int findStartingYear(BaseComputeSettings computeSettings)
+	{
+		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
+
+		ModelAlternative modelAlt;
+		ModelAltIterationSettings maSettings;
+		
+		List<DataLocation> dataLocs;
+		DataLocation dataLoc, linkedDl;
+		
+		DSSIdentifier dssId, srcDssId = new DSSIdentifier();
+		
+		DssDataLocation dssDl;
+		
+		String dssPath, fileName;
+		HecTime[] times;
+		int startYear = 0, year;
+		for (int i = 0;i < modelAlts.size() && !_canceled;i ++ )
+		{
+			modelAlt = modelAlts.get(i);
+			if ( modelAlt == null )
+			{
+				continue;
+			}
+			maSettings = computeSettings.getModelAltSettings(modelAlt);
+			if ( maSettings == null )
+			{
+				continue;
+			}
+			dataLocs = maSettings.getDataLocations();
+			if ( dataLocs == null )
+			{
+				continue;
+			}
+			for(int d = 0;d < dataLocs.size() && !_canceled; d++ )
+			{
+				dataLoc = dataLocs.get(d);
+				dssId = maSettings.getDSSIdentifierFor(dataLoc);
+				if ( dssId == null || dssId.getDSSPath() == null || dssId.getDSSPath().isEmpty())
+				{
+					continue;
+				}
+				linkedDl = dataLoc.getLinkedToLocation();
+		
+				if ( linkedDl instanceof DssDataLocation )
+				{
+					dssDl = (DssDataLocation) linkedDl;
+					dssPath = dssId.getDSSPath();
+					fileName = Project.getCurrentProject().getAbsolutePath(dssId.getFileName());
+					srcDssId.setFileName(fileName);
+					srcDssId.setDSSPath(dssPath);
+					times = DssFileManagerImpl.getDssFileManager().getTSTimeRange(srcDssId, 0);	
+					if ( times != null )
+					{
+						year = times[0].year();
+						startYear = Math.max(startYear, year);
+					}
+				}
+			}
+		}
+		return startYear;
+	}
+
+	/**
+	 * @param srcTsc
+	 */
+	private void outputTimeSeries(TimeSeriesContainer srcTsc)
+	{
+		HecTime time = new HecTime();
+		for(int i = 0; i < 10; i++ )
+		{
+			time.set(srcTsc.times[i]);
+			_sim.addLogMessage("Time="+time+" value="+srcTsc.values[i]);
+		}
+	}
+
+	/**
+	 * @param srcTsc
+	 * @param startTime
+	 * @param rtw
+	 * @return
+	 */
+	private TimeSeriesContainer shiftInTime(TimeSeriesContainer srcTsc,
+			HecTime startTime, RunTimeWindow rtw)
+	{
+		_sim.addComputeMessage("Time shifting "+srcTsc.fullName+" from "+startTime + " to " +rtw.getStartTime());
+		int diff = rtw.getStartTime().value() -   startTime.value();
+		String shift = Integer.toString(diff)+ " Minute";
+		_sim.addComputeMessage("Time shifting "+srcTsc.fullName+" "+shift);
+		
+		TimeSeriesMath tsm;
+		try
+		{
+			tsm = new TimeSeriesMath(srcTsc);
+			tsm = (TimeSeriesMath) tsm.shiftInTime(shift);
+		}
+		catch (HecMathException e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+		TimeSeriesContainer shiftedTsc = tsm.getContainer();
+		return shiftedTsc;
+	}
+
+	/**
+	 * copy in the new iteration data
+	 * @param m 
+	 * @return
+	 */
+	private boolean copyDssMembers(int member, BaseComputeSettings computeSettings)
+	{
+		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
+		ModelAlternative modelAlt;
+		ModelAltIterationSettings maSettings;
+		List<DataLocation> dataLocs;
+		DataLocation dataLoc, linkedDl;
+		DSSIdentifier dssId, srcDssId = new DSSIdentifier();
+
+		DSSPathname pathname = new DSSPathname();
+		String dssPath, fileName;
+		DssDataLocation dssDl;
+		boolean copySuccessful = true;
+		
+		RunTimeWindow rtw = _sim.getRunTimeWindow();
+		HecTime startTime = (HecTime) rtw.getStartTime().clone();
+		HecTime endTime = (HecTime) rtw.getEndTime().clone();
+		
+		int startDaysToSubtract = -Integer.getInteger("Iteration.StartDaysToSubtract", 0);	
+		startTime.addDays(startDaysToSubtract);
+		srcDssId.setStartTime(startTime);
+		
+		
+		int endDaysToAdd = -Integer.getInteger("Iteration.EndDaysToAdd", 0);	
+		endTime.addDays(endDaysToAdd);
+		srcDssId.setEndTime(endTime);
+		
 		_sim.addComputeMessage("Copying over iterative DSS records...");
 		for (int i = 0;i < modelAlts.size() && !_canceled;i ++ )
 		{
@@ -776,7 +1168,7 @@ public class ActionComputable
 			{
 				continue;
 			}
-			maSettings = _iterSettings.getModelAltSettings(modelAlt);
+			maSettings = computeSettings.getModelAltSettings(modelAlt);
 			if ( maSettings == null )
 			{
 				continue;
@@ -823,6 +1215,13 @@ public class ActionComputable
 						}
 						else
 						{
+							/// save off the source DSS data into the collection dss file with the F part appended with -PA
+							srcTsc.fileName = getCollectionsOutputDssFile(computeSettings.getCollectionDssFilename()); 
+							pathname.setPathname(srcTsc.fullName);
+							pathname.setCollectionSequence(member);
+							pathname.setFPart(pathname.getFPart()+"-ITER");
+							srcTsc.fullName = pathname.getPathname();
+							rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
 							_sim.addComputeMessage("   Copied " + dssPath+ " to "+dssDl.get_dssFile()+":"+dssDl.getDssPath());
 						}
 					}
@@ -873,7 +1272,7 @@ public class ActionComputable
 	/**
 	 * 
 	 */
-	private void copyDssResultsToCollectionsDss(int interationId)
+	private void copyDssResultsToCollectionsDss(int interationId, BaseComputeSettings computeSettings)
 	{
 		_sim.addComputeMessage("Saving Computed DSS records to collections");
 		
@@ -886,7 +1285,7 @@ public class ActionComputable
 			{
 				continue;
 			}
-			updateIterationDssWithDssData(modelAlt, interationId);
+			updateIterationDssWithDssData(modelAlt, interationId, computeSettings);
 		}
 	}	
 	/**
@@ -894,7 +1293,7 @@ public class ActionComputable
 	 * forecast DSS file
 	 * @param modelAlt
 	 */
-	private boolean updateIterationDssWithDssData(ModelAlternative modelAlt, int interationId)
+	private boolean updateIterationDssWithDssData(ModelAlternative modelAlt, int interationId, BaseComputeSettings computeSettings)
 	{
 			
 		_sim.addComputeMessage("Saving Computed DSS records to collections for "+modelAlt);
@@ -912,7 +1311,7 @@ public class ActionComputable
 			return true;
 		}
 		_sim.addComputeMessage("Copying output DSS for "+modelAlt.getProgram()
-			+" model "+modelAlt+" to Iteration.dss");
+			+" model "+modelAlt+" to "+computeSettings.getCollectionDssFilename());
 		DSSPathname pathname = new DSSPathname();
 		Vector<String>destPaths = new Vector<>(srcPaths.size());
 		String path;
@@ -923,7 +1322,7 @@ public class ActionComputable
 			pathname.setCollectionSequence(interationId);
 			destPaths.add(pathname.getPathname());
 		}
-		String iterDssFile = getIterationDssFile();
+		String iterDssFile = getCollectionsOutputDssFile(computeSettings.getCollectionDssFilename());
 		int rv = copyRecords(dssFile, iterDssFile, srcPaths, destPaths);
 		boolean success = rv == srcPaths.size();
 		if ( !success )
@@ -937,13 +1336,13 @@ public class ActionComputable
 	/**
 	 * @return
 	 */
-	private String getIterationDssFile()
+	private String getCollectionsOutputDssFile(String dssFileName)
 	{
 		if ( _iterDssFile == null )
 		{
 			String dssFile = _sim.getSimulationDssFile();
 			String computeFolder = RMAIO.getDirectoryFromPath(dssFile);
-			_iterDssFile = RMAIO.concatPath(computeFolder, ITERATION_DSS_FILE);
+			_iterDssFile = RMAIO.concatPath(computeFolder, dssFileName);
 		}
 		return _iterDssFile;
 	}

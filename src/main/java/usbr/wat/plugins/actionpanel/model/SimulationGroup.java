@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.jdom.Document;
 import org.jdom.Element;
@@ -38,6 +40,9 @@ public class SimulationGroup extends AbstractXMLManager
 	private String _apName;
 	
 	private Map<String, IterationSettings>_iterationsSettings = new HashMap<>();
+	private Map<String, PositionAnalysisSettings>_positionAnalysisSettings = new HashMap<>();
+	
+	private Map<String, ComputeType>_computeTypeSettings = new HashMap();
 
 	public SimulationGroup()
 	{
@@ -76,6 +81,7 @@ public class SimulationGroup extends AbstractXMLManager
 		{
 			XMLUtilities.saveChildElement(elem, "AnalysisPeriod", _analysisPeriod.getName());
 		}
+		
 		Element simsElem = new Element("Simulations");
 		elem.addContent(simsElem);
 		WatSimulation sim;
@@ -87,9 +93,63 @@ public class SimulationGroup extends AbstractXMLManager
 			XMLUtilities.saveChildElement(simelem, "Name", sim.getName());
 			XMLUtilities.saveChildElement(simelem, "Class", sim.getClass().getName());
 			saveIterationSettings(simelem, sim.getName());
+			savePositionAnalysisSettings(simelem, sim.getName());
+		}
+		saveComputeTypes(elem);
+		return true;
+	}
+	private void saveComputeTypes(Element elem)
+	{
+		Set<Entry<String, ComputeType>> computeTypes = _computeTypeSettings.entrySet();
+		Element computeTypesElem = new Element("ComputeTypes");
+		elem.addContent(computeTypesElem);
+		Iterator<Entry<String, ComputeType>> iter = computeTypes.iterator();
+		Element simElem;
+		while (iter.hasNext())
+		{
+			Entry<String, ComputeType> next = iter.next();
+			simElem = XMLUtilities.saveChildElement(computeTypesElem, "Simulation", next.getKey());
+			XMLUtilities.saveChildElement(simElem, "ComputeType", next.getValue().name());
 		}
 		
-		return true;
+	}
+	/**
+	 * @param root
+	 */
+	private void loadComputeTypes(Element root)
+	{
+		Element computeTypesElem = root.getChild("ComputeTypes");
+		if (computeTypesElem == null )
+		{
+			return;
+		}
+		List kids = computeTypesElem.getChildren("Simulation");
+		Element simElem, ctElem;
+		for (int i = 0;i < kids.size(); i++ )
+		{
+			simElem = (Element) kids.get(i);
+			ctElem = simElem.getChild("ComputeType");
+			if ( ctElem != null )
+			{
+				_computeTypeSettings.put(simElem.getTextTrim(), ComputeType.valueOf(ctElem.getTextTrim()));
+			}
+		}
+	}
+	/**
+	 * @param simelem
+	 * @param name
+	 */
+	private void savePositionAnalysisSettings(Element simElem, String simName)
+	{
+		PositionAnalysisSettings settings = _positionAnalysisSettings.get(simName);
+		if ( settings == null )
+		{
+			return;
+		}
+		Element paElem = new Element("PositionAnalysisSettings");
+		simElem.addContent(paElem);
+		
+		settings.saveData(paElem);
 	}
 	/**
 	 * 
@@ -120,29 +180,35 @@ public class SimulationGroup extends AbstractXMLManager
 			System.out.println("loadDocument:no root element");
 			return false;
 		}
-		if ( "SimulationGroup".equals(root.getName()) )
-		{
-			XMLUtilities.loadNamedType(root, this);
-			_apName = XMLUtilities.getChildElementAsString(root, "AnalysisPeriod", null);
-			
-			Element simsNode = root.getChild("Simulations");
-			if ( simsNode != null )
-			{
-				List simKidNodes = simsNode.getChildren("Simulation");
-				Element simElem;
-				for(int i = 0;i < simKidNodes.size(); i++ )
-				{
-					simElem = (Element) simKidNodes.get(i);
-					String simName = XMLUtilities.getChildElementAsString(simElem, "Name", true, null);
-					String simClass = XMLUtilities.getChildElementAsString(simElem, "Class", true, null);
-					_simulationInfo.add(new SimulationInfo(simName, simClass));
-					loadIterationSettings(simElem, simName);
-				}
-			}
-		}
 		try
 		{
 			setIgnoreModifiedEvents(true);
+			_iterationsSettings.clear();
+			_positionAnalysisSettings.clear();
+			_computeTypeSettings.clear();
+			if ( "SimulationGroup".equals(root.getName()) )
+			{
+				XMLUtilities.loadNamedType(root, this);
+				_apName = XMLUtilities.getChildElementAsString(root, "AnalysisPeriod", null);
+
+				Element simsNode = root.getChild("Simulations");
+				if ( simsNode != null )
+				{
+					List simKidNodes = simsNode.getChildren("Simulation");
+					Element simElem;
+					for(int i = 0;i < simKidNodes.size(); i++ )
+					{
+						simElem = (Element) simKidNodes.get(i);
+						String simName = XMLUtilities.getChildElementAsString(simElem, "Name", true, null);
+						String simClass = XMLUtilities.getChildElementAsString(simElem, "Class", true, null);
+						_simulationInfo.add(new SimulationInfo(simName, simClass));
+						loadIterationSettings(simElem, simName);
+						loadPositionAnalysisSettings(simElem, simName);
+					}
+				}
+				loadComputeTypes(root);
+			}
+
 		}
 		finally
 		{
@@ -153,6 +219,23 @@ public class SimulationGroup extends AbstractXMLManager
 		
 	}
 
+	
+	/**
+	 * @param simElem
+	 * @param simName
+	 */
+	private void loadPositionAnalysisSettings(Element simElem, String simName)
+	{
+		Element iterElem = simElem.getChild("PositionAnalysisSettings");
+		if ( iterElem == null )
+		{
+			return;
+		}
+		PositionAnalysisSettings settings = new PositionAnalysisSettings();
+		settings.loadData(iterElem);
+		
+		_positionAnalysisSettings.put(simName, settings);
+	}
 	/**
 	 * @param simElem
 	 */
@@ -324,6 +407,65 @@ public class SimulationGroup extends AbstractXMLManager
 		}
 		return settings;
 	}
+	/**
+	 * @param name
+	 * @return
+	 */
+	public PositionAnalysisSettings getPositionAnalysisSettings(String simName)
+	{
+		PositionAnalysisSettings settings = _positionAnalysisSettings.get(simName);
+		if ( settings == null )
+		{
+			settings = new PositionAnalysisSettings();
+			_positionAnalysisSettings.put(simName, settings);
+		}
+		return settings;
+
+	}
+	/**
+	 * @param name
+	 * @return
+	 */
+	public ComputeType getComputeType(String simName)
+	{
+		ComputeType computeType = _computeTypeSettings.get(simName);
+		if ( computeType == null )
+		{
+			computeType = ComputeType.Standard;
+		}
+		return computeType;
+	}
+	/**
+	 * 
+	 * @param simName
+	 * @param ct
+	 */
+	public void setComputeType(String simName, ComputeType ct)
+	{
+		if ( simName != null && ct != null )
+		{
+			_computeTypeSettings.put(simName, ct);
+		}
+	}
+	/**
+	 * @param name
+	 * @param computeType
+	 * @return
+	 */
+	public BaseComputeSettings getComputeSettings(String simName,
+			ComputeType computeType)
+	{
+		switch ( computeType )
+		{
+			case Iterative:
+				return getIterationSettings(simName);
+			case PositionAnalysis:
+				return getPositionAnalysisSettings(simName);
+			default:
+				return null;
+		}
+	}
+	
 
 
 	

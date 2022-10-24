@@ -23,6 +23,7 @@ import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.editors.iterationCompute.UsgsComputeSelectorDialog;
 import usbr.wat.plugins.actionpanel.model.ActionComputable;
 import usbr.wat.plugins.actionpanel.model.IterationSettings;
+import usbr.wat.plugins.actionpanel.model.PositionAnalysisSettings;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -42,6 +43,8 @@ public class RunSimulationAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
+		boolean recomputeAll = (e.getModifiers() & ActionEvent.CTRL_MASK) != 0;
+		
 		SimulationGroup simGroup = _parent.getSimulationGroup();
 		if ( simGroup == null )
 		{
@@ -62,15 +65,18 @@ public class RunSimulationAction extends AbstractAction
 		ActionComputable computable;
 		WatSimulation sim ;
 		IterationSettings iterSettings;
+		PositionAnalysisSettings posAnalysisSettings;
 		UsgsComputeSelectorDialog computeDlg = new UsgsComputeSelectorDialog(Browser.getBrowserFrame(),WatSimulation.class);
 		while ( iter.hasNext())
 		{
 			sim = iter.next();
 			iterSettings = simGroup.getIterationSettings(sim.getName());
-			computable = new ActionComputable(sim, iterSettings);
+			posAnalysisSettings = simGroup.getPositionAnalysisSettings(sim.getName());
+			computable = new ActionComputable(sim, iterSettings, posAnalysisSettings, simGroup.getComputeType(sim.getName()));
 			computable.setProgressDialog(computeDlg);
 			computables.add(computable);
 		}
+		//computeDlg.setRecomputeAll(recomputeAll);
 		computeDlg.setSelectedComputables(computables);
 		computeDlg.setSelectOutOfDate(false);
 		computeDlg.setComputeOnOpen(true);

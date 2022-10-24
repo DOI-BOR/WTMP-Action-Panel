@@ -1,6 +1,7 @@
 
 package usbr.wat.plugins.actionpanel.editors;
 
+import java.awt.CardLayout;
 import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
@@ -8,7 +9,6 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JLabel;
@@ -27,21 +27,18 @@ import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
-import rma.swing.RmaJCheckBox;
 import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDescriptionField;
 import rma.swing.RmaJDialog;
-import rma.swing.RmaJIntegerField;
-import rma.swing.RmaJIntegerSetField;
 import rma.swing.RmaJTabbedPane;
 import rma.swing.RmaJTextField;
 import rma.swing.list.RmaListModel;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
-import usbr.wat.plugins.actionpanel.editors.iterationCompute.IterationBcPanel;
-import usbr.wat.plugins.actionpanel.editors.iterationCompute.SensitivityPanel;
+import usbr.wat.plugins.actionpanel.editors.iterationCompute.IterationPanel;
+import usbr.wat.plugins.actionpanel.editors.iterationCompute.PositionAnalysisPanel;
+import usbr.wat.plugins.actionpanel.model.ComputeType;
 import usbr.wat.plugins.actionpanel.model.IterationSettings;
-import usbr.wat.plugins.actionpanel.model.ModelAltIterationSettings;
-import usbr.wat.plugins.actionpanel.model.SensitivitySettings;
+import usbr.wat.plugins.actionpanel.model.PositionAnalysisSettings;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -55,19 +52,21 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	private RmaJTextField _simGroupFld;
 	private RmaJComboBox<WatSimulation> _simCombo;
 	private RmaJDescriptionField _simDescFld;
-	private RmaJCheckBox _useIterativeComputeCheck;
-	private RmaJIntegerSetField _groupMembersFld;
+	private RmaJComboBox<ComputeType> _computeTypeCombo;
+	
 	private RmaJComboBox<ModelAlternative> _modelAltCombo;
-	private SometimesTabbedPanel _panelForTabs;
+	private JTabbedPane _iterationPanelForTabs;
 	private ButtonCmdPanel _cmdPanel;
 	private SimulationGroup _simGroup;
 	private WatSimulation _selectedSim;
 	private EnabledJPanel _bottomPanel;
 	private ModelAlternative _selectedModelAlt;
-	private RmaJIntegerField _maxMembersFld;
+	
 
-	private IterationBcPanel _bcPanel;
-	private SensitivityPanel _sensitivityPanel;
+	private JPanel _cardPanel;
+	private IterationPanel _iterationPanel;
+	private PositionAnalysisPanel _posAnalysisPanel;
+	private boolean _fillSimInfo;
 	/**
 	 * @param parent
 	 */
@@ -87,7 +86,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	private void buildControls()
 	{
 		getContentPane().setLayout(new GridBagLayout());
-		setTitle("Edit Iteration Compute Settings");
+		setTitle("Edit Compute Settings");
 		
 		JPanel topPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -127,14 +126,8 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5555;
 		getContentPane().add(_cmdPanel, gbc);
 	
-		_bcPanel = new IterationBcPanel(this);
-		_sensitivityPanel = new SensitivityPanel(this);
 		
-		_panelForTabs.addPanel(_bcPanel);
-		_panelForTabs.addPanel(_sensitivityPanel);
-		
-		
-		iterativeComputeCheckChanged();
+		computeTypeChanged();
 	}
 
 	
@@ -182,6 +175,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		
 		_simCombo = new RmaJComboBox<>();
 		_simCombo.setEditable(false);
+		_simCombo.setModifiable(false);
 		label.setLabelFor(_simCombo);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -193,7 +187,20 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		panel.add(_simCombo, gbc);	
 		
-		_useIterativeComputeCheck= new RmaJCheckBox("Make Iterative Simulation");
+		label = new JLabel("Compute Type:");
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1; 
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.WEST;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5505;
+		panel.add(label, gbc);	
+		
+		_computeTypeCombo = new RmaJComboBox<>(ComputeType.values());
+		_computeTypeCombo.setEnabled(false);
+		label.setLabelFor(_computeTypeCombo);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -202,7 +209,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		gbc.anchor    = GridBagConstraints.WEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
-		panel.add(_useIterativeComputeCheck, gbc);	
+		panel.add(_computeTypeCombo, gbc);	
 		
 		label = new JLabel("Description:");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -244,54 +251,10 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	 */
 	private void buildBottomPanel(JPanel panel)
 	{
-		JLabel label = new JLabel("Compute Members:");
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1; 
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.NONE;
-		gbc.insets    = RmaInsets.INSETS5505;
-		panel.add(label, gbc);
 		
-		_groupMembersFld = new RmaJIntegerSetField();
-		label.setLabelFor(_groupMembersFld);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1;
-		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		panel.add(_groupMembersFld, gbc);
-		
-		label = new JLabel("Maximum:");
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1; 
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.NONE;
-		gbc.insets    = RmaInsets.INSETS5505;
-		panel.add(label, gbc);
-		
-		_maxMembersFld = new RmaJIntegerField();
-		label.setLabelFor(_maxMembersFld);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		panel.add(_maxMembersFld, gbc);
 			
-		label = new JLabel("Model Alternative:");
+		JLabel label = new JLabel("Model Alternative:");
+		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = 1; 
@@ -315,7 +278,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		panel.add(_modelAltCombo, gbc);	
 		
-		_panelForTabs = new SometimesTabbedPanel();
+		_cardPanel = new JPanel(new CardLayout());
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -324,7 +287,19 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
-		panel.add(_panelForTabs, gbc);
+		panel.add(_cardPanel, gbc);
+		
+		
+		_cardPanel.add(new JPanel(), ComputeType.Standard.getName());
+		
+		_iterationPanel = new IterationPanel(this);
+		_cardPanel.add(_iterationPanel, ComputeType.Iterative.getName());
+		
+		_posAnalysisPanel = new PositionAnalysisPanel(this);
+		_cardPanel.add(_posAnalysisPanel, ComputeType.PositionAnalysis.getName());
+		
+		((CardLayout)_cardPanel.getLayout()).show(_cardPanel, ComputeType.Standard.getName());
+		
 	}
 	/**
 	 * 
@@ -333,7 +308,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	{
 		_simCombo.addItemListener(e->simComboChange(e));
 		_modelAltCombo.addItemListener(e->modelAltComboChanged(e));
-		_useIterativeComputeCheck.addActionListener(e->iterativeComputeCheckChanged());
+		_computeTypeCombo.addActionListener(e->computeTypeChanged());
 		_cmdPanel.addCmdPanelListener(new ButtonCmdPanelListener()
 		{
 			public void buttonCmdActionPerformed(ActionEvent e)
@@ -361,10 +336,25 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	/**
 	 * @return
 	 */
-	private void iterativeComputeCheckChanged()
+	private void computeTypeChanged()
 	{
-		boolean selected = _useIterativeComputeCheck.isSelected();
-		_bottomPanel.setEnabled(selected);
+		double numYears = 0.;
+		if ( _selectedSim != null )
+		{	
+			numYears = _selectedSim.getRunTimeWindow().getNumberOfYears();
+		}
+		ComputeType type = (ComputeType) _computeTypeCombo.getSelectedItem();
+		if ( numYears > 1.0 && type == ComputeType.PositionAnalysis )
+		{
+			JOptionPane.showMessageDialog(this, "Position Analysis Computes can only be performed on Simulations with a time window of 1 year or less.","Time Window too long", JOptionPane.INFORMATION_MESSAGE );
+			EventQueue.invokeLater(()->_computeTypeCombo.setSelectedItem(ComputeType.Standard));
+			return;
+		}
+		boolean enabled = type != ComputeType.Standard;
+		
+		_bottomPanel.setEnabled(enabled);
+		
+		((CardLayout)_cardPanel.getLayout()).show(_cardPanel, type.getName());
 	}
 
 	/**
@@ -377,9 +367,9 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		{
 			return;
 		}
-		if ( isModified())
+		if ( isModified() && _selectedModelAlt != null )
 		{
-			if (_selectedModelAlt != null && shouldSaveChanges())
+			if (_selectedModelAlt != null && shouldSaveChanges(_selectedModelAlt.getName()))
 			{
 				saveSimInfo();
 			}
@@ -401,32 +391,21 @@ public class EditIterationSettingsDialog extends RmaJDialog
 			return;
 		}
 		IterationSettings iterationSettings = _simGroup.getIterationSettings(_selectedSim.getName());
-		String variantName = _selectedSim.getVariantName();
-		modelAlt.setVariantName(variantName);
-		ModelAltIterationSettings modelAltSettings = iterationSettings.getModelAltSettings(modelAlt);
-		SensitivitySettings sSettings = iterationSettings.getSensitivitySettings();
-		if ( modelAltSettings != null )
-		{
-			fillPanels(modelAltSettings);
-		}
-	}
-
-	/**
-	 * @param modelAltSettings
-	 */
-	private void fillPanels(ModelAltIterationSettings modelAltSettings)
-	{
-		_bcPanel.fillPanel(modelAltSettings);
+		_iterationPanel.fillPanel(modelAlt, iterationSettings);
+		
+		
+		PositionAnalysisSettings posAnalysisSettings = _simGroup.getPositionAnalysisSettings(_selectedSim.getName());
+		_posAnalysisPanel.fillPanel(modelAlt, posAnalysisSettings);
+		EventQueue.invokeLater(()->setModified(false));
 		
 	}
 
+	
 	/**
 	 * 
 	 */
 	private void clearTabPanels()
 	{
-		// TODO Auto-generated method stub
-		System.out.println("clearTabPanels TODO implement me");
 		
 	}
 
@@ -440,9 +419,13 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		{
 			return;
 		}
-		if ( isModified())
+		EventQueue.invokeLater(()->simComboChanged());
+	}
+	private void simComboChanged ()
+	{
+		if ( isModified()&& _selectedSim != null )
 		{
-			if (shouldSaveChanges())
+			if (shouldSaveChanges(_selectedSim.getName()))
 			{
 				saveSimInfo();
 			}
@@ -459,8 +442,9 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		try
 		{
+			_fillSimInfo = true;
 			_selectedSim = selectedSim;
-			_sensitivityPanel.setSimulation(_selectedSim);
+			_iterationPanel.setSimulation(_selectedSim);
 			if ( selectedSim != null )
 			{
 				_simDescFld.setText(selectedSim.getDescription());
@@ -472,30 +456,19 @@ public class EditIterationSettingsDialog extends RmaJDialog
 				{
 					EventQueue.invokeLater(()->_modelAltCombo.setSelectedIndex(0));
 				}
-
-
-				IterationSettings iterationSettings = _simGroup.getIterationSettings(_selectedSim.getName());
-
-				boolean isIterative = iterationSettings.isIterative();
-				_useIterativeComputeCheck.setSelected(isIterative);
-
-				List<Integer>iterationMembersList = new ArrayList<>();
-				int[] members = iterationSettings.getMembersToCompute();
-				if ( members != null )
-				{
-					for (int i= 0; i < members.length;i++ )
-					{
-						iterationMembersList.add(members[i]);
-					}
-				}
-				_groupMembersFld.setIntegerSet(iterationMembersList);
-				_maxMembersFld.setValue(iterationSettings.getMaximumMember());
-				iterativeComputeCheckChanged();
-				_sensitivityPanel.fillPanel(iterationSettings.getSensitivitySettings());
+				
+				ComputeType computeType = _simGroup.getComputeType(_selectedSim.getName());
+				_computeTypeCombo.setSelectedItem(computeType);
+				_computeTypeCombo.setEnabled(true);
+				computeTypeChanged();
+				 
+				_selectedModelAlt = null;
+				EventQueue.invokeLater(()->setModified(false));
 			}
 		}
 		finally
 		{
+			_fillSimInfo = false;
 			setCursor(Cursor.getDefaultCursor());
 		}
 	}
@@ -507,27 +480,15 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	{
 		if ( isValidForm())
 		{
-			IterationSettings iterationSettings = _simGroup.getIterationSettings(_selectedSim.getName());
-			boolean enabled = _useIterativeComputeCheck.isSelected();
-			iterationSettings.setIterative(enabled);
-			String txt = _groupMembersFld.getText();
-			if ( "*".equals(txt))
-			{
-				
-			}
-			else
-			{
-				int[] computeMembers = _groupMembersFld.getIntegerSet();
-				iterationSettings.setMembersToCompute(computeMembers);
-			}
-			iterationSettings.setMaximumMember(_maxMembersFld.getValue());
-			if ( _selectedModelAlt != null )
-			{
-				ModelAltIterationSettings modelAltSettings = iterationSettings.getModelAltSettings(_selectedModelAlt);
-				_bcPanel.savePanel(modelAltSettings);
-			}
+			ComputeType computeType = (ComputeType) _computeTypeCombo.getSelectedItem();
+			_simGroup.setComputeType(_selectedSim.getName(), computeType);
 			
-			_sensitivityPanel.savePanel(iterationSettings.getSensitivitySettings());
+			IterationSettings iterationSettings = _simGroup.getIterationSettings(_selectedSim.getName());
+			_iterationPanel.savePanel(iterationSettings);
+			
+			
+			PositionAnalysisSettings posAnalysisSettings = _simGroup.getPositionAnalysisSettings(_selectedSim.getName());
+			_posAnalysisPanel.savePanel(posAnalysisSettings);
 			
 			_simGroup.setModified(true);
 			setModified(false);
@@ -544,33 +505,21 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	{
 		if ( _selectedSim != null )
 		{
-			if ( !_useIterativeComputeCheck.isSelected())
+			if ( _computeTypeCombo.getSelectedIndex() < 0 )
 			{
 				return true;
 			}
-			int max = _maxMembersFld.getValueUndefined(-1);
-			if ( max == -1 )
+			ComputeType computeType = (ComputeType) _computeTypeCombo.getSelectedItem();
+			
+			if ( computeType == ComputeType.Iterative && !_iterationPanel.isValidForm())
 			{
-				JOptionPane.showMessageDialog(this, "Please enter a Maximum Compute member value", "Missing Value", JOptionPane.INFORMATION_MESSAGE);
-				_maxMembersFld.requestFocus();
 				return false;
 			}
-			int[] computeMembers = _groupMembersFld.getIntegerSet();
-			if ( computeMembers == null || computeMembers.length == 0) 
+			else if ( computeType == ComputeType.PositionAnalysis )
 			{
-				JOptionPane.showMessageDialog(this, "Please enter the Compute Members to compute", "Missing Value", JOptionPane.INFORMATION_MESSAGE);
-				_groupMembersFld.requestFocus();
-				return false;
 				
 			}
-			Arrays.sort(computeMembers);
-			if ( max < computeMembers[computeMembers.length-1])
-			{
-				JOptionPane.showMessageDialog(this, "The Maximum Iteration Member must be greater than or equal to the largest Compute Member", "Invalid Value", JOptionPane.INFORMATION_MESSAGE);
-				_maxMembersFld.requestFocus();
-				return false;
-				
-			}
+			
 			return true;
 			
 		}
@@ -580,15 +529,15 @@ public class EditIterationSettingsDialog extends RmaJDialog
 	/**
 	 * @return
 	 */
-	private boolean shouldSaveChanges()
+	private boolean shouldSaveChanges(String name)
 	{
-		if ( _selectedSim == null )
+		if ( _fillSimInfo )
 		{
 			return false;
 		}
 		if ( isModified() )
 		{
-			int opt = JOptionPane.showConfirmDialog(this, "There are changes for "+_selectedSim+". Save Changes?", "Confirm Changes", JOptionPane.YES_NO_OPTION);
+			int opt = JOptionPane.showConfirmDialog(this, "There are changes for "+name+". Save Changes?", "Confirm Changes", JOptionPane.YES_NO_OPTION);
 			return opt == JOptionPane.YES_OPTION;
 		}
 		return false;
@@ -676,6 +625,12 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		}
 		EventQueue.invokeLater(()->setModified(false));
 	}
+	
+	@Override
+	public void setModified(boolean modified)
+	{
+		super.setModified(modified);
+	}
 
 	/**
 	 * @param watSimulation
@@ -690,5 +645,23 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		{
 			_simCombo.setSelectedIndex(-1);
 		}
+	}
+
+	
+
+	/**
+	 * @return
+	 */
+	public WatSimulation getSelectedSimulation()
+	{
+		return _selectedSim;
+	}
+
+	/**
+	 * @return
+	 */
+	public ModelAlternative getSelectedModelAlternative()
+	{
+		return _selectedModelAlt;
 	}
 }

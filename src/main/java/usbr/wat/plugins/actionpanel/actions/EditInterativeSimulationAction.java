@@ -34,7 +34,7 @@ public class EditInterativeSimulationAction extends AbstractAction
 	 */
 	public EditInterativeSimulationAction(ActionsWindow parent)
 	{
-		super("Edit Iteration Settings...");
+		super("Edit Compute Settings...");
 		setEnabled(false);
 		_parent = parent;
 	}

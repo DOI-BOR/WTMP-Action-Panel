@@ -27,8 +27,12 @@ import hec2.plugin.model.ModelAlternative;
 import hec2.wat.model.WatSimulation;
 
 import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationResultsAction;
+import usbr.wat.plugins.actionpanel.model.BaseComputeSettings;
+import usbr.wat.plugins.actionpanel.model.ComputeType;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
+import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
  * @author mark
@@ -212,10 +216,15 @@ public class SimulationTreeTableNode extends AbstractMutableTreeTableNode
 	{
 		return _sim;
 	}
+	public String getToolTipText()
+	{
+		return getToolTipText(ActionPanelPlugin.getInstance().getActionsWindow().getSimulationGroup());
+	}
 	/**
+	 * @param simulationGroup 
 	 * @return
 	 */
-	public String getToolTipText()
+	public String getToolTipText(SimulationGroup simGroup)
 	{
 		if ( _sim != null )
 		{
@@ -241,6 +250,19 @@ public class SimulationTreeTableNode extends AbstractMutableTreeTableNode
 					tip.append(" : ");
 					tip.append(modelAlt.getName());
 					tip.append("<br>");
+				}
+			}
+			if ( simGroup != null ) 
+			{
+				ComputeType computeType = simGroup.getComputeType(_sim.getName());
+				tip.append("<b>Compute Type: </b>");
+				tip.append(computeType.toString());
+				if ( computeType != ComputeType.Standard )
+				{
+					BaseComputeSettings computeSettings = simGroup.getComputeSettings(_sim.getName(), computeType);
+					
+					tip.append("<br><b>Members to Compute: </b>");
+					tip.append(Arrays.toString(computeSettings.getMembersToCompute()));
 				}
 			}
 			tip.append("</html>");

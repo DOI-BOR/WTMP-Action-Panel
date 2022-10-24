@@ -21,7 +21,8 @@ import hec2.wat.model.WatSimulation;
 
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
-import usbr.wat.plugins.actionpanel.model.ActionComputable;
+import usbr.wat.plugins.actionpanel.model.BaseComputeSettings;
+import usbr.wat.plugins.actionpanel.model.ComputeType;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -39,7 +40,7 @@ public class ViewIterationResultsAction extends AbstractAction
 	 */
 	public ViewIterationResultsAction(ActionsWindow parent)
 	{
-		super("View Results...");
+		super("View DSS Results...");
 		_parent = parent;
 	}
 
@@ -55,22 +56,35 @@ public class ViewIterationResultsAction extends AbstractAction
 			
 		}
 		List<WatSimulation>sims = _parent.getSelectedSimulations();
-		ListSelection dssVue = new ListSelection("Iteration Results",
+		
+		ListSelection dssVue = new ListSelection("Compute Results",
                 ListSelection.FULL_FUNCTION, false, false);
 		WatSimulation sim;
-		String simDssFile, iterDssFile;
+		String simDssFile, computeDssFile;
 		
 		boolean openedFile = false;
+		ComputeType computeType;
+		BaseComputeSettings computeSettings;
 		for (int i = 0;i < sims.size(); i++ )
 		{
 			sim = sims.get(i);
+			computeType = simGroup.getComputeType(sim.getName());
+			
 			simDssFile = sim.getSimulationDssFile();
-			simDssFile = RMAIO.getDirectoryFromPath(simDssFile);
-			iterDssFile = RMAIO.concatPath(simDssFile, ActionComputable.ITERATION_DSS_FILE);
-	System.out.println("actionPerformed:Sim iter dss file: "+iterDssFile);
-			if ( FileManagerImpl.getFileManager().fileExists(iterDssFile))
+			if( computeType != ComputeType.Standard )
 			{
-				dssVue.openDSSFile(iterDssFile);
+				simDssFile = RMAIO.getDirectoryFromPath(simDssFile);
+				computeSettings = simGroup.getComputeSettings(sim.getName(), computeType);
+				computeDssFile = RMAIO.concatPath(simDssFile, computeSettings.getCollectionDssFilename());
+			}
+			else
+			{
+				computeDssFile = simDssFile;
+			}
+	System.out.println("actionPerformed:Sim compute dss file: "+computeDssFile);
+			if ( FileManagerImpl.getFileManager().fileExists(computeDssFile))
+			{
+				dssVue.openDSSFile(computeDssFile);
 				openedFile = true;
 			}
 		}
