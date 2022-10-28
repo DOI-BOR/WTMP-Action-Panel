@@ -76,7 +76,7 @@ public class RunSimulationAction extends AbstractAction
 			computable.setProgressDialog(computeDlg);
 			computables.add(computable);
 		}
-		//computeDlg.setRecomputeAll(recomputeAll);
+		computeDlg.setRecomputeAll(recomputeAll);
 		computeDlg.setSelectedComputables(computables);
 		computeDlg.setSelectOutOfDate(false);
 		computeDlg.setComputeOnOpen(true);
