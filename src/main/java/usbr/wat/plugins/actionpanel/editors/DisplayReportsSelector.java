@@ -401,12 +401,13 @@ public class DisplayReportsSelector extends RmaJDialog
 			SwingWorker<Void, ReportCreator> worker = new SwingWorker<Void, ReportCreator>()
 			{
 				private boolean _successful = true;
+				private ReportCreator _failedReport;
 				@Override
 				public Void doInBackground()
 				{
 					Set<Entry<ReportPlugin, List<SimulationReportInfo>>> info = pluginReports.entrySet();
 					Iterator<Entry<ReportPlugin, List<SimulationReportInfo>>> iter = info.iterator();
-					List<Future<ReportCreator>>futures = new ArrayList();
+					List<Future<ReportCreator>>futures = new ArrayList<>();
 					while (iter.hasNext())
 					{
 						Entry<ReportPlugin, List<SimulationReportInfo>> next = iter.next();
@@ -457,12 +458,14 @@ public class DisplayReportsSelector extends RmaJDialog
 							{
 								_agp.setMessage("Failed to create report "+rv.getReportPlugin().getName());
 								_successful = false;
+								_failedReport = rv;
 							}
 						}
 						else
 						{
 							_agp.setMessage("Failed to create report ");
 							_successful = false;
+							_failedReport = rv;
 						}
 					}
 				}
@@ -472,11 +475,10 @@ public class DisplayReportsSelector extends RmaJDialog
 					_agp.setMessage("Reports Complete");
 					try
 					{
-						threadPool.awaitTermination(10, TimeUnit.SECONDS);
+						threadPool.awaitTermination(5, TimeUnit.SECONDS);
 					}
 					catch (InterruptedException e)
 					{
-						// TODO Auto-generated catch block
 					}
 					try
 					{
@@ -489,12 +491,19 @@ public class DisplayReportsSelector extends RmaJDialog
 					if ( _successful )
 					{
 						int opt = JOptionPane.showOptionDialog(DisplayReportsSelector.this, "Reports Created Successfully",
-								"Complete",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE,null, new Object[] {"Close", "Display Reports"}, "Close");
+								"Complete",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE,
+								null, new Object[] {"Close", "Display Reports"}, "Close");
 						if ( opt == 1 )
 						{
 							DisplayReportAction action = new DisplayReportAction(_parent);
 							action.displayReportAction();
 						}
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(DisplayReportsSelector.this, 
+						"Failed to create report for "+_failedReport._reportPlugin.getName(),
+						"Report Failed", JOptionPane.INFORMATION_MESSAGE);
 					}
 				}
 			};
