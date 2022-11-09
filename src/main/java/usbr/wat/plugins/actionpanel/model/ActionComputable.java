@@ -935,7 +935,8 @@ public class ActionComputable
 		HecTime startTime = (HecTime) rtw.getStartTime().clone();
 		int year = startingYear;
 		year+=member;
-		startTime.setYearMonthDay(year, startTime.month(), startTime.day());
+		// setYearMonthDay() day is 0 based, day() is 1 based so we have to subtract one to get the correct day
+		startTime.setYearMonthDay(year, startTime.month(), startTime.day()-1);
 		int startDaysToSubtract = -Integer.getInteger("PAC.StartDaysToSubtract", 0);
 		startTime.addDays(startDaysToSubtract);
 		
@@ -987,7 +988,9 @@ public class ActionComputable
 					TimeSeriesContainer srcTsc = DssFileManagerImpl.getDssFileManager().readTS(srcDssId, true);
 					if ( srcTsc != null && srcTsc.numberValues > 0 )
 					{
-						_sim.addComputeMessage("Read data for " + srcDssId+" start="+srcTsc.getStartTime()+" end="+srcTsc.getEndTime()+" num values="+srcTsc.numberValues);
+						HecTime srcStart = srcTsc.getStartTime();
+						srcStart.showTimeAsBeginningOfDay(true);
+						_sim.addComputeMessage("Read data for " + srcDssId+" start="+srcStart+" end="+srcTsc.getEndTime()+" num values="+srcTsc.numberValues);
 						srcTsc.fileName = dssDl.get_dssFile();
 						srcTsc.fullName = dssDl.getDssPath();
 						//no time shift the data back to the original time window

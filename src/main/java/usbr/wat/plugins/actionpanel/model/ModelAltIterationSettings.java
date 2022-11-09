@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.jdom.Element;
 
@@ -187,6 +188,7 @@ public class ModelAltIterationSettings extends NamedType
 			dssId = currentSettings.get(dl);
 			if (dssId == null )
 			{
+				Logger.getLogger(getClass().getName()).fine("No DSS File/Info found for "+dl);
 				dssId = new DSSIdentifier("","");
 			}
 			_dataLocationSettings.put(dl, dssId);
