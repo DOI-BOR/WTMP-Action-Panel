@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 
 import org.jdom.Document;
 import org.jdom.Element;
@@ -82,6 +83,7 @@ public class AboutDialog extends RmaJDialog
 		fillPluginTable();
 		fillExeTable();
 		pack();
+		setMinimumSize(getSize());
 		setLocationRelativeTo(getParent());
 	}
 
@@ -266,17 +268,49 @@ public class AboutDialog extends RmaJDialog
 	 */
 	private void fillExeTable()
 	{
-		VersionAction action = new VersionAction();
-		String version = action.versionAction();
-		addToTable(VersionAction.GIT_PYTHON_EXE, version);
-		
-		String dir = AbstractReportAction.getDirectoryToUse();
-		String reportExe = RMAIO.concatPath(dir, AbstractReportAction.PYTHON_REPORT_BAT);
-		List<String>cmd = new ArrayList<>(2);
-		cmd.add(reportExe);
-		cmd.add("--version");
-		version = runExe(cmd);
-		addToTable(AbstractReportAction.PYTHON_REPORT_BAT, version);
+		SwingWorker<Void, List<String>> worker = new SwingWorker<Void, List<String>>()
+		{
+			@Override
+			public Void doInBackground()
+			{
+				VersionAction action = new VersionAction();
+				String version = action.versionAction();
+				List<String>rowData = new ArrayList<>();
+				rowData.add(VersionAction.GIT_PYTHON_EXE);
+				rowData.add(version);
+				publish(rowData);
+
+				String dir = AbstractReportAction.getDirectoryToUse();
+				String reportExe = RMAIO.concatPath(dir, AbstractReportAction.PYTHON_REPORT_BAT);
+				List<String>cmd = new ArrayList<>(2);
+				cmd.add(reportExe);
+				cmd.add("--version");
+				version = runExe(cmd);
+				rowData = new ArrayList<>();
+				rowData.add(AbstractReportAction.PYTHON_REPORT_BAT);
+				rowData.add(version);
+				publish(rowData);
+				
+				return null;
+			}
+			@Override
+			public void process(List<List<String>> chunks)
+			{
+				for (int i = 0;i < chunks.size(); i++ )
+				{
+					Object chunk = chunks.get(i);
+					if ( chunk instanceof List )
+					{
+						List versionInfo = (List) chunk;
+						if ( versionInfo.size() == 2 )
+						{
+							addToTable((String)versionInfo.get(0), (String)versionInfo.get(1));
+						}
+					}
+				}
+			}
+		};
+		worker.execute();
 	}
 	/**
 	 * @param cmd
