@@ -62,6 +62,8 @@ import usbr.wat.plugins.actionpanel.model.ModelAltIterationSettings;
 public class IterationBcPanel extends AbstractEditorPanel
 {
 	public static final String TAB_NAME = "Boundary Conditions";
+	private static final String DEFAULT_BROWSER_TITLE = "Select DSS Pathname";
+	
 	public static final int INDEX_COL = 0;
 	public static final int DATALOCATION_COL = 1;
 	public static final int PARAMETER_COL = 2;
@@ -79,6 +81,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 	private JButton _clearDssBtn;
 	private JButton _plotBtn;
 	protected EditIterationSettingsDialog _parent;
+	private DSSBrowser _browser;
 	/**
 	 * @param editIterationSettingsDialog
 	 */
@@ -254,6 +257,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 						}
 					}
 				}
+				
 			}
 		
 			G2dDialog g2dDlg = new G2dDialog( null, dl.getName(), false, data);
@@ -332,6 +336,10 @@ public class IterationBcPanel extends AbstractEditorPanel
 		_selectDssBtn.setEnabled(enabled);
 		_clearDssBtn.setEnabled(enabled);
 		_plotBtn.setEnabled(enabled);
+		if ( enabled )
+		{
+			updateDssBrowserTitle();
+		}
 	}
 
 
@@ -341,13 +349,35 @@ public class IterationBcPanel extends AbstractEditorPanel
 	 */
 	void browseDSSAction(Window parent)
 	{
-		DSSBrowser browser = new DSSBrowser(parent);
-		browser.setTitle("Select DSS Pathname");
-		browser.setLocationRelativeTo(this);
-		browser.setVisible(true);
+		_browser = new DSSBrowser(parent);
+		updateDssBrowserTitle();
+		
+		_browser.setLocationRelativeTo(this);
+		_browser.setVisible(true);
 	}
 
 	
+	/**
+	 * 
+	 */
+	private void updateDssBrowserTitle()
+	{
+		if ( _browser == null )
+		{
+			return;
+		}
+		int row = _bcTable.getSelectedRow();
+		String title = DEFAULT_BROWSER_TITLE;
+		if ( row > -1 )
+		{
+			DSSIdentifier dssId = (DSSIdentifier) _bcTable.getValueAt(row, MODEL_DSS_COL);
+			title = title + " for "+dssId.getDSSPath();
+		}
+		_browser.setTitle(title);
+	}
+
+
+
 	@Override
 	public String getTabname()
 	{
@@ -586,6 +616,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 					{
 						DSSIdentifier dssId = new DSSIdentifier(dssFile, dssPathname.getPathname());
 						_bcTable.setValueAt(dssId, rows[i], DSSID_COL);
+						setModified(true);
 						if ( _bcEditor != null && _bcEditor.isVisible())
 						{
 							_bcEditor.setSelectedDssId(dssId);

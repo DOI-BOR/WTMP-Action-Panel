@@ -200,6 +200,7 @@ public class EditIterationSettingsDialog extends RmaJDialog
 		
 		_computeTypeCombo = new RmaJComboBox<>(ComputeType.values());
 		_computeTypeCombo.setEnabled(false);
+		_computeTypeCombo.setModifiable(true);
 		label.setLabelFor(_computeTypeCombo);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;

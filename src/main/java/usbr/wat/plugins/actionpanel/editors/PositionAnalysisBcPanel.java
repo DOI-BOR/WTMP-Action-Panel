@@ -7,6 +7,10 @@
  */
 package usbr.wat.plugins.actionpanel.editors;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JOptionPane;
 import javax.swing.event.TableModelEvent;
 
 import com.rma.io.DssFileManagerImpl;
@@ -14,6 +18,7 @@ import com.rma.model.Project;
 
 import hec.heclib.util.HecTime;
 import hec.io.DSSIdentifier;
+import hec.io.TimeSeriesContainer;
 import hec.lang.NamedType;
 import hec.model.RunTimeWindow;
 
@@ -73,6 +78,7 @@ public class PositionAnalysisBcPanel extends IterationBcPanel
 		
 		int maxElement = Integer.MAX_VALUE;
 		dssId2 = new DSSIdentifier();
+		List<DSSIdentifier>missingDataDssIds = new ArrayList<>();
 		for (int r = 0;r < numRows;r ++ )
 		{
 			cellObj = _bcTable.getValueAt(r, DSSID_COL);
@@ -95,10 +101,30 @@ public class PositionAnalysisBcPanel extends IterationBcPanel
 				years = rtw.getNumberOfYears();
 				maxElement = Math.min(maxElement, years);
 			}
+			else // no times....any data?
+			{
+				TimeSeriesContainer tsc = DssFileManagerImpl.getDssFileManager().readTS(dssId2, true);
+				if ( tsc == null || tsc.numberValues == 0 )
+				{
+					DSSIdentifier missingDssId = new DSSIdentifier(dssId2);
+					missingDataDssIds.add(missingDssId);
+				}
+			}
 		}
 		if ( maxElement < Integer.MAX_VALUE)
 		{
 			_parentPanel.setMaxElement(maxElement);
+		}
+		if ( missingDataDssIds.size() > 0 )
+		{
+			StringBuilder builder = new StringBuilder();
+			builder.append("No Data Found for \n:");
+			for (int i = 0;i < missingDataDssIds.size(); i++ )
+			{
+				builder.append(missingDataDssIds.get(i));
+				builder.append("\n");
+			}
+			JOptionPane.showMessageDialog(this, builder.toString(), "Missing Data", JOptionPane.INFORMATION_MESSAGE);
 		}
 		
 	}

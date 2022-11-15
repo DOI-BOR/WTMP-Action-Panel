@@ -929,6 +929,11 @@ public class ActionComputable
 		DssDataLocation dssDl;
 		boolean copySuccessful = true;
 		int startingYear = findStartingYear(computeSettings);
+		if ( startingYear < 0 )
+		{
+			_sim.addErrorMessage("Failed to find common starting year for override DSS data");
+			return false;
+		}
 		_sim.addComputeMessage("Common start year for modified BCs:" +startingYear);
 		
 		RunTimeWindow rtw = _sim.getRunTimeWindow();
@@ -1052,7 +1057,7 @@ public class ActionComputable
 		
 		String dssPath, fileName;
 		HecTime[] times;
-		int startYear = 0, year;
+		int startYear = -1, year;
 		for (int i = 0;i < modelAlts.size() && !_canceled;i ++ )
 		{
 			modelAlt = modelAlts.get(i);
@@ -1092,6 +1097,10 @@ public class ActionComputable
 					{
 						year = times[0].year();
 						startYear = Math.max(startYear, year);
+					}
+					else
+					{
+						_sim.addWarningMessage("Failed to find start time for TS Record " + srcDssId);
 					}
 				}
 			}
