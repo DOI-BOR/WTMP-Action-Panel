@@ -39,6 +39,8 @@ public class RepoButtonPanel extends JPanel
 	
 	private Window _parent;
 	private StudyStorageDialog _studyStorageDialog;
+	private SaveStudyAsAction _saveStudyAsAction;
+	private JButton _saveStudyAsButton;
 
 	public RepoButtonPanel(Window parent, StudyStorageDialog studyStorageDialog)
 	{
@@ -100,11 +102,23 @@ public class RepoButtonPanel extends JPanel
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
 		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.001;
+		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.insets(10,5,0,5);
 		add(_openStudyButton, gbc);
+		
+		_saveStudyAsAction = new SaveStudyAsAction(_studyStorageDialog);
+		_saveStudyAsButton = new JButton(_saveStudyAsAction);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.001;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.insets(10,5,0,5);
+		add(_saveStudyAsButton, gbc);
 		
 	}
 	
