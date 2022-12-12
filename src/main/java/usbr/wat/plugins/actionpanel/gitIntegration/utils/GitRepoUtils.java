@@ -7,13 +7,18 @@
  */
 package usbr.wat.plugins.actionpanel.gitIntegration.utils;
 
+import java.awt.Window;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -30,13 +35,18 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
+import com.google.common.flogger.FluentLogger;
 import com.rma.client.BrowserPreferences;
 import com.rma.io.FileManagerImpl;
+
+import hec.io.ProcessOutputLine;
+import hec.io.ProcessOutputReader;
 
 import hec2.wat.WAT;
 
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
+import usbr.wat.plugins.actionpanel.gitIntegration.actions.AbstractGitAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.DownloadStudyAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.ShowChangesActions;
 import usbr.wat.plugins.actionpanel.gitIntegration.model.RepoInfo;
@@ -447,6 +457,114 @@ public class GitRepoUtils
 			
 		};
 		worker.execute();
+	}
+
+	/**
+	 * @param dir
+	 * @return
+	 */
+	public static String getRepoUrl(Window parentForError, String dir)
+	{
+		boolean echoOutput = Boolean.getBoolean(AbstractGitAction.DEBUG_OUTPUT_PROP);
+		List<String>cmd = new ArrayList<>();
+		cmd.add(getGitCmd());
+		cmd.add("remote");
+		cmd.add("get-url");
+		cmd.add("origin");
+		ProcessBuilder builder = new ProcessBuilder(cmd);
+		builder.directory(new File(dir));
+		Process proc =null;
+		try
+		{
+			proc = builder.start();
+		}
+		catch(IOException ioe)
+		{
+			FluentLogger.forEnclosingClass().atWarning().log("Failed to launch %s, Error %s", cmd, ioe.getMessage());
+			return null;
+		}
+		InputStream iStream = proc.getInputStream();
+		InputStream eStream = proc.getErrorStream();
+		BufferedReader iReader = new BufferedReader(new InputStreamReader(iStream));
+		BufferedReader eReader = new BufferedReader(new InputStreamReader(iStream));
+		
+		Vector<ProcessOutputLine> output = new Vector<>();
+		ProcessOutputReader outputReader = new ProcessOutputReader(iReader, output,"git stdout", echoOutput, false);
+		ProcessOutputReader errorReader = new ProcessOutputReader(eReader, output,"git stderr", echoOutput, true);
+		try
+		{
+			int rv = proc.waitFor();
+			if ( echoOutput)
+			{
+				System.out.println(cmd.get(0)+" exit code="+rv);
+			}
+			if ( rv != 0 )
+			{
+				String msg = AbstractGitAction.getErrorMessage("Error finding git repo url",cmd, output);
+				AbstractGitAction.showErrorMsg(parentForError, cmd.toString(), msg);
+				
+				return null;
+			}
+		}
+		catch (InterruptedException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		finally
+		{
+			try
+			{
+				Thread.sleep(500);
+			}
+			catch (InterruptedException e)
+			{
+			}
+			if ( outputReader != null )
+			{
+				outputReader.close();
+			}
+			if ( errorReader != null )
+			{
+				errorReader.close();
+			}
+		}
+		return parseOutput(output);
+	}
+
+	/**
+	 * @param output
+	 * @return
+	 */
+	private static String parseOutput(Vector<ProcessOutputLine> output)
+	{
+		ProcessOutputLine line;
+		for (int i = 0; i< output.size(); i++ )
+		{
+			line = output.get(i);
+			if ( line.isStdout() )
+			{
+				if (line.getLine().startsWith("http:"))
+				{
+					return line.getLine();
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * @return
+	 */
+	private static String getGitCmd()
+	{
+		String gitProp = System.getProperty("Git.Cmd.Path");
+		if ( gitProp != null && !gitProp.isEmpty())
+		{
+			return gitProp;
+		}
+		return "git";
 	}
 }
 	

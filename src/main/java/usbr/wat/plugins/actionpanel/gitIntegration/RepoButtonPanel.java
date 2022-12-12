@@ -14,7 +14,14 @@ import java.awt.Window;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
+import com.rma.event.ProjectAdapter;
+import com.rma.event.ProjectEvent;
+import com.rma.model.Project;
+
+import hec.io.FileManagerImpl;
+
 import rma.swing.RmaInsets;
+import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.DownloadStudyAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.RestoreStudyAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.UploadStudyAction;
@@ -41,6 +48,7 @@ public class RepoButtonPanel extends JPanel
 	private StudyStorageDialog _studyStorageDialog;
 	private SaveStudyAsAction _saveStudyAsAction;
 	private JButton _saveStudyAsButton;
+	private ProjectAdapter _projectListener;
 
 	public RepoButtonPanel(Window parent, StudyStorageDialog studyStorageDialog)
 	{
@@ -48,10 +56,9 @@ public class RepoButtonPanel extends JPanel
 		_parent = parent;
 		_studyStorageDialog = studyStorageDialog;
 		buildControls();
+		addListeners();
 		setButtonsEnabled(false);
 	}
-
-	
 
 	/**
 	 * 
@@ -110,6 +117,7 @@ public class RepoButtonPanel extends JPanel
 		
 		_saveStudyAsAction = new SaveStudyAsAction(_studyStorageDialog);
 		_saveStudyAsButton = new JButton(_saveStudyAsAction);
+		_saveStudyAsButton.setEnabled(!Project.getCurrentProject().isNoProject());
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -121,17 +129,52 @@ public class RepoButtonPanel extends JPanel
 		add(_saveStudyAsButton, gbc);
 		
 	}
-	
+	/**
+	 * 
+	 */
+	private void addListeners()
+	{
+		_projectListener = new ProjectAdapter()
+		{
+			@Override
+			public void projectOpened(ProjectEvent e)
+			{
+				Project prj = e.getProject();
+				boolean enabled = prj.isNoProject();
+				_saveStudyAsButton.setEnabled(enabled);
+			}
+		};
+		Project.addStaticProjectListener(_projectListener);
+	}	
 	/**
 	 * @param b
 	 */
 	private void setButtonsEnabled(boolean enabled)
 	{
-		_uploadStudyAction.setEnabled(enabled);
+		_uploadStudyAction.setEnabled(shouldEnableUploadButton(enabled));
 		_downloadStudyButton.setEnabled(enabled);
 		_restoreStudyButton.setEnabled(enabled);
 		_openStudyAction.setEnabled(enabled);
 	}
+	/**
+	 * @param enabled
+	 * @return
+	 */
+	private boolean shouldEnableUploadButton(boolean enabled)
+	{
+		if ( _studyStorageDialog.getSelectedRepo() == null && !Project.getCurrentProject().isNoProject())
+		{  // project opened, no selected repo, is there a saved study as file?
+			String dir = Project.getCurrentProject().getProjectDirectory();
+			String checkFile = RMAIO.concatPath(dir, SaveStudyAsAction.SAVED_STUDY_AS_FILE);
+			if ( FileManagerImpl.getFileManager().fileExists(checkFile))
+			{
+				return true;
+			}
+			
+		}
+		return enabled;
+	}
+
 	public void setRepoInfo(RepoInfo repo)
 	{
 		_downloadStudyAction.setRepoInfo(repo);
@@ -147,5 +190,13 @@ public class RepoButtonPanel extends JPanel
 	public void setSoftOverwriteOnDownload(boolean softoverwrite)
 	{
 		_downloadStudyAction.setSoftOverwriteOnDownLoad(softoverwrite);
+	}
+
+	/**
+	 * 
+	 */
+	public void closing()
+	{
+		Project.removeStaticProjectListener(_projectListener);
 	}
 }

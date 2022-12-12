@@ -66,7 +66,7 @@ public class OkToPushAction extends AbstractGitAction
 			String msg = getErrorMessage(null, lines);
 			String title ="Can't Upload to Server";
 			
-			showErrorMsg(title, msg);
+			showErrorMsg(getParent(), title, msg);
 			return false;
 		}
 		return true;

@@ -48,11 +48,17 @@ public class ActionPanelPlugin
 	
 	public void displayActionsWindow()
 	{
+		if ( Browser.getBrowserFrame()==null || !Browser.getBrowserFrame().isVisible())
+		{
+			EventQueue.invokeLater(()->displayActionsWindow());
+			return;
+		}
 		if ( _actionsWindow == null )
 		{
 			_actionsWindow = new ActionsWindow(Browser.getBrowserFrame());
 			_actionsWindow.setLocationRelativeTo(Browser.getBrowserFrame());
 		}
+		
 		_actionsWindow.setVisible(true);
 	}
 	/**

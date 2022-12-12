@@ -10,17 +10,12 @@ package usbr.wat.plugins.actionpanel.commands;
 import java.util.List;
 
 import com.rma.commands.AbstractNewManagerCommand;
-import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
 import hec2.wat.model.WatAnalysisPeriod;
 import hec2.wat.model.WatSimulation;
-import hec2.wat.model.WatSimulationContainer;
 
-import rma.util.RMAIO;
-import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
-import usbr.wat.plugins.actionpanel.actions.UpdateDataAction;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -103,6 +98,11 @@ public class NewSimulationGroupCmd extends AbstractNewManagerCommand
 	 */
 	public static WatSimulation createSimulation(WatSimulation sim, SimulationGroup simgroup, Project project, WatAnalysisPeriod ap)
 	{
+		SaveSimulationToGroupCmd cmd = new SaveSimulationToGroupCmd(sim, null,null, simgroup, project, ap);
+		cmd.doCommand();
+		WatSimulation newSim = cmd.getSimulation();
+		return newSim;
+		/*
 		WatSimulationContainer container ;
 		String newSimName = getGroupSimName(sim.getName(), simgroup.getName());
 		container = new WatSimulationContainer();
@@ -138,6 +138,7 @@ public class NewSimulationGroupCmd extends AbstractNewManagerCommand
 		new UpdateDataAction(ActionPanelPlugin.getInstance().getActionsWindow()).updateData(simgroup);
 		
 		return newSim;
+		*/
 	}
 
 	/**

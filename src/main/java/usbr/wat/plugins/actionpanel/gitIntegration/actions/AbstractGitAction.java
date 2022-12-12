@@ -12,9 +12,11 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Window;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -91,11 +93,15 @@ public abstract class AbstractGitAction extends AbstractAction
 	{
 		return _parent;
 	}
+	protected boolean callGit(List<String> cmd)
+	{
+		return callGit(cmd, null,null);
+	}
 	/**
 	 * @param cmd
 	 * @return
 	 */
-	protected boolean callGit(List<String> cmd)
+	protected boolean callGit(List<String> cmd, String lookForText, String replyText)
 	{
 		if ( _parent != null )
 		{
@@ -134,6 +140,7 @@ public abstract class AbstractGitAction extends AbstractAction
 			JOptionPane.showMessageDialog(_parent, "Failed to launch Git command " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
+		BufferedWriter inputWriter  = null;
 		
 		InputStream iStream = proc.getInputStream();
 		InputStream eStream = proc.getErrorStream();
@@ -144,6 +151,22 @@ public abstract class AbstractGitAction extends AbstractAction
 		ProcessOutputReader outputReader = new ProcessOutputReader(iReader, _output,"git stdout", echoOutput,false);
 		ProcessOutputReader errorReader = new ProcessOutputReader(eReader, _output,"git stderr", echoOutput,true);
 		
+		if ( replyText != null )
+		{
+			lookFor(lookForText, _output);
+			inputWriter = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
+			try
+			{
+				_logger.fine("Sending reply text: "+replyText.substring(0,2)+"....");
+				inputWriter.write(replyText);
+				inputWriter.newLine();
+				inputWriter.flush();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+		}	
 	
 		try
 		{
@@ -185,6 +208,15 @@ public abstract class AbstractGitAction extends AbstractAction
 			{
 				errorReader.close();
 			}
+			if ( inputWriter != null )
+			{
+				try
+				{
+					inputWriter.close();
+				}
+				catch (IOException e)
+				{ }
+			}
 		}
 		}
 		finally
@@ -200,6 +232,39 @@ public abstract class AbstractGitAction extends AbstractAction
 		return false;
 	}
 	/**
+	 * @param lookForText
+	 * @param output
+	 */
+	protected boolean lookFor(String lookForText, List<ProcessOutputLine> output)
+	{
+		ProcessOutputLine line;
+		int cnt = 0;
+		do
+		{
+			for( int i = 0;i < output.size(); i++ )
+			{
+				line = output.get(i);
+				if (line.getLine().contains(lookForText))
+				{
+					_logger.fine("Found "+lookForText);
+					return true;
+				}
+			}
+			try
+			{
+				Thread.sleep(300);
+			}
+			catch (InterruptedException e)
+			{
+			}
+			cnt++;
+		}
+		while ( cnt < 5);
+		_logger.info("Failed to find: "+lookForText);
+		return false;
+	}
+
+	/**
 	 * @param cmd
 	 * @param output
 	 */
@@ -214,21 +279,21 @@ public abstract class AbstractGitAction extends AbstractAction
 		// this might make too big a message and needs put in a panel with a text area
 		if ( _parent != null )
 		{
-			showErrorMsg("Error", msg);
+			showErrorMsg(_parent,"Error", msg);
 			
 		}
 	}
 	/**
 	 * @param msg
 	 */
-	protected void showErrorMsg(String title, String msg)
+	public static void showErrorMsg(Window parent, String title, String msg)
 	{
 		RmaJTextArea textArea = new RmaJTextArea(5, 80);
 		textArea.setEditable(false);
 		JScrollPane sp = new JScrollPane(textArea);
 		textArea.setText(msg);
 	
-		RmaJDialog dlg = new RmaJDialog(_parent, title, true);
+		RmaJDialog dlg = new RmaJDialog(parent, title, true);
 		dlg.getContentPane().setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -255,9 +320,8 @@ public abstract class AbstractGitAction extends AbstractAction
 		cmdPanel.addCmdPanelListener(e->dlg.setVisible(false));
 		
 		dlg.pack();
-		dlg.setLocationRelativeTo(_parent);
+		dlg.setLocationRelativeTo(parent);
 		dlg.setVisible(true);
-		//JOptionPane.showMessageDialog(_parent, sp, title, JOptionPane.ERROR_MESSAGE);
 	}
 
 	public void setShowFailedCallMessage(boolean showMsg)
@@ -272,7 +336,7 @@ public abstract class AbstractGitAction extends AbstractAction
 	 * @param errorReader
 	 * @return
 	 */
-	protected static String getErrorMessage(String header, List<String>cmd, List<ProcessOutputLine> output)
+	public static String getErrorMessage(String header, List<String>cmd, List<ProcessOutputLine> output)
 	{
 		StringBuilder builder = new StringBuilder();
 		if ( header != null )

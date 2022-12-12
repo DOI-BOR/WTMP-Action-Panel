@@ -7,6 +7,7 @@
  */
 package usbr.wat.plugins.actionpanel.gitIntegration;
 
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Window;
@@ -14,6 +15,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -36,6 +40,7 @@ import rma.swing.RmaJTextField;
 import rma.swing.list.RmaListModel;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.DownloadStudyAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.model.RepoInfo;
+import usbr.wat.plugins.actionpanel.gitIntegration.ui.RepoJTree;
 import usbr.wat.plugins.actionpanel.gitIntegration.utils.GitRepoUtils;
 
 /**
@@ -50,13 +55,13 @@ public class ReposEditor extends RmaJDialog
 	private RmaJComboBox<RepoInfo> _reposCombo;
 	private JButton _addRepoButton;
 	private RmaJTextField _repoNameFld;
-	private RmaJTextField _srcUrlFld;
 	private RmaFileChooserField _destFolderFld;
 	private ButtonCmdPanel _cmdPanel;
 	private JButton _deleteRepoButton;
 	private JPanel _infoPanel;
 	private RepoInfo _currentRepo;
 	private AbstractAction _defaultAction;
+	private RepoJTree _repoTree;
 
 	/**
 	 * @param parent
@@ -68,7 +73,7 @@ public class ReposEditor extends RmaJDialog
 		addListeners();
 		fillRepoCombo();
 		pack();
-		setSize(700, 250);
+		setSize(700, 460);
 		setLocationRelativeTo(getParent());
 	}
 
@@ -81,7 +86,7 @@ public class ReposEditor extends RmaJDialog
 		setTitle("Repository Settings");
 		getContentPane().setLayout(new GridBagLayout());
 		
-		JLabel label = new JLabel("Repository:");
+		JLabel label = new JLabel("Repository Info:");
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -93,7 +98,31 @@ public class ReposEditor extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(label, gbc);
 		
-		_reposCombo = new RmaJComboBox<>();
+		_reposCombo = new RmaJComboBox<RepoInfo>()
+		{
+			@Override
+			public String getToolTipText(MouseEvent e)
+			{
+				RepoInfo repo = (RepoInfo) getSelectedItem();
+				if ( repo == null )
+				{
+					return super.getToolTipText(e);
+				}
+				StringBuilder builder = new StringBuilder();
+				builder.append("<html>");
+				builder.append("<b>Name:</b>");
+				builder.append(repo.getName());
+				builder.append("<br><b>Repo URL:</b>");
+				builder.append(repo.getSourceUrl());
+				builder.append("<br><b>Local Folder:</b>");
+				builder.append(repo.getLocalPath());
+				builder.append("<html>");
+				
+				return builder.toString();
+				
+				
+			}
+		};
 		label.setLabelFor(_reposCombo);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -194,8 +223,11 @@ public class ReposEditor extends RmaJDialog
 		gbc.anchor    = GridBagConstraints.WEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
-		_infoPanel.add(label, gbc);
+		//_infoPanel.add(label, gbc);
 		
+		
+		_repoTree = new RepoJTree(RepoJTree.SelectionType.Project);
+		/*		
 		_defaultAction = new AbstractAction("Set Default Source URL")
 		{
 			@Override
@@ -215,16 +247,17 @@ public class ReposEditor extends RmaJDialog
 		};
 
 		_srcUrlFld.addPopupAction(_defaultAction);
-		label.setLabelFor(_srcUrlFld);
+		*/
+		//label.setLabelFor(_srcUrlFld);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
 		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.0;
+		gbc.weighty   = 1.0;
 		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
-		_infoPanel.add(_srcUrlFld, gbc);
+		_infoPanel.add(_repoTree, gbc);
 		
 		
 		
@@ -285,7 +318,7 @@ public class ReposEditor extends RmaJDialog
 	 */
 	protected void setDefaultSourceUrl()
 	{
-		_srcUrlFld.setText(DEFAULT_REPO_URL);
+		//_srcUrlFld.setText(DEFAULT_REPO_URL);
 	}
 
 
@@ -324,6 +357,15 @@ public class ReposEditor extends RmaJDialog
 				checkForExistingRepo();
 			}
 			
+		});
+		
+		addWindowListener(new WindowAdapter()
+		{
+			@Override
+			public void windowOpened(WindowEvent e)
+			{
+				EventQueue.invokeLater(()->_repoTree.fillRepoTree());
+			}
 		});
 		_destFolderFld.addFileSelectedListener(e->checkForExistingRepo());
 		
@@ -417,13 +459,14 @@ public class ReposEditor extends RmaJDialog
 			GitRepoUtils.getRepoInfo(info);
 			if ( info.getSourceUrl() != null )
 			{
-				_srcUrlFld.setText(info.getSourceUrl());
-				_srcUrlFld.setEditable(false);
+				_repoTree.setSelectedPath(info.getSourceUrl());
+				//_srcUrlFld.setText(info.getSourceUrl());
+				_repoTree.setEnabled(false);
 			}
 		}
 		else
 		{
-			_srcUrlFld.setEditable(true);
+			_repoTree.setEnabled(true);
 		}
 		
 	}
@@ -432,8 +475,8 @@ public class ReposEditor extends RmaJDialog
 	public void clearForm()
 	{
 		_repoNameFld.clearPerformed();
-		_srcUrlFld.clearPerformed();
 		_destFolderFld.clearPerformed();		
+		_repoTree.clearPerformed();
 	}
 
 	/**
@@ -445,7 +488,7 @@ public class ReposEditor extends RmaJDialog
 		_reposCombo.setSelectedIndex(-1);
 		_infoPanel.setEnabled(true);
 		_repoNameFld.setEditable(true);
-		_srcUrlFld.setEditable(true);
+		_repoTree.setEnabled(true);
 		_currentRepo = null;
 	}
 
@@ -467,8 +510,8 @@ public class ReposEditor extends RmaJDialog
 			_repoNameFld.setEditable(false);
 			_destFolderFld.setText(repo.getLocalPath());
 			_destFolderFld.setEditable(true);
-			_srcUrlFld.setText(repo.getSourceUrl());
-			_srcUrlFld.setEditable(false);
+			_repoTree.setSelectedPath(repo.getSourceUrl());
+			_repoTree.setEnabled(false);
 			_currentRepo = repo;
 			_deleteRepoButton.setEnabled(true);
 		}
@@ -477,7 +520,7 @@ public class ReposEditor extends RmaJDialog
 			_infoPanel.setEnabled(false);
 			_repoNameFld.clearPerformed();
 			_destFolderFld.clearPerformed();
-			_srcUrlFld.clearPerformed();
+			_repoTree.setSelectedPath(null);
 			_currentRepo = null;
 			_deleteRepoButton.setEnabled(false);
 		}
@@ -497,7 +540,7 @@ public class ReposEditor extends RmaJDialog
 			RepoInfo repo = new RepoInfo();
 			repo.setName(_repoNameFld.getText());
 			repo.setLocalPath(_destFolderFld.getText());
-			repo.setSourceUrl(_srcUrlFld.getText());
+			repo.setSourceUrl(_repoTree.getRepoPath());
 			if ( GitRepoUtils.hasGitRepo(repo.getLocalPath()))
 			{
 				int opt = JOptionPane.showConfirmDialog(this, "<html>The folder "+repo.getLocalPath()
@@ -528,7 +571,7 @@ public class ReposEditor extends RmaJDialog
 		else
 		{
 			_currentRepo.setLocalPath(_destFolderFld.getText());
-			_currentRepo.setSourceUrl(_srcUrlFld.getText());
+			_currentRepo.setSourceUrl(_repoTree.getRepoPath());
 			GitRepoUtils.writeRepo(_currentRepo);
 			setModified(false);
 		}
@@ -545,7 +588,7 @@ public class ReposEditor extends RmaJDialog
 		{
 			return false;
 		}
-		String remoteUrl = _srcUrlFld.getText();
+		String remoteUrl = _repoTree.getRepoPath();
 		if ( remoteUrl.isEmpty() )
 		{
 			return false;
@@ -581,7 +624,7 @@ public class ReposEditor extends RmaJDialog
 			{
 				defRepoUrl = DEFAULT_REPO_URL;
 			}
-			_srcUrlFld.setText(defRepoUrl);
+			_repoTree.setSelectedPath(defRepoUrl);
 			String defRepoName =System.getProperty("DefaultRepo.Name");
 			if ( defRepoName == null )
 			{

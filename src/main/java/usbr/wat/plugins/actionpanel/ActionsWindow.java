@@ -762,6 +762,10 @@ public class ActionsWindow extends RmaJDialog
 		}
 	}
 	
+	public void fillSimulationTable()
+	{
+		setSimulationTable(getSimulationGroup());
+	}
 	/**
 	 * @param sg
 	 */
@@ -1030,10 +1034,7 @@ public class ActionsWindow extends RmaJDialog
 			{
 				return;
 			}
-			if ( Project.getCurrentProject().getManager(proxy.getName(), proxy.getClassName()) == null )
-			{ // already deleted
-				return;
-			}
+			
 			String name = proxy.getName();
 			SimulationGroup simGroup = getSimulationGroup();
 			WatSimulation sim;
@@ -1049,6 +1050,7 @@ public class ActionsWindow extends RmaJDialog
 						simGroup.removeSimulation(sim);
 						simGroup.setModified(true);
 						deleted = true;
+						break;
 					}
 				}
 				if ( deleted )

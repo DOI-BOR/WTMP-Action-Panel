@@ -356,7 +356,10 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		for (int i = 0;i < size; i++ )
 		{
 			simGroup = simGroups.get(i);
-			
+			if ( simGroup == null )
+			{
+				continue;
+			}
 			if (simGroup.containsSimulation(sim))
 			{
 				return true;

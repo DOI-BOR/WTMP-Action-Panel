@@ -18,7 +18,13 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
+import com.rma.model.Project;
+
+import hec.io.FileManagerImpl;
+
+import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.gitIntegration.EnterCommentsDlg;
+import usbr.wat.plugins.actionpanel.gitIntegration.SaveStudyAsAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.StudyStorageDialog;
 import usbr.wat.plugins.actionpanel.gitIntegration.model.RepoInfo;
 
@@ -55,6 +61,14 @@ public class UploadStudyAction extends AbstractGitAction
 	 */
 	public boolean uploadStudyAction()
 	{
+		Project prj = Project.getCurrentProject();
+		String dir = prj.getProjectDirectory();
+		String markerFileName = RMAIO.concatPath(dir, SaveStudyAsAction.SAVED_STUDY_AS_FILE);
+		if ( FileManagerImpl.getFileManager().fileExists(markerFileName))
+		{
+			CreateRepoAction action = new CreateRepoAction(_studyStorageDialog);
+			return action.createRepoAction();
+		}
 		String comments = getComments();
 		if ( comments == null )
 		{

@@ -45,6 +45,7 @@ import rma.swing.RmaJXTreeTable;
 import rma.swing.table.RmaCellEditor;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
+import usbr.wat.plugins.actionpanel.actions.SaveSimulationAsAction;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
 
 /**
@@ -85,8 +86,14 @@ public class SimulationTreeTable extends RmaJXTreeTable
 					{
 						return;
 					}
-					JPopupMenu popup = createPopupMenu();
 					Object lastComp = path.getLastPathComponent();
+					WatSimulation sim = null;
+					if ( lastComp instanceof SimulationTreeTableNode)
+					{
+						sim = ((SimulationTreeTableNode)lastComp).getSimulation();
+					}
+					JPopupMenu popup = createPopupMenu(sim);
+					
 					if ( lastComp instanceof ActionsTreeTableNode )
 					{
 						((ActionsTreeTableNode)lastComp).addPopupMenuItems(popup);
@@ -116,11 +123,38 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		
 	}
 	/**
+	 * @param sim 
 	 * 
 	 */
-	private JPopupMenu createPopupMenu()
+	private JPopupMenu createPopupMenu(WatSimulation sim)
 	{
 		JPopupMenu popup = new JPopupMenu();
+		JPopupMenu simPopup = null;
+		/* waiting on WAT PR to be approved.
+		if ( sim != null )
+		{
+			MutableTreeNode node = Browser.getBrowserFrame().getProjectTree().getNodeForManager(sim);
+			if ( node instanceof WatSimulationNode )
+			{
+				WatSimulationNode simNode = (WatSimulationNode) node;
+				simPopup = simNode.buildPopupMenu();
+			}
+		}
+		*/
+		if (simPopup != null )
+		{
+			int compCnt = simPopup.getComponentCount();
+			for (int i=compCnt-1; i >= 0; i-- )
+			{
+				popup.add(simPopup.getComponent(i),0);
+			}
+		}
+		JMenuItem saveAsMenuItem = new JMenuItem("Save As...");
+		saveAsMenuItem.addActionListener(e->saveSimulationAs(sim));
+		int idx = findSaveMenuIndex(popup);
+		popup.add(saveAsMenuItem,idx);
+		popup.addSeparator();
+	
 		JMenuItem showInProjectTreeMenu = new JMenuItem("Show In Study Tree");
 		showInProjectTreeMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().showInProjectTreeAction());
 		popup.add(showInProjectTreeMenu);
@@ -129,8 +163,37 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		popup.add(editMetaDataMenu);
 		JMenuItem displayLogMenu = new JMenuItem("View Compute Log...");
 		displayLogMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().displayComputeLog());
-		popup.add(displayLogMenu);
+		//popup.add(displayLogMenu);
 		return popup;
+	}
+	/**
+	 * @return
+	 */
+	private void saveSimulationAs(WatSimulation sim)
+	{
+		SaveSimulationAsAction ssa = new SaveSimulationAsAction();
+		ssa.saveSimulationAs(ActionPanelPlugin.getInstance().getActionsWindow().getSimulationGroup(), sim);
+	}
+	/**
+	 * @param popup
+	 * @return
+	 */
+	private int findSaveMenuIndex(JPopupMenu popup)
+	{
+		int compCnt = popup.getComponentCount();
+		for (int i=compCnt-1; i >= 0; i-- )
+		{
+			Component comp = popup.getComponent(i);
+			if ( comp instanceof JMenuItem )
+			{
+				if ( ((JMenuItem)comp).getText().equals("Save"))
+				{
+					return i+1;
+				}
+			}
+			
+		}
+		return compCnt-1;
 	}
 	/**
 	 * @return

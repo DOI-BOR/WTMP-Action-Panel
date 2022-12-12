@@ -34,6 +34,8 @@ import javax.swing.JSeparator;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 
+import com.rma.model.Project;
+
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaImage;
@@ -41,6 +43,7 @@ import rma.swing.RmaInsets;
 import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDialog;
 import rma.swing.list.RmaListModel;
+import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.AbstractGitAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.actions.ShowChangesActions;
 import usbr.wat.plugins.actionpanel.gitIntegration.model.RepoInfo;
@@ -101,11 +104,11 @@ public class StudyStorageDialog extends RmaJDialog
 		getContentPane().setLayout(new GridBagLayout());
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		
-		JLabel label = new JLabel("Repository:");
+		JLabel label = new JLabel("Repository Info:");
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.gridwidth = 1;
 		gbc.weightx   = 0.0;
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.WEST;
@@ -336,6 +339,11 @@ public class StudyStorageDialog extends RmaJDialog
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
+			public void windowOpened(WindowEvent e)
+			{
+				EventQueue.invokeLater(()->selectRepo());
+			}
+			@Override
 			public void windowClosing(WindowEvent e)
 			{
 				setVisible(false);
@@ -510,6 +518,29 @@ public class StudyStorageDialog extends RmaJDialog
 		}
 		
 	}
+	private void selectRepo()
+	{
+		Project prj = Project.getCurrentProject();
+		
+		if ( prj.isNoProject())
+		{
+			return;
+		}
+		String dir = prj.getProjectDirectory();
+		
+		int cnt = _repoCombo.getItemCount();
+		RepoInfo ri;
+		for (int i = 0;i < cnt; i++ )
+		{
+			ri = _repoCombo.getItemAt(i);
+			if ( RMAIO.pathsEqual(dir, ri.getLocalPath()))
+			{
+				_repoCombo.setSelectedIndex(i);
+				break;
+			}
+		}
+		
+	}
 	/**
 	 * @return
 	 */
@@ -556,6 +587,7 @@ public class StudyStorageDialog extends RmaJDialog
 				_timer.stop();
 				_timer = null;
 			}
+			_repoButtonPanel.closing();
 		}
 		
 	}
