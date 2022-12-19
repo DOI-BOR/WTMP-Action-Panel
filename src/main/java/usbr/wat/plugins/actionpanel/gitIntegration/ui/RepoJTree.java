@@ -308,7 +308,7 @@ public class RepoJTree extends EnabledJPanel
 		Object[] pathArray = path.getPath();
 		FolderNode node;
 		node = (FolderNode) path.getLastPathComponent();
-		for (int i = 0;i < pathArray.length;i++ )
+		for (int i = 1;i < pathArray.length;i++ ) // skip wat-studies since that's the last part of GIT_ROOT_PATH
 		{
 			node = (FolderNode) pathArray[i];
 			if ( node.isProjectNode()&& _selectionType == SelectionType.Folder)
