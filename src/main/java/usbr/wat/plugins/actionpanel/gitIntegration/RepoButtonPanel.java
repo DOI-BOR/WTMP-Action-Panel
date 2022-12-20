@@ -12,6 +12,7 @@ import java.awt.GridBagLayout;
 import java.awt.Window;
 
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.rma.event.ProjectAdapter;
@@ -122,12 +123,24 @@ public class RepoButtonPanel extends JPanel
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
 		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.001;
+		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.insets(10,5,0,5);
-		add(_saveStudyAsButton, gbc);
+		if ( Boolean.getBoolean("WTMP.HasSaveStudyAs"))
+		{
+			add(_saveStudyAsButton, gbc);
+		}
 		
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 0.0;
+		gbc.weighty   = 0.001;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.NONE;
+		gbc.insets    = RmaInsets.INSETS5505;
+		add(new JLabel(), gbc);
 	}
 	/**
 	 * 
