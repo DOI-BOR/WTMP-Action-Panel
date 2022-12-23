@@ -1,0 +1,49 @@
+plugins {
+    id "java-library"
+    id "maven-publish"
+}
+
+dependencies {
+    def rootProject = project(":");
+    // API Dependencies
+    api "mil.army.usace.hec.wat:hec-wat:${rootProject.wat_version}!!"
+
+    // JasperReports
+    api 'net.sf.jasperreports:jasperreports:6.17.0'
+    api 'net.sf.jasperreports:jasperreports-chart-themes:6.17.0'
+    implementation 'net.sf.jasperreports:jasperreports-chart-customizers:6.17.0'
+    implementation 'net.sf.jasperreports:jasperreports-fonts:6.17.0'
+    implementation 'net.sf.jasperreports:jasperreports-custom-visualization:6.17.0'
+    implementation 'net.sf.jasperreports:jasperreports-functions:6.17.0'
+    implementation 'net.sf.jasperreports:jasperreports-annotation-processors:6.17.0'
+    implementation 'net.sf.jasperreports:jasperreports-metadata:6.17.0'
+
+    // Implementation/Runtime Dependencies
+    implementation project(":usbr-git-library")
+    implementation 'mil.army.usace.hec.wat:wat-cequalw2-plugin:v1.1-2.0.0.1149-20210903.004433-1'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
+    implementation 'org.gitlab4j:gitlab4j-api:4.19.0'
+    implementation 'mil.army.usace.hec.swingx:swingx-core:1.6.6'
+    implementation 'gov.usbr.wq:merlin-data-exchange:1.6.1'
+}
+
+
+jar {
+    manifest {
+        attributes("WatPluginMainClass": "usbr.wat.plugins.actionpanel.ActionPanelPlugin")
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = "usbr-actionpanel-plugin"
+            from components.java
+        }
+    }
+}
+
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
