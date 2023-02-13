@@ -15,13 +15,12 @@ import javax.swing.AbstractAction;
 
 import hec.io.FileManagerImpl;
 
-import hec2.wat.model.WatSimulation;
-
 import rma.util.RMAFilenameFilter;
 import rma.util.RMAFilenameFilterSet;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.io.OutputType;
+import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
 
 /**
  * display the report for the simulation
@@ -50,16 +49,16 @@ public class DisplayReportAction extends AbstractAction
 	 */
 	public void displayReportAction()
 	{
-		List<WatSimulation> sims = _parent.getSelectedSimulations();
-		if ( sims == null || sims.isEmpty() )
+		List<SimulationReportInfo> simInfos = _parent.getSimulationReportInfos();
+		if ( simInfos == null || simInfos.isEmpty() )
 		{
 			return;
 		}
-		for (int i = 0;i < sims.size(); i++)
+		for (int i = 0;i < simInfos.size(); i++)
 		{
 			
-			WatSimulation sim = sims.get(i);
-			displayReportAction(sim.getSimulationDirectory());
+			SimulationReportInfo simInfo = simInfos.get(i);
+			displayReportAction(simInfo.getSimFolder());
 		}
 	}
 	public void displayReportAction(String simulationDirectory)
