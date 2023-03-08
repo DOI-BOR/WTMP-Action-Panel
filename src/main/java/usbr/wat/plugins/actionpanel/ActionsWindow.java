@@ -972,7 +972,7 @@ public class ActionsWindow extends RmaJDialog
 		File[] dssFiles = folderFile.listFiles(filter);
 		if ( dssFiles != null )
 		{
-			for (int i = 0;i < dssFiles.length;)
+			for (int i = 0;i < dssFiles.length;i++)
 			{
 				String name = dssFiles[i].getName();
 				if ( name.equalsIgnoreCase(lookForDssFile))

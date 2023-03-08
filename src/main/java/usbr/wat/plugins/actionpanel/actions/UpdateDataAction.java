@@ -11,7 +11,9 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.extract.ui.ExtractDialog;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -36,10 +38,10 @@ public class UpdateDataAction extends AbstractAction
 	/**
 	 * @param simulationGroup
 	 */
-	public boolean updateData(SimulationGroup simulationGroup)
+	public void updateData(SimulationGroup simulationGroup)
 	{
-		System.out.println("Extract call goes here");
-		return false;
+		ExtractDialog dlg = new ExtractDialog(ActionPanelPlugin.getInstance().getActionsWindow(), simulationGroup);
+		dlg.setVisible(true);
 	}
 
 }
