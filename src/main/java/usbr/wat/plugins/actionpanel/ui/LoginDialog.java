@@ -144,7 +144,7 @@ public class LoginDialog extends RmaJDialog
 						setVisible(false);
 						break;
 					case ButtonCmdPanel.CANCEL_BUTTON :
-						_canceled = false;
+						_canceled = true;
 						setVisible(false);
 						break;
 				}
