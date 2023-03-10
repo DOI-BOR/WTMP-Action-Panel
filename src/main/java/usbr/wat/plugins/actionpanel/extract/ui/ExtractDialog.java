@@ -190,6 +190,7 @@ public class ExtractDialog extends RmaJDialog
 		getContentPane().add(label, gbc);
 		
 		Vector<String>storeOptions = new Vector<>();
+		//bah.  having to use these strings instead of constants sucks
 		storeOptions.add("0-replace-all");
 		storeOptions.add("1-replace-missing-values-only");
 		storeOptions.add("2-replace-all-create");
@@ -553,15 +554,19 @@ public class ExtractDialog extends RmaJDialog
 		String userName = ExtractLoginInfo.getUserName();
 		String password = ExtractLoginInfo.getPassword();
 		
-		if ( userName == null || password == null )
+		do
 		{
-			if ( !ExtractLoginInfo.askForLoginInfo(this, "Enter login information for "+GRAB_DATA_URL))
+			if ( userName == null || password == null )
 			{
-				return;
+				if ( !ExtractLoginInfo.askForLoginInfo(this, "Enter login information for "+GRAB_DATA_URL))
+				{
+					return;
+				}
+				userName = ExtractLoginInfo.getUserName();
+				password = ExtractLoginInfo.getPassword();
 			}
 		}
-		userName = ExtractLoginInfo.getUserName();
-		password = ExtractLoginInfo.getPassword();
+		while(userName == null || password == null );
 		
 		String prjFolder = Project.getCurrentProject().getProjectDirectory();
 		Path prjPath = Paths.get(prjFolder);
