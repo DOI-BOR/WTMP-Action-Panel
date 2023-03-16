@@ -8,11 +8,16 @@
 package usbr.wat.plugins.actionpanel;
 
 import java.awt.EventQueue;
+import java.io.IOException;
 
 import javax.swing.JMenu;
 
+import com.google.common.flogger.FluentLogger;
 import com.rma.client.Browser;
 
+import org.jdom.JDOMException;
+import usbr.git.GitlabConfigurator;
+import usbr.git.cli.GitCLIUnavailableException;
 import usbr.wat.plugins.actionpanel.actions.ActionWindowAction;
 
 /**
@@ -21,6 +26,8 @@ import usbr.wat.plugins.actionpanel.actions.ActionWindowAction;
  */
 public class ActionPanelPlugin
 {
+	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+
 	private static ActionPanelPlugin _instance;
 	
 	private ActionsWindow _actionsWindow;
@@ -28,6 +35,7 @@ public class ActionPanelPlugin
 	{
 		super();
 		_instance = this;
+		configureGitConfiguration();
 		addToToolsMenu();
 		EventQueue.invokeLater(()->displayActionsWindow());
 	}
@@ -44,7 +52,17 @@ public class ActionPanelPlugin
 		}
 	}
 
-	
+	private void configureGitConfiguration() {
+		try {
+			GitlabConfigurator.prepareFromConfigurationFile(getClass().getResource("GitlabConfig.xml")).configureGit();
+		} catch (IOException | InterruptedException e) {
+			LOGGER.atWarning().withCause(e).log("Error setting Git configuration! Git operations may not work.");
+		} catch (GitCLIUnavailableException e) {
+			LOGGER.atSevere().withCause(e).log("Unable to run Git CLI! Please ensure Git is installed and present on $PATH");
+		} catch (JDOMException e) {
+			LOGGER.atWarning().withCause(e).log("Unable to parse WTMP Gitlab Configuration File! Git operations may not work.");
+		}
+	}
 	
 	public void displayActionsWindow()
 	{
@@ -73,7 +91,6 @@ public class ActionPanelPlugin
 	public static void main(String[] args)
 	{
 		new ActionPanelPlugin();
-		
 	}
 	
 	public static ActionPanelPlugin getInstance()

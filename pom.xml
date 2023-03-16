@@ -16,6 +16,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>usbr.wat.plugins</groupId>
+			<artifactId>usbr-git-library</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
 				<groupId>jdom</groupId>
 				<artifactId>jdom</artifactId>
 				<version>1.0</version>
