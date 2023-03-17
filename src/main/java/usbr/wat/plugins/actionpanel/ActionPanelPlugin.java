@@ -17,6 +17,7 @@ import com.rma.client.Browser;
 
 import org.jdom.JDOMException;
 import usbr.git.GitlabConfigurator;
+import usbr.git.XMLParseException;
 import usbr.git.cli.GitCLIUnavailableException;
 import usbr.wat.plugins.actionpanel.actions.ActionWindowAction;
 
@@ -56,11 +57,13 @@ public class ActionPanelPlugin
 		try {
 			GitlabConfigurator.prepareFromConfigurationFile(getClass().getResource("GitlabConfig.xml")).configureGit();
 		} catch (IOException | InterruptedException e) {
-			LOGGER.atWarning().withCause(e).log("Error setting Git configuration! Git operations may not work.");
+			LOGGER.atWarning().withCause(e).log("Error setting Git configuration! Git operations may not work. Git CLI Communications Failure.");
 		} catch (GitCLIUnavailableException e) {
-			LOGGER.atSevere().withCause(e).log("Unable to run Git CLI! Please ensure Git is installed and present on $PATH");
+			LOGGER.atSevere().withCause(e).log("Unable to execute Git CLI! Please ensure Git is installed and present on $PATH");
 		} catch (JDOMException e) {
-			LOGGER.atWarning().withCause(e).log("Unable to parse WTMP Gitlab Configuration File! Git operations may not work.");
+			LOGGER.atWarning().withCause(e).log("Unable to parse WTMP Gitlab Configuration File! Git operations may not work. JDOM Exception");
+		} catch (XMLParseException e) {
+			LOGGER.atWarning().withCause(e).log("Unable to parse WTMP Gitlab Configuration File! Git operations may not work. XML Parsing failure");
 		}
 	}
 	
