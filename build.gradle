@@ -17,6 +17,8 @@ dependencies {
     implementation 'net.sf.jasperreports:jasperreports-functions:6.17.0'
     implementation 'net.sf.jasperreports:jasperreports-annotation-processors:6.17.0'
     implementation 'net.sf.jasperreports:jasperreports-metadata:6.17.0'
+	implementation 'org.apache.poi:poi:3.8'
+	implementation 'org.apache.poi:poi-ooxml:3.8'
 
     // Implementation/Runtime Dependencies
     implementation project(":usbr-git-library")

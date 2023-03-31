@@ -58,11 +58,11 @@ import net.sf.jasperreports.repo.RepositoryService;
 import rma.swing.RmaJDialog;
 import rma.util.RMAFilenameFilter;
 import rma.util.RMAIO;
-import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.io.OutputType;
 import usbr.wat.plugins.actionpanel.io.ReportOptions;
 import usbr.wat.plugins.actionpanel.model.ReportPlugin;
 import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * @author mark
@@ -101,10 +101,13 @@ public abstract class AbstractReportAction extends AbstractAction
 	private static final String SIM_REPORT_DIR_PARAM = "RUN_DIR";
 	
 	private List<String> _errMsgs= new ArrayList<>();
+
+	private UsbrPanel _parentPanel;
 	
-	public AbstractReportAction(String name)
+	public AbstractReportAction(String name, UsbrPanel parentPanel)
 	{
 		super(name);
+		_parentPanel = parentPanel;
 	}
 	
 	@Override
@@ -112,7 +115,7 @@ public abstract class AbstractReportAction extends AbstractAction
 	{
 		ReportOptions options = new ReportOptions();
 		options.setOutputType(OutputType.PDF);
-		createReport(ActionPanelPlugin.getInstance().getActionsWindow().getSimulationReportInfos(), options );
+		createReport(_parentPanel.getSimulationReportInfos(), options );
 	}
 	/**
 	 * @param reportFile

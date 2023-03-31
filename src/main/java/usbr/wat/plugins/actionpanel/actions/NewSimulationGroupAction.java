@@ -9,9 +9,11 @@ package usbr.wat.plugins.actionpanel.actions;
 
 import java.awt.event.ActionEvent;
 
-import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
+import usbr.wat.plugins.actionpanel.commands.NewSimulationGroupCmd;
 import usbr.wat.plugins.actionpanel.editors.NewSimulationGroupDialog;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;
 
 /**
  * @author Mark Ackerman
@@ -20,23 +22,26 @@ import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 @SuppressWarnings("serial")
 public class NewSimulationGroupAction extends BaseActionsPanelAction
 {
-	private ActionsWindow _parent;
-	public NewSimulationGroupAction(ActionsWindow parent)
+	private CalibrationPanel _parent;
+	public NewSimulationGroupAction(CalibrationPanel calibrationPanel)
 	{
 		super("Create Simulation Group...");
 		setEnabled(false);
-		_parent = parent;
+		_parent = calibrationPanel;
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		NewSimulationGroupDialog dlg = new NewSimulationGroupDialog(_parent, true);
+		NewSimulationGroupDialog dlg = new NewSimulationGroupDialog(ActionPanelPlugin.getInstance().getActionsWindow(), true,
+				"New Simulation Group");
+		dlg.setSimulationGroupClass(SimulationGroup.class);
+		dlg.setSimulationGroupFactory(NewSimulationGroupCmd.class);
 		dlg.setVisible(true);
 		if ( dlg.isCanceled())
 		{
 			return;
 		}
-		SimulationGroup sg = dlg.getSimulationGroup();
+		SimulationGroup sg = (SimulationGroup) dlg.getSimulationGroup();
 		_parent.setSimulationGroup(sg);
 	}
 

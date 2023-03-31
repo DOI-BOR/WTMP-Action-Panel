@@ -18,7 +18,7 @@ import hec2.wat.model.WatSimulationContainer;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.actions.UpdateDataAction;
-import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 
 /**
  * @author mark
@@ -28,7 +28,7 @@ public class SaveSimulationToGroupCmd extends AbstractNewManagerCommand
 {
 
 	private WatSimulation _srcSim;
-	private SimulationGroup _simGroup;
+	private AbstractSimulationGroup _simGroup;
 	private WatAnalysisPeriod _ap;
 	private WatSimulation _newSim;
 	private String _newDesc;
@@ -41,7 +41,7 @@ public class SaveSimulationToGroupCmd extends AbstractNewManagerCommand
 	 * @param project
 	 * @param ap
 	 */
-	public SaveSimulationToGroupCmd(WatSimulation srcSim, String newName, String newDesc, SimulationGroup simGroup,
+	public SaveSimulationToGroupCmd(WatSimulation srcSim, String newName, String newDesc, AbstractSimulationGroup simGroup,
 			Project project, WatAnalysisPeriod ap)
 	{
 		super(project,"", "", null); // not using what the super does

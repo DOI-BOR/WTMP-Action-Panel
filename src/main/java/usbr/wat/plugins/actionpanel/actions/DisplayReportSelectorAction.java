@@ -13,6 +13,7 @@ import javax.swing.AbstractAction;
 
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.editors.DisplayReportsSelector;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * @author Mark Ackerman
@@ -23,11 +24,13 @@ public class DisplayReportSelectorAction extends AbstractAction
 {
 	private ActionsWindow _parent;
 	private DisplayReportsSelector _selector;
-	public DisplayReportSelectorAction(ActionsWindow parent)
+	private UsbrPanel _parentPanel;
+	public DisplayReportSelectorAction(ActionsWindow parent, UsbrPanel parentPanel)
 	{
 		super("Create Report...");
 		setEnabled(false);
 		_parent = parent;
+		_parentPanel = parentPanel;
 	}
 	@Override
 	public void actionPerformed(ActionEvent arg0)
@@ -41,7 +44,7 @@ public class DisplayReportSelectorAction extends AbstractAction
 	{
 		if ( _selector == null )
 		{
-			_selector = new DisplayReportsSelector(_parent);
+			_selector = new DisplayReportsSelector(_parent,_parentPanel);
 		}
 		_selector.setVisible(true);
 	}

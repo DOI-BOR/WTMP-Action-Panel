@@ -19,6 +19,7 @@ import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.commands.SaveSimulationToGroupCmd;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 import usbr.wat.plugins.actionpanel.ui.SaveSimulationAsDialog;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * @author mark
@@ -26,9 +27,11 @@ import usbr.wat.plugins.actionpanel.ui.SaveSimulationAsDialog;
  */
 public class SaveSimulationAsAction extends AbstractAction
 {
-	public SaveSimulationAsAction()
+	private UsbrPanel _parentPanel;
+	public SaveSimulationAsAction(UsbrPanel parentPanel)
 	{
 		super("Save Simulation As...");
+		_parentPanel = parentPanel;
 		
 	}
 	@Override
@@ -61,7 +64,7 @@ public class SaveSimulationAsAction extends AbstractAction
 		if ( newSim != null )
 		{
 			simGroup.addSimulation(newSim);
-			ActionPanelPlugin.getInstance().getActionsWindow().fillSimulationTable();
+			_parentPanel.fillSimulationTable();
 			return true;
 		}
 		

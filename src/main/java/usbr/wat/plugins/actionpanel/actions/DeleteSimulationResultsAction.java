@@ -17,6 +17,7 @@ import com.rma.io.FileManagerImpl;
 
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTableNode;
 
 /**
@@ -27,15 +28,17 @@ public class DeleteSimulationResultsAction extends AbstractAction
 {
 
 	private ActionsWindow _parent;
+	private UsbrPanel _parentPanel;
 
 	/**
 	 * @param parent
 	 */
-	public DeleteSimulationResultsAction(ActionsWindow parent)
+	public DeleteSimulationResultsAction(ActionsWindow parent, UsbrPanel parentPanel)
 	{
 		super("Delete Results");
 		setEnabled(false);
 		_parent = parent;
+		_parentPanel = parentPanel;
 	}
 
 	@Override
@@ -73,7 +76,7 @@ public class DeleteSimulationResultsAction extends AbstractAction
 			result = results.get(i);
 			if ( deleteResultsFolder(result.getFolder()))
 			{
-				SimulationTreeTableNode simNode = _parent.getSimulationTreeTable().getSimulationNodeFor(result.getSimulation());
+				SimulationTreeTableNode simNode = _parentPanel.getSimulationTreeTable().getSimulationNodeFor(result.getSimulation());
 				simNode.removeResultsFor(result);
 			}
 			else

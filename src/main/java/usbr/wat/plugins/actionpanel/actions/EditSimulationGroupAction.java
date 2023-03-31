@@ -13,7 +13,9 @@ import javax.swing.AbstractAction;
 
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.editors.NewSimulationGroupDialog;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.ui.AbstractSimulationPanel;
 
 /**
  * @author Mark Ackerman
@@ -23,21 +25,24 @@ public class EditSimulationGroupAction extends AbstractAction
 {
 
 	private ActionsWindow _parent;
+	private AbstractSimulationPanel _parentPanel;
 
 	/**
 	 * @param parent
 	 */
-	public EditSimulationGroupAction(ActionsWindow parent)
+	public EditSimulationGroupAction(ActionsWindow parent, AbstractSimulationPanel parentPanel)
 	{
 		super("Edit Simulation Group...");
 		setEnabled(false);
 		_parent = parent;
+		_parentPanel = parentPanel;
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
-		NewSimulationGroupDialog dlg = new NewSimulationGroupDialog(_parent, true);
+		NewSimulationGroupDialog dlg = new NewSimulationGroupDialog(_parent, true, "Edit Simulation Group");
+			
 		SimulationGroup simGroup = _parent.getSimulationGroup();
 		dlg.fillForm(simGroup);
 		
@@ -46,8 +51,8 @@ public class EditSimulationGroupAction extends AbstractAction
 		{
 			return;
 		}
-		SimulationGroup sg = dlg.getSimulationGroup();
-		_parent.setSimulationGroup(sg);
+		AbstractSimulationGroup sg = dlg.getSimulationGroup();
+		_parentPanel.setSimulationGroup(sg);
 	}
 
 }

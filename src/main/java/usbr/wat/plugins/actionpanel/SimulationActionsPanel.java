@@ -18,6 +18,7 @@ import usbr.wat.plugins.actionpanel.actions.DeleteSimulationResultsAction;
 import usbr.wat.plugins.actionpanel.actions.DisplayReportSelectorAction;
 import usbr.wat.plugins.actionpanel.actions.RunSimulationAction;
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationResultsAction;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * panel for the Simulation Actions
@@ -35,11 +36,14 @@ public class SimulationActionsPanel extends EnabledJPanel
 	private SaveSimulationResultsAction _saveResultsAction;
 
 	private DeleteSimulationResultsAction _deleteResultsAction;
+
+	private UsbrPanel _parentPanel;
 	
-	public SimulationActionsPanel(ActionsWindow parent)
+	public SimulationActionsPanel(ActionsWindow parent, UsbrPanel parentPanel)
 	{
 		super(new GridBagLayout());
 		_parent = parent;
+		_parentPanel = parentPanel;
 		buildControls();
 		
 	}
@@ -49,7 +53,7 @@ public class SimulationActionsPanel extends EnabledJPanel
 	 */
 	private void buildControls()
 	{
-		_runSimulationAction = new RunSimulationAction(_parent);
+		_runSimulationAction = new RunSimulationAction(_parent, _parentPanel);
 		JButton button = new JButton(_runSimulationAction);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -62,7 +66,7 @@ public class SimulationActionsPanel extends EnabledJPanel
 		gbc.insets    = RmaInsets.INSETS5555;
 		add(button, gbc);
 	
-		_displayReportsSelectorAction = new DisplayReportSelectorAction(_parent);
+		_displayReportsSelectorAction = new DisplayReportSelectorAction(_parent, _parentPanel);
 		button = new JButton(_displayReportsSelectorAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -74,7 +78,7 @@ public class SimulationActionsPanel extends EnabledJPanel
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(button, gbc);
 		
-		_saveResultsAction = new SaveSimulationResultsAction(_parent);
+		_saveResultsAction = new SaveSimulationResultsAction(_parent, _parentPanel);
 		button = new JButton(_saveResultsAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -86,7 +90,7 @@ public class SimulationActionsPanel extends EnabledJPanel
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(button, gbc);
 		
-		_deleteResultsAction = new DeleteSimulationResultsAction(_parent);
+		_deleteResultsAction = new DeleteSimulationResultsAction(_parent, _parentPanel);
 		button = new JButton(_deleteResultsAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;

@@ -28,6 +28,7 @@ import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 import usbr.wat.plugins.actionpanel.ui.ResultsDataDialog;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTableNode;
 
 /**
@@ -43,15 +44,17 @@ public class SaveSimulationResultsAction extends AbstractAction
 	private WatSimulation _currentSim;
 	private String _currentResultsDir;
 	private ResultsData _currentResultsData;
+	private UsbrPanel _parentPanel;
 
 	/**
 	 * @param parent
 	 */
-	public SaveSimulationResultsAction(ActionsWindow parent)
+	public SaveSimulationResultsAction(ActionsWindow parent, UsbrPanel parentPanel)
 	{
 		super("Save Results");
 		setEnabled(false);
 		_parent = parent;
+		_parentPanel = parentPanel;
 	}
 
 	@Override
@@ -160,7 +163,7 @@ public class SaveSimulationResultsAction extends AbstractAction
 	public void copyFinished(int totalCopied)
 	{
 		_currentResultsData.saveDataToFolder(_currentResultsDir);
-		SimulationTreeTableNode node = _parent.getSimulationTreeTable().getSimulationNodeFor(_currentSim);
+		SimulationTreeTableNode node = _parentPanel.getSimulationTreeTable().getSimulationNodeFor(_currentSim);
 		node.addResultsFolder(_currentResultsDir);
 		
 		_currentSim = null;

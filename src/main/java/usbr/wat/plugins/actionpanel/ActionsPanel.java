@@ -33,7 +33,8 @@ import usbr.wat.plugins.actionpanel.actions.SelectSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.actions.UpdateDataAction;
 import usbr.wat.plugins.actionpanel.actions.UpdateModelsAction;
 import usbr.wat.plugins.actionpanel.actions.ViewIterationResultsAction;
-import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
+import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;
 
 /**
  * @author Mark Ackerman
@@ -54,11 +55,13 @@ public class ActionsPanel extends JPanel
 	private NewSimulationGroupAction _newSimGroupAction;
 	private SelectSimulationGroupAction _selectSimGroupAction;
 	private AboutAction _aboutAction;
+	private CalibrationPanel _parentPanel;
 
-	public ActionsPanel(ActionsWindow parent)
+	public ActionsPanel(ActionsWindow parent, CalibrationPanel parentPanel)
 	{
 		super(new GridBagLayout());
 		_parent = parent;
+		_parentPanel = parentPanel;
 		
 		buildControls();
 		addListeners();
@@ -71,7 +74,7 @@ public class ActionsPanel extends JPanel
 	 */
 	private void buildControls()
 	{
-		_newSimGroupAction = new NewSimulationGroupAction(_parent);
+		_newSimGroupAction = new NewSimulationGroupAction(_parent.getCalibrationPanel());
 		JButton button = new JButton(_newSimGroupAction);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -96,7 +99,7 @@ public class ActionsPanel extends JPanel
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(button, gbc);
 	
-		_editSimulationAction = new EditSimulationGroupAction(_parent);
+		_editSimulationAction = new EditSimulationGroupAction(_parent, _parentPanel);
 		button = new JButton(_editSimulationAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -243,7 +246,7 @@ public class ActionsPanel extends JPanel
 	/**
 	 * @param sg
 	 */
-	public void setSimulationGroup(SimulationGroup sg)
+	public void setSimulationGroup(AbstractSimulationGroup sg)
 	{
 		boolean enabled = sg != null;
 		enableActions(enabled);

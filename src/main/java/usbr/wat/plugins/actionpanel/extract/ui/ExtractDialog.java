@@ -59,7 +59,7 @@ import rma.swing.text.DateDocument;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.extract.action.RunExtractAction;
 import usbr.wat.plugins.actionpanel.extract.model.ExtractLoginInfo;
-import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 
 /**
  * @author mark
@@ -86,7 +86,7 @@ public class ExtractDialog extends RmaJDialog
 	private JMenuItem _viewConfigFileMenu;
 	private JMenuItem _validateConfigFileMenu;
 
-	public ExtractDialog(Window parent, SimulationGroup simulationGroup)
+	public ExtractDialog(Window parent, AbstractSimulationGroup simulationGroup)
 	{
 		super(parent, true);
 		buildControls();
@@ -407,7 +407,7 @@ public class ExtractDialog extends RmaJDialog
 	 * @param simulationGroup 
 	 * 
 	 */
-	private void fillForm(SimulationGroup simulationGroup)
+	private void fillForm(AbstractSimulationGroup simulationGroup)
 	{
 		_simGroupFld.setText(simulationGroup.getName());
 		JButton okbutton = _cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON);

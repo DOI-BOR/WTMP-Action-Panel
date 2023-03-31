@@ -25,6 +25,7 @@ import usbr.wat.plugins.actionpanel.model.ActionComputable;
 import usbr.wat.plugins.actionpanel.model.IterationSettings;
 import usbr.wat.plugins.actionpanel.model.PositionAnalysisSettings;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * @author Mark Ackerman
@@ -34,11 +35,14 @@ import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 public class RunSimulationAction extends AbstractAction
 {
 	private ActionsWindow _parent;
-	public RunSimulationAction(ActionsWindow parent)
+	private UsbrPanel _parentPanel;
+	
+	public RunSimulationAction(ActionsWindow parent, UsbrPanel parentPanel)
 	{
 		super("Run Simulation");
 		setEnabled(false);
 		_parent = parent;
+		_parentPanel = parentPanel;
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -81,7 +85,7 @@ public class RunSimulationAction extends AbstractAction
 		computeDlg.setSelectOutOfDate(false);
 		computeDlg.setComputeOnOpen(true);
 		computeDlg.setVisible(true);
-		_parent.updateComputeStates();
+		_parentPanel.updateComputeStates();
 	}
 
 }

@@ -11,6 +11,8 @@ import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,8 +47,10 @@ import rma.swing.RmaJTable;
 import rma.swing.list.RmaListModel;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
-import usbr.wat.plugins.actionpanel.commands.NewSimulationGroupCmd;
+import usbr.wat.plugins.actionpanel.commands.AbstractNewSimulationGroupCmd;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 
 /**
  * @author Mark Ackerman
@@ -58,6 +62,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 
 	private static final int SELECTED_COLUMN = 0;
 	private static final int SIMULATION_COLUMN = 1;
+	private static final String ForecastSimulationGroup = null;
 	
 	
 	private NameDescriptionPanel _nameDescPanel;
@@ -66,15 +71,18 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	private RmaJTable _simTable;
 	private ButtonCmdPanel _cmdPanel;
 	protected boolean _canceled;
-	private SimulationGroup _simGroup;
+	private AbstractSimulationGroup _simGroup;
+	private Class< ? extends AbstractSimulationGroup> _simGroupClass;
+	private Class< ? extends AbstractNewSimulationGroupCmd> _simGroupCmdClass;
 
 	/**
 	 * @param parent
 	 * @param b
 	 */
-	public NewSimulationGroupDialog(ActionsWindow parent, boolean modal)
+	public NewSimulationGroupDialog(ActionsWindow parent, boolean modal, String title)
 	{
 		super(parent, modal);
+		setTitle(title);
 		buildControls();
 		addListeners();
 		fillForm();
@@ -90,7 +98,6 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	private void buildControls()
 	{
 		getContentPane().setLayout(new GridBagLayout());
-		setTitle("New Simulation Group");
 		
 		_nameDescPanel = new NameDescriptionPanel();
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -270,7 +277,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		List<WatSimulation> sims = proj.getManagerListForType(WatSimulation.class);
 		WatSimulation sim;
 		Vector row;
-		List<SimulationGroup>simGroups = proj.getManagerListForType(SimulationGroup.class);
+		List<AbstractSimulationGroup>simGroups = (List<AbstractSimulationGroup>) proj.getManagerListForType(_simGroupClass);
 		for (int i = 0;i < sims.size(); i++ )
 		{
 			sim = sims.get(i);
@@ -287,7 +294,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	/**
 	 * @param simGroup
 	 */
-	public void fillForm(SimulationGroup simGroup)
+	public void fillForm(AbstractSimulationGroup simGroup)
 	{
 		_simGroup = simGroup;
 		fillTable();
@@ -349,10 +356,10 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	 * @param sim
 	 * @return true if it is part of a simulation group
 	 */
-	private boolean simPartOfGroup(WatSimulation sim, List<SimulationGroup>simGroups)
+	private boolean simPartOfGroup(WatSimulation sim, List<AbstractSimulationGroup>simGroups)
 	{
 		int size = simGroups.size();
-		SimulationGroup simGroup;
+		AbstractSimulationGroup simGroup;
 		for (int i = 0;i < size; i++ )
 		{
 			simGroup = simGroups.get(i);
@@ -380,7 +387,32 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		RmaFile file = getSimulationGroupFolder();
 		WatAnalysisPeriod ap = (WatAnalysisPeriod) _apCombo.getSelectedItem();
 		List<WatSimulation> sims =  getSelectedSimulations();
-		NewSimulationGroupCmd cmd = new NewSimulationGroupCmd(Project.getCurrentProject(),name, desc,file, ap, sims);
+		Class<?>paramClasses[] = new Class[] {Project.class, String.class, String.class, RmaFile.class, WatAnalysisPeriod.class,
+				List.class};
+		
+		Constructor< ? extends AbstractNewSimulationGroupCmd> ctor;
+		try
+		{
+			ctor = _simGroupCmdClass.getConstructor(paramClasses);
+		}
+		catch (NoSuchMethodException | SecurityException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		AbstractNewSimulationGroupCmd cmd;
+		try
+		{
+			cmd = ctor.newInstance(Project.getCurrentProject(),name, desc,file, ap, sims);
+		}
+		catch (InstantiationException | IllegalAccessException
+				| IllegalArgumentException | InvocationTargetException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
 		cmd.doCommand();
 		_simGroup = cmd.getSimulationGroup();
 		return _simGroup != null;
@@ -445,7 +477,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 			simToAdd = findSimulationInTable(newSimName);
 			if ( simToAdd != null )
 			{
-				newSim = NewSimulationGroupCmd.createSimulation(simToAdd, _simGroup, proj, ap);
+				newSim = AbstractNewSimulationGroupCmd.createSimulation(simToAdd, _simGroup, proj, ap);
 				if ( newSim != null )
 				{
 					_simGroup.addSimulation(newSim);
@@ -483,7 +515,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	private WatSimulation findSimGroupSimulationByOrigName(String baseSimName)
 	{
 		List<WatSimulation> sims = _simGroup.getSimulations();
-		String groupSimName = NewSimulationGroupCmd.getGroupSimName(baseSimName, _simGroup.getName());
+		String groupSimName = AbstractNewSimulationGroupCmd.getGroupSimName(baseSimName, _simGroup.getName());
 		WatSimulation sim;
 		for (int i = 0;i < sims.size();i ++ )
 		{
@@ -573,7 +605,8 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		if ( _simGroup == null )
 		{
 			String name = _nameDescPanel.getName();
-			if ( proj.getManagerProxy(name, SimulationGroup.class) != null )
+			if ( proj.getManagerProxy(name, SimulationGroup.class) != null || 
+				proj.getManagerProxy(name, ForecastSimGroup.class) != null )
 			{
 				JOptionPane.showMessageDialog(this, "A Simulation Group named "+name+" already exists. Please enter a unique name", 
 						"Duplicate Name", JOptionPane.INFORMATION_MESSAGE);
@@ -629,9 +662,23 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	/**
 	 * @return
 	 */
-	public SimulationGroup getSimulationGroup()
+	public AbstractSimulationGroup getSimulationGroup()
 	{
 		return _simGroup;
+	}
+
+
+
+	/**
+	 * @param class1
+	 */
+	public void setSimulationGroupClass(Class<? extends AbstractSimulationGroup> simGroupClass)
+	{
+		_simGroupClass = simGroupClass;
+	}
+	public void setSimulationGroupFactory(Class<? extends AbstractNewSimulationGroupCmd> cmdClass)
+	{
+		_simGroupCmdClass = cmdClass;
 	}
 
 

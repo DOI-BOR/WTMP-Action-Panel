@@ -74,6 +74,7 @@ import usbr.wat.plugins.actionpanel.io.ReportOptions;
 import usbr.wat.plugins.actionpanel.model.ReportPlugin;
 import usbr.wat.plugins.actionpanel.model.ReportsManager;
 import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * @author Mark Ackerman
@@ -103,11 +104,13 @@ public class DisplayReportsSelector extends RmaJDialog
 	private RmaJTable _simTable;
 	private CheckboxTree _reportsTree;
 	private DefaultMutableTreeNode _rootNode;
+	private UsbrPanel _parentPanel;
 
-	public DisplayReportsSelector(ActionsWindow parent)
+	public DisplayReportsSelector(ActionsWindow parent, UsbrPanel parentPanel)
 	{
 		super(parent, false);
 		_parent =parent;
+		_parentPanel = parentPanel;
 		buildControls();
 		addListeners();
 		pack();
@@ -495,7 +498,7 @@ public class DisplayReportsSelector extends RmaJDialog
 								null, new Object[] {"Close", "Display Reports"}, "Close");
 						if ( opt == 1 )
 						{
-							DisplayReportAction action = new DisplayReportAction(_parent);
+							DisplayReportAction action = new DisplayReportAction(_parentPanel);
 							action.displayReportAction();
 						}
 					}
@@ -575,7 +578,7 @@ public class DisplayReportsSelector extends RmaJDialog
 			
 		}
 		
-		List<SimulationReportInfo> sims = _parent.getSimulationReportInfos();
+		List<SimulationReportInfo> sims = _parentPanel.getSimulationReportInfos();
 		
 		SimulationReportInfo sri;
 		String folder;

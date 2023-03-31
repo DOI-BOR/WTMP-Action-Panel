@@ -18,9 +18,9 @@ import hec.io.FileManagerImpl;
 import rma.util.RMAFilenameFilter;
 import rma.util.RMAFilenameFilterSet;
 import rma.util.RMAIO;
-import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.io.OutputType;
 import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * display the report for the simulation
@@ -31,9 +31,9 @@ import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
 @SuppressWarnings("serial")
 public class DisplayReportAction extends AbstractAction
 {
-	private ActionsWindow _parent;
+	private UsbrPanel _parent;
 
-	public DisplayReportAction(ActionsWindow parent)
+	public DisplayReportAction(UsbrPanel parent)
 	{
 		super("Display Report...");
 		_parent = parent;

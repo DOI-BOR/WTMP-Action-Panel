@@ -18,7 +18,7 @@ import org.jdesktop.swingx.treetable.TreeTableNode;
 
 import hec2.wat.model.WatSimulation;
 
-import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 
 /**
  * @author mark
@@ -38,7 +38,8 @@ public class SimulationTreeTableModel extends AbstractTreeTableModel
 			"Simulation", "Selected", "Map", "Report"	
 	};
 	private SimulationTreeTableNode _root;
-	public SimulationTreeTableModel(SimulationGroup simGroup)
+	
+	public SimulationTreeTableModel(AbstractSimulationGroup simGroup)
 	{
 		super(new SimulationTreeTableNode(null, null));
 		_root = (SimulationTreeTableNode) getRoot();

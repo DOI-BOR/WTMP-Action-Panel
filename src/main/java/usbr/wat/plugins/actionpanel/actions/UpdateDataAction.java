@@ -14,7 +14,7 @@ import javax.swing.AbstractAction;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.extract.ui.ExtractDialog;
-import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 
 /**
  * @author Mark Ackerman
@@ -38,7 +38,7 @@ public class UpdateDataAction extends AbstractAction
 	/**
 	 * @param simulationGroup
 	 */
-	public void updateData(SimulationGroup simulationGroup)
+	public void updateData(AbstractSimulationGroup simulationGroup)
 	{
 		ExtractDialog dlg = new ExtractDialog(ActionPanelPlugin.getInstance().getActionsWindow(), simulationGroup);
 		dlg.setVisible(true);

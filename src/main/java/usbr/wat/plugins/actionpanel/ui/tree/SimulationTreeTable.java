@@ -51,6 +51,7 @@ import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationAsAction;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
+import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 /**
  * @author mark
@@ -63,10 +64,13 @@ public class SimulationTreeTable extends RmaJXTreeTable
 	
 	private Border _defaultBorder;
 	private Highlighter _tableRowHighlighter = new ReportRowHighligher();
+
+	private UsbrPanel _parentPanel;
 	
-	public SimulationTreeTable()
+	public SimulationTreeTable(UsbrPanel parentPanel)
 	{
 		super(createTreeModel());
+		_parentPanel = parentPanel;
 		adPopupListener();
 		setRenderers();
 		setHighlighters(_tableRowHighlighter); // for now
@@ -160,13 +164,13 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		popup.addSeparator();
 	
 		JMenuItem showInProjectTreeMenu = new JMenuItem("Show In Study Tree");
-		showInProjectTreeMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().showInProjectTreeAction());
+		showInProjectTreeMenu.addActionListener(e->_parentPanel.showInProjectTreeAction());
 		popup.add(showInProjectTreeMenu);
 		JMenuItem editMetaDataMenu = new JMenuItem("Edit MetaData...");
-		editMetaDataMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().editSimulationMetaData());
+		editMetaDataMenu.addActionListener(e->_parentPanel.editSimulationMetaData());
 		popup.add(editMetaDataMenu);
 		JMenuItem displayLogMenu = new JMenuItem("View Compute Log...");
-		displayLogMenu.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().displayComputeLog());
+		displayLogMenu.addActionListener(e->_parentPanel.displayComputeLog());
 		//popup.add(displayLogMenu);
 		return popup;
 	}
@@ -175,7 +179,7 @@ public class SimulationTreeTable extends RmaJXTreeTable
 	 */
 	private void saveSimulationAs(WatSimulation sim)
 	{
-		SaveSimulationAsAction ssa = new SaveSimulationAsAction();
+		SaveSimulationAsAction ssa = new SaveSimulationAsAction(_parentPanel);
 		ssa.saveSimulationAs(ActionPanelPlugin.getInstance().getActionsWindow().getSimulationGroup(), sim);
 	}
 	/**
@@ -302,11 +306,11 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		
 		JButton button = setButtonCellEditor(SimulationTreeTableModel.DISPLAY_IN_MAPS_COLUMN);
 		button.setText("Show on Map");
-		button.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().displaySimulationInMap());
+		button.addActionListener(e->_parentPanel.displaySimulationInMap());
 		
 		button = setButtonCellEditor(SimulationTreeTableModel.VIEW_REPORT_COLUMN);
 		button.setText("View Report");
-		button.addActionListener(e->ActionPanelPlugin.getInstance().getActionsWindow().displayReport());
+		button.addActionListener(e->_parentPanel.displayReport());
 		setColumnWidths(350,150,110,110);
 		expandAll();
 	}
