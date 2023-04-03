@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JSeparator;
+import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
@@ -44,10 +45,14 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	
 	private List<ForecastTable>_tables = new ArrayList<>();
 	private EnabledJPanel _tablePanel;
-	private RmaTableModel _opsTableModel;
-	private RmaTableModel _metTableModel;
-	private RmaTableModel _bcTableModel;
-	private RmaTableModel _tempTargetTableModel;
+	private static RmaTableModel _opsTableModel;
+	private static RmaTableModel _metTableModel;
+	private static RmaTableModel _bcTableModel;
+	private static RmaTableModel _tempTargetTableModel;
+	private static ListSelectionModel _opsSelectionModel;
+	private static ListSelectionModel _metSelectionModel;
+	private static ListSelectionModel _bcSelectionModel;
+	private static ListSelectionModel _tempTargetSelectionModel;
 
 	/**
 	 * @param forecastPanel
@@ -89,6 +94,14 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		{
 			_opsTable = new ForecastTable(this, new String[] {"Operations"});
 		}
+		if ( _opsSelectionModel != null )
+		{
+			_opsTable.setSelectionModel(_opsSelectionModel);
+		}
+		else
+		{
+			_opsSelectionModel = _opsTable.getSelectionModel();
+		}
 		if ( _opsTableModel == null )
 		{
 			_opsTableModel = (RmaTableModel) _opsTable.getModel();
@@ -112,6 +125,14 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		else
 		{
 			_metTable = new ForecastTable(this, new String[] {"Meteorology"});
+		}
+		if ( _metSelectionModel != null )
+		{
+			_metTable.setSelectionModel(_metSelectionModel);
+		}
+		else
+		{
+			_metSelectionModel = _metTable.getSelectionModel();
 		}
 		if ( _metTableModel == null )
 		{
@@ -137,6 +158,14 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		{
 			_bcTable = new ForecastTable(this, new String[] {"Boundary Condition Sets"});
 		}
+		if ( _bcSelectionModel != null )
+		{
+			_bcTable.setSelectionModel(_bcSelectionModel);
+		}
+		else
+		{
+			_bcSelectionModel = _bcTable.getSelectionModel();
+		}
 		if ( _bcTableModel == null )
 		{
 			_bcTableModel = (RmaTableModel) _bcTable.getModel();
@@ -160,6 +189,14 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		else
 		{
 			_tempTargetTable = new ForecastTable(this, new String[] {"Temperature Target Sets"});
+		}
+		if ( _tempTargetSelectionModel != null )
+		{
+			_tempTargetTable.setSelectionModel(_tempTargetSelectionModel);
+		}
+		else
+		{
+			_tempTargetSelectionModel = _tempTargetTable.getSelectionModel();
 		}
 		if ( _tempTargetTableModel == null )
 		{
@@ -205,7 +242,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	/**
 	 * 
 	 */
-	private void addListeners()
+	protected void addListeners()
 	{
 		_opsTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_opsTable));
 		_metTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_metTable));
@@ -215,7 +252,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	}	
 	/**
 	 * @param e 
-	 * @param opsTable
+	 * @param table
 	 * @return
 	 */
 	private void tableSelected(ListSelectionEvent e, ForecastTable table)
@@ -289,8 +326,8 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 
 		private Border _defaultBorder;
 		/**
-		 * @param abstractForecastPanel
-		 * @param strings
+		 * @param parent
+		 * @param headers
 		 */
 		public ForecastTable(AbstractForecastPanel parent,
 				String[] headers)

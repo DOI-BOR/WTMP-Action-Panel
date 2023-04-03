@@ -9,16 +9,41 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 
+import com.google.common.flogger.FluentLogger;
+import com.rma.io.FileManagerImpl;
+import com.rma.io.RmaFile;
+import com.rma.model.Project;
+import hec.io.HecFile;
+import hec2.model.DataLocation;
+import hec2.plugin.model.ModelAlternative;
+import hec2.wat.model.WatSimulation;
+import hec2.wat.plugin.SimpleWatPlugin;
+import hec2.wat.plugin.WatPlugin;
+import hec2.wat.plugin.WatPluginManager;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
+import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.MetData;
+import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
 import usbr.wat.plugins.actionpanel.ui.NavPlotPanel;
+import usbr.wat.plugins.actionpanel.ui.NavPlotPanel2;
 
 /**
  * @author mark
@@ -26,10 +51,11 @@ import usbr.wat.plugins.actionpanel.ui.NavPlotPanel;
  */
 public class MeteorologyPanel extends AbstractForecastPanel
 {
-
+	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+	private static final String CONFIG_FILE = "shared/config/met_editor.config";
 	private RmaJTable _metInfoTable;
 	private JButton _importButton;
-	private NavPlotPanel _plotPanel;
+	private NavPlotPanel2 _plotPanel;
 	private ForecastSimGroup _fsg;
 
 	/**
@@ -38,7 +64,6 @@ public class MeteorologyPanel extends AbstractForecastPanel
 	public MeteorologyPanel(ForecastPanel forecastPanel)
 	{
 		super(forecastPanel);
-		addListeners();
 	}
 
 	
@@ -85,8 +110,7 @@ public class MeteorologyPanel extends AbstractForecastPanel
 		gbc.insets    = RmaInsets.INSETS5505;
 		lowerPanel.add(_importButton, gbc);
 		
-		_plotPanel = new NavPlotPanel();
-_plotPanel.getPlotPanel().buildDefaultComponents();
+		_plotPanel = new NavPlotPanel2();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -104,9 +128,11 @@ _plotPanel.getPlotPanel().buildDefaultComponents();
 	/**
 	 * 
 	 */
-	private void addListeners()
+	protected void addListeners()
 	{
+		super.addListeners();
 		_importButton.addActionListener(e->displayImportDataWindow());
+		getTableForPanel().getSelectionModel().addListSelectionListener(e->tableRowSelected());
 	}
 
 	/**
@@ -121,6 +147,17 @@ _plotPanel.getPlotPanel().buildDefaultComponents();
 		{
 			return;
 		}
+		List<MeteorlogicData> metData = dlg.getMetData();
+		for (int i = 0;i <metData.size(); i++ )
+		{
+			ForecastTable metTable = getTableForPanel();
+			Vector<MeteorlogicData> row = new Vector<>();
+			row.add(metData.get(i));
+			metTable.appendRow(row);
+			_fsg.getMeteorlogyData().add(metData.get(i));
+			_fsg.setModified(true);
+		}
+
 	}
 
 
@@ -134,9 +171,16 @@ _plotPanel.getPlotPanel().buildDefaultComponents();
 	@Override
 	protected void savePanel()
 	{
-		// TODO Auto-generated method stub
-		System.out.println("savePanel TODO implement me");
-		
+		List<MeteorlogicData>metDataList = new ArrayList<>();
+		ForecastTable table = getTableForPanel();
+		int numRows = table.getNumRows();
+		MeteorlogicData metData;
+		for (int r = 0;r < numRows;r++ )
+		{
+			metData = (MeteorlogicData) table.getValueAt(r,0);
+			metDataList.add(metData);
+		}
+		_fsg.setMeteorlogyData(metDataList);
 	}
 
 	@Override
@@ -144,7 +188,87 @@ _plotPanel.getPlotPanel().buildDefaultComponents();
 	{
 		setEnabled(fsg != null);
 		_fsg = fsg;
+		getTableForPanel().deleteCells();
+		_plotPanel.setEnabled(false);
+		if ( _fsg != null )
+		{
+			List<MeteorlogicData> data = _fsg.getMeteorlogyData();
+			_metTable.deleteCells();
+			Vector<MeteorlogicData> row;
+			for (int i = 0; i < data.size(); i++ )
+			{
+				row = new Vector<>();
+				row.add(data.get(i));
+				_metTable.appendRow(row);
+			}
+			fillNavPanel();
+		}
 	}
+
+	/**
+	 * TODO only supports ResSim model alternatives right now
+	 */
+	private void fillNavPanel()
+	{
+		_plotPanel.setLocationList(null);
+		Project prj = Project.getCurrentProject();
+
+		String prjDir = prj.getProjectDirectory();
+		String configPath = RMAIO.concatPath(prjDir, CONFIG_FILE);
+		RmaFile configFile = FileManagerImpl.getFileManager().getFile(configPath);
+		if ( configFile == null )
+		{
+			return;
+		}
+		BufferedReader reader = configFile.getBufferedReader();
+
+		if ( reader == null )
+		{
+			return;
+		}
+		String line;
+		try
+		{
+			//Met Station Location, Met parameter, Source DSS file, Source DSS record, Number of Destinations, Destination DSS file, Destination DSS record
+			reader.readLine(); // skip first line
+			Map<String, MetLocation> locationInfo = new HashMap<>();
+			String name;
+			while ((line = reader.readLine()) != null)
+			{
+				String[] metInfoArray = line.split(",");
+				if ( metInfoArray == null || metInfoArray.length == 0 )
+				{
+					continue;
+				}
+				MetLocation metLoc = locationInfo.get(metInfoArray[0]);
+				if ( metLoc == null )
+				{
+					metLoc = new MetLocation();
+					name = metInfoArray[0].trim();
+					metLoc.setName(name);
+					locationInfo.put(name, metLoc);
+				}
+				DssLocation dssLoc = new DssLocation(metInfoArray[1].trim(), metInfoArray[2].trim(), metInfoArray[3].trim());
+				metLoc.addDssLocation(dssLoc);
+			}
+			_plotPanel.setLocationList(locationInfo.values().stream().collect(Collectors.toList()));
+		}
+		catch ( IOException ioe)
+		{
+			LOGGER.atWarning().withCause(ioe).log("Error reading file "+configFile.getAbsolutePath());
+		}
+		finally
+		{
+			try
+			{
+				reader.close();
+			} catch (IOException e)
+			{
+			}
+		}
+
+	}
+
 
 
 
@@ -152,14 +276,23 @@ _plotPanel.getPlotPanel().buildDefaultComponents();
 	protected void tableRowSelected()
 	{
 		ForecastTable table =  getTableForPanel();
-		int row = table.getSelectedRow();
-		if ( row == -1 )
+		int selRow = table.getSelectedRow();
+		_metInfoTable.deleteCells();
+		if ( selRow > -1 )
 		{
-			
+			MeteorlogicData metData = (MeteorlogicData) table.getValueAt(selRow,0);
+			Vector row = new Vector();
+			row.add(metData.getName());
+			row.add(metData.getMetDataType());
+			row.add(metData.getDescription());
+
+			_metInfoTable.appendRow(row);
+			_plotPanel.setYear(metData.getYear());
+			_plotPanel.setEnabled(true);
 		}
 		else
 		{
-			MetData metData = (MetData) table.getValueAt(row,0);
+			_plotPanel.setEnabled(false);
 		}
 	}
 

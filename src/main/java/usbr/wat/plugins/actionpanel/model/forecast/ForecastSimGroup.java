@@ -23,6 +23,8 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 {
 	private List<TemperatureTarget> _tempTargets = new ArrayList<>();
 	private InitialConditions _initConditions = new InitialConditions();
+	private List<MeteorlogicData> _metData = new ArrayList<>();
+
 	public ForecastSimGroup()
 	{
 		super();
@@ -32,15 +34,38 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	/**
 	 * 
 	 * called late in the loading process to load data that's not simulation specific
-	 * @param doc
+	 * @param root
 	 */
 	@Override
 	protected void finishLoading(Element root)
 	{
 		loadTempTargets(root);
 		loadInitialConditions(root);
+		loadMetData(root);
 		
 	}
+
+	private void loadMetData(Element root)
+	{
+		_metData.clear();
+		Element metDataElem = root.getChild("Meteorology");
+		if ( metDataElem == null )
+		{
+			return;
+		}
+		List kids = metDataElem.getChildren();
+		for (int i = 0;i < kids.size(); i++ )
+		{
+			Element child = (Element) kids.get(i);
+			MeteorlogicData metData = new MeteorlogicData();
+			if ( metData.loadData(child))
+			{
+				_metData.add(metData);
+			}
+
+		}
+	}
+
 	/**
 	 * @param root
 	 */
@@ -125,7 +150,21 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	{
 		saveTempTargets(root);
 		saveInitialConditions(root);
+		saveMetData(root);
 		
+	}
+
+	private void saveMetData(Element root)
+	{
+		Element metElem = new Element("Meteorology");
+		root.addContent(metElem);
+		MeteorlogicData metData;
+		for (int i = 0;i < _metData.size(); i++ )
+		{
+			metData = _metData.get(i);
+			metData.saveData(metElem);
+		}
+
 	}
 
 
@@ -197,4 +236,22 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	{
 		return _tempTargets;
 	}
+
+	public List<MeteorlogicData> getMeteorlogyData()
+	{
+		return _metData;
+	}
+
+	public void setMeteorlogyData(List<MeteorlogicData>metDataList)
+	{
+		_metData.clear();
+		if ( metDataList != null )
+		{
+			_metData.addAll(metDataList);
+		}
+		setModified(true);
+	}
+
+
+
 }

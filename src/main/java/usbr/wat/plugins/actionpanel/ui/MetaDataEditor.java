@@ -32,7 +32,7 @@ public class MetaDataEditor extends RmaJDialog
 	private ButtonCmdPanel _cmdPanel;
 
 	/**
-	 * @param actionsWindow
+	 * @param parent
 	 */
 	public MetaDataEditor(Window parent)
 	{

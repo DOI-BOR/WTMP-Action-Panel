@@ -398,7 +398,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	/**
 	 * 
 	 */
-	private void addListeners()
+	protected void addListeners()
 	{
 		Project.addStaticProjectListener(new ProjectAdapter()
 		{

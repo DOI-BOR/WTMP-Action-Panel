@@ -34,6 +34,8 @@ import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
+import usbr.wat.plugins.actionpanel.model.forecast.MetDataType;
+import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
 
 /**
  * @author mark
@@ -125,8 +127,8 @@ public class ImportMetDataWindow extends RmaJDialog
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(label, gbc);
-		
-		String[] types = new String[] {"Historical", "L3MTO", "NCAR"};
+
+		MetDataType[] types = MetDataType.values();
 		_importTypeCombo = new RmaJComboBox<>(types);
 		label.setLabelFor(_importTypeCombo);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -360,32 +362,60 @@ public class ImportMetDataWindow extends RmaJDialog
 			JOptionPane.showMessageDialog(this, "Please Select a Data Source", "No Data Source", JOptionPane.PLAIN_MESSAGE);
 			return false;
 		}
-		List<String>selectedYears = getSelectedYears();
+		List<Integer>selectedYears = getSelectedYears();
 		if ( selectedYears.isEmpty() )
 		{
 			JOptionPane.showMessageDialog(this, "Please Select one or more years", "No Years Selected", JOptionPane.PLAIN_MESSAGE);
 			return false;
 		}
 		
-		return false;
+		return true;
 	}
 
+	public List<MeteorlogicData> getMetData()
+	{
+		List<MeteorlogicData>metDataSets = new ArrayList<>();
+		List<Integer> years = getSelectedYears();
+		importData(years);
+		int year;
+		for (int i=0; i < years.size(); i++ )
+		{
+			year = years.get(i);
+			MeteorlogicData metData = new MeteorlogicData();
+			metData.setName(_nameFld.getText().trim()+"-"+year);
+			metData.setDescription(_descFld.getText().trim());
+			metData.setMetDataType((MetDataType) _importTypeCombo.getSelectedItem());
+
+			metData.setYear(year);
+			metDataSets.add(metData);
+		}
+		return metDataSets;
+	}
+
+	/**
+	 * import the data from DSS, shifting it to the selected dates
+	 */
+	private void importData(List<Integer>year)
+	{
+
+	}
 
 
 	/**
 	 * @return
 	 */
-	private List<String> getSelectedYears()
+	private List<Integer> getSelectedYears()
 	{
 		int rowCnt = _metTable.getRowCount();
 		Object obj;
-		List<String>selectedYears = new ArrayList<>();
+		List<Integer>selectedYears = new ArrayList<>();
 		for (int r = 0;r < rowCnt;r++)
 		{
 			obj = _metTable.getValueAt(r, 0);
 			if ( Boolean.TRUE == obj || "true".equalsIgnoreCase(obj.toString()))
 			{
-				selectedYears.add((String) _metTable.getValueAt(r, 1));
+				String year = (String) _metTable.getValueAt(r, 1);
+				selectedYears.add(RMAIO.parseInt(year));
 			}
 		}
 		return selectedYears;
@@ -398,9 +428,7 @@ public class ImportMetDataWindow extends RmaJDialog
 	 */
 	public void fillForm(ForecastSimGroup fsg)
 	{
-		// TODO Auto-generated method stub
-		System.out.println("fillForm TODO implement me");
-		
+
 	}
 
 
