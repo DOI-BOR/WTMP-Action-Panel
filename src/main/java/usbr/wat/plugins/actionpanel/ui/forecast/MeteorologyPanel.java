@@ -171,16 +171,19 @@ public class MeteorologyPanel extends AbstractForecastPanel
 	@Override
 	protected void savePanel()
 	{
-		List<MeteorlogicData>metDataList = new ArrayList<>();
-		ForecastTable table = getTableForPanel();
-		int numRows = table.getNumRows();
-		MeteorlogicData metData;
-		for (int r = 0;r < numRows;r++ )
+		if ( _fsg != null )
 		{
-			metData = (MeteorlogicData) table.getValueAt(r,0);
-			metDataList.add(metData);
+			List<MeteorlogicData> metDataList = new ArrayList<>();
+			ForecastTable table = getTableForPanel();
+			int numRows = table.getNumRows();
+			MeteorlogicData metData;
+			for (int r = 0; r < numRows; r++)
+			{
+				metData = (MeteorlogicData) table.getValueAt(r, 0);
+				metDataList.add(metData);
+			}
+			_fsg.setMeteorlogyData(metDataList);
 		}
-		_fsg.setMeteorlogyData(metDataList);
 	}
 
 	@Override
@@ -275,24 +278,26 @@ public class MeteorologyPanel extends AbstractForecastPanel
 	@Override
 	protected void tableRowSelected()
 	{
-		ForecastTable table =  getTableForPanel();
-		int selRow = table.getSelectedRow();
-		_metInfoTable.deleteCells();
-		if ( selRow > -1 )
+		if ( _fsg != null )
 		{
-			MeteorlogicData metData = (MeteorlogicData) table.getValueAt(selRow,0);
-			Vector row = new Vector();
-			row.add(metData.getName());
-			row.add(metData.getMetDataType());
-			row.add(metData.getDescription());
+			ForecastTable table = getTableForPanel();
+			int selRow = table.getSelectedRow();
+			_metInfoTable.deleteCells();
+			if (selRow > -1)
+			{
+				MeteorlogicData metData = (MeteorlogicData) table.getValueAt(selRow, 0);
+				Vector row = new Vector();
+				row.add(metData.getName());
+				row.add(metData.getMetDataType());
+				row.add(metData.getDescription());
 
-			_metInfoTable.appendRow(row);
-			_plotPanel.setYear(metData.getYear());
-			_plotPanel.setEnabled(true);
-		}
-		else
-		{
-			_plotPanel.setEnabled(false);
+				_metInfoTable.appendRow(row);
+				_plotPanel.setYear(metData.getYear());
+				_plotPanel.setEnabled(true);
+			} else
+			{
+				_plotPanel.setEnabled(false);
+			}
 		}
 	}
 

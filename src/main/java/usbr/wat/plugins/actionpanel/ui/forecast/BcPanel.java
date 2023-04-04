@@ -9,13 +9,19 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JButton;
 
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
+import usbr.wat.plugins.actionpanel.model.forecast.BcData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
+import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
+import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 import usbr.wat.plugins.actionpanel.ui.NavPlotPanel;
 
 /**
@@ -29,6 +35,7 @@ public class BcPanel extends AbstractForecastPanel
 	private RmaJTable _bcInfoTable;
 	private JButton _createButton;
 	private NavPlotPanel _plotPanel;
+	private ForecastSimGroup _fsg;
 
 	/**
 	 * @param forecastPanel
@@ -52,6 +59,10 @@ public class BcPanel extends AbstractForecastPanel
 				Dimension d = super.getPreferredScrollableViewportSize();
 				d.height = getRowHeight() *1;
 				return d;
+			}
+			public boolean isCellEditable(int row, int col)
+			{
+				return false;
 			}
 		};
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -90,6 +101,38 @@ public class BcPanel extends AbstractForecastPanel
 	}
 
 	@Override
+	protected void addListeners()
+	{
+		super.addListeners();
+		_createButton.addActionListener(e->createBcAction());
+		getTableForPanel().getSelectionModel().addListSelectionListener(e->tableRowSelected());
+	}
+
+	private void createBcAction()
+	{
+		CreateBcWindow dlg = new CreateBcWindow(ActionPanelPlugin.getInstance().getActionsWindow());
+		dlg.fillForm(_fsg);
+		dlg.setVisible(true);
+		if ( dlg.isCanceled())
+		{
+			return;
+		}
+		List<BcData> bcDataList = dlg.getBcData();
+		ForecastTable bcTable = getTableForPanel();
+		BcData bcData;
+		for (int i = 0; i < bcDataList.size(); i++ )
+		{
+			bcData = bcDataList.get(i);
+			Vector<BcData> row = new Vector<>();
+			row.add(bcData);
+			bcTable.appendRow(row);
+			_fsg.getBcData().add(bcData);
+		}
+		_fsg.setModified(true);
+
+	}
+
+	@Override
 	public ForecastTable getTableForPanel()
 	{
 		return _bcTable;
@@ -98,31 +141,51 @@ public class BcPanel extends AbstractForecastPanel
 	@Override
 	protected void savePanel()
 	{
-		// TODO Auto-generated method stub
-		System.out.println("savePanel TODO implement me");
-		
+
 	}
 
 	@Override
 	public void setSimulationGroup(ForecastSimGroup fsg)
 	{
-		// TODO Auto-generated method stub
-		System.out.println("setSimulationGroup TODO implement me");
-		
+		setEnabled(fsg != null);
+		_fsg = fsg;
+		ForecastTable table = getTableForPanel();
+		table.deleteCells();
+		_plotPanel.setEnabled(false);
+		if ( _fsg != null )
+		{
+			List<BcData> data = _fsg.getBcData();
+			Vector<BcData> row;
+			for (int i = 0; i < data.size(); i++ )
+			{
+				row = new Vector<>();
+				row.add(data.get(i));
+				table.appendRow(row);
+			}
+			fillNavPanel();
+		}
+	}
+
+	private void fillNavPanel()
+	{
 	}
 
 	@Override
 	protected void tableRowSelected()
 	{
-		ForecastTable table = getTableForPanel();
-		int row = table.getSelectedRow();
-		if ( row == -1 )
+		if ( _fsg != null )
 		{
-			// clear panel
-		}
-		else
-		{
-			//fill Panel
+			ForecastTable table = getTableForPanel();
+			int selRow = table.getSelectedRow();
+			_bcInfoTable.deleteCells();
+			if (selRow > -1)
+			{
+				BcData bcData = (BcData) table.getValueAt(selRow, 0);
+				Vector row = new Vector();
+				row.add(bcData.getName());
+
+				_bcInfoTable.appendRow(row);
+			}
 		}
 	}
 

@@ -11,6 +11,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -205,10 +207,8 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		}
 		if ( _tempTargetTableModel == null )
 		{
-			_tempTargetTableModel = new TempTargetForecastTableModel();
-			_tempTargetTable.setModel(_tempTargetTableModel);
+			_tempTargetTableModel = (RmaTableModel) _tempTargetTable.getModel();
 		}
-		_tempTargetTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		_tempTargetTable.setName("Temperature Target Sets");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -255,7 +255,35 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		_metTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_metTable));
 		_bcTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_bcTable));
 		_tempTargetTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_tempTargetTable));
-		
+		_opsTable.addMouseListener(new MouseAdapter()
+	   {
+			public void mouseReleased(MouseEvent e)
+			{
+				_forecastPanel.setSelectedTab(getPanelForTable(_opsTable));
+			}
+	   });
+		_metTable.addMouseListener(new MouseAdapter()
+		{
+			public void mouseReleased(MouseEvent e)
+			{
+				_forecastPanel.setSelectedTab(getPanelForTable(_metTable));
+			}
+		});
+		_bcTable.addMouseListener(new MouseAdapter()
+		{
+			public void mouseReleased(MouseEvent e)
+			{
+				_forecastPanel.setSelectedTab(getPanelForTable(_bcTable));
+			}
+		});
+		_tempTargetTable.addMouseListener(new MouseAdapter()
+		{
+			public void mouseReleased(MouseEvent e)
+			{
+				_forecastPanel.setSelectedTab(getPanelForTable(_tempTargetTable));
+			}
+		});
+
 	}	
 	/**
 	 * @param e 

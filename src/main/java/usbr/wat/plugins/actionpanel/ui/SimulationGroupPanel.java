@@ -111,7 +111,7 @@ public class SimulationGroupPanel extends EnabledJPanel
 		gbc.insets    = RmaInsets.INSETS5500;
 		add(_newButton, gbc);
 		
-		_deleteButton = new JButton(new DeleteForecastSimGroupAction());
+		_deleteButton = new JButton(new DeleteForecastSimGroupAction(ActionPanelPlugin.getInstance().getActionsWindow()));
 		_deleteButton.setEnabled(false);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -233,11 +233,7 @@ public class SimulationGroupPanel extends EnabledJPanel
 	{
 		_newButton.setEnabled(true);
 		_deleteButton.setEnabled(true);
-		Project prj = Project.getCurrentProject();
-		List<ManagerProxy> simGroupProxies = prj.getManagerProxyListForType(ForecastSimGroup.class);
-		RMASort.quickSort(simGroupProxies);
-		RmaListModel<ManagerProxy> newModel = new RmaListModel<>(false, simGroupProxies);
-		_simulationGroupCombo.setModel(newModel);
+		loadSimulationGroupCombo();
 	}
 
 	/**
@@ -268,5 +264,19 @@ public class SimulationGroupPanel extends EnabledJPanel
 			_simulationGroupCombo.setSelectedItem(proxy);
 		}
 		_descFld.setText(fsg.getDescription());
+	}
+
+	public void loadSimulationGroupCombo()
+	{
+		Project prj = Project.getCurrentProject();
+		Object curProxy = _simulationGroupCombo.getSelectedItem();
+		List<ManagerProxy> simGroupProxies = prj.getManagerProxyListForType(ForecastSimGroup.class);
+		RMASort.quickSort(simGroupProxies);
+		RmaListModel<ManagerProxy> newModel = new RmaListModel<>(false, simGroupProxies);
+		_simulationGroupCombo.setModel(newModel);
+		if ( newModel.contains(curProxy))
+		{
+			_simulationGroupCombo.setSelectedItem(curProxy);
+		}
 	}
 }

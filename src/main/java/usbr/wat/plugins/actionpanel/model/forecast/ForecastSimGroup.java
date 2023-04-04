@@ -24,6 +24,8 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	private List<TemperatureTargetSet> _tempTargetSets = new ArrayList<>();
 	private InitialConditions _initConditions = new InitialConditions();
 	private List<MeteorlogicData> _metData = new ArrayList<>();
+	private List<OperationsData> _opsData = new ArrayList<>();
+	private List<BcData> _bcData = new ArrayList<>();
 
 	public ForecastSimGroup()
 	{
@@ -41,8 +43,52 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	{
 		loadTempTargetSets(root);
 		loadInitialConditions(root);
+		loadOpsData(root);
 		loadMetData(root);
+		loadBcData(root);
 		
+	}
+
+	private void loadBcData(Element root)
+	{
+		_bcData.clear();
+		Element bcDataElem = root.getChild("BoundaryConditions");
+		if ( bcDataElem == null )
+		{
+			return;
+		}
+		List kids = bcDataElem.getChildren();
+		for (int i = 0;i < kids.size(); i++ )
+		{
+			Element child = (Element) kids.get(i);
+			BcData bcData = new BcData();
+			if ( bcData.loadData(child))
+			{
+				_bcData.add(bcData);
+			}
+
+		}
+	}
+
+	private void loadOpsData(Element root)
+	{
+		_opsData.clear();
+		Element opsDataElem = root.getChild("Operations");
+		if ( opsDataElem == null )
+		{
+			return;
+		}
+		List kids = opsDataElem.getChildren();
+		for (int i = 0;i < kids.size(); i++ )
+		{
+			Element child = (Element) kids.get(i);
+			OperationsData opsData = new OperationsData();
+			if ( opsData.loadData(child))
+			{
+				_opsData.add(opsData);
+			}
+
+		}
 	}
 
 	private void loadMetData(Element root)
@@ -108,11 +154,6 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		}
 	}
 
-	@Override
-	protected boolean loadDocument(Document doc)
-	{
-		return super.loadDocument(doc);
-	}
 
 	/**
 	 *  initial things for loading from a file
@@ -149,8 +190,34 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	{
 		saveTempTargets(root);
 		saveInitialConditions(root);
+		saveOpsData(root);
 		saveMetData(root);
+		saveBcData(root);
 		
+	}
+
+	private void saveBcData(Element root)
+	{
+		Element bcElem = new Element("BoundaryConditions");
+		root.addContent(bcElem);
+		BcData bcData;
+		for (int i = 0;i < _bcData.size(); i++ )
+		{
+			bcData = _bcData.get(i);
+			bcData.saveData(bcElem);
+		}
+	}
+
+	private void saveOpsData(Element root)
+	{
+		Element opsElem = new Element("Operations");
+		root.addContent(opsElem);
+		OperationsData opsData;
+		for (int i = 0;i < _opsData.size(); i++ )
+		{
+			opsData = _opsData.get(i);
+			opsData.saveData(opsElem);
+		}
 	}
 
 	private void saveMetData(Element root)
@@ -254,5 +321,22 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	}
 
 
+	public List<OperationsData> getOperationsData()
+	{
+		return _opsData;
+	}
+	public void setOperationsData(List<OperationsData>opsDataList)
+	{
+		_opsData.clear();
+		if ( opsDataList != null )
+		{
+			_opsData.addAll(opsDataList);
+		}
+		setModified(true);
+	}
 
+	public List<BcData> getBcData()
+	{
+		return _bcData;
+	}
 }

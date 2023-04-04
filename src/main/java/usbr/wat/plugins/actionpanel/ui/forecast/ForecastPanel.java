@@ -180,4 +180,16 @@ public class ForecastPanel extends RmaJPanel
 		}
 	}
 
+	public void loadSimulationGroupCombo()
+	{
+		_simGroupPanel.loadSimulationGroupCombo();
+	}
+
+	public void setSelectedTab(AbstractForecastPanel panel)
+	{
+		if (panel != null )
+		{
+			_tabbedPane.setSelectedComponent(panel);
+		}
+	}
 }
