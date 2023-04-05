@@ -9,11 +9,21 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.JButton;
 
+import com.rma.model.Manager;
+import com.rma.model.Project;
+import hec2.wat.model.WatAnalysisPeriod;
+import org.joda.time.LocalDate;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
@@ -31,7 +41,7 @@ import usbr.wat.plugins.actionpanel.ui.NavPlotPanel;
 @SuppressWarnings("serial")
 public class BcPanel extends AbstractForecastPanel
 {
-
+	private static final Logger LOGGER = Logger.getLogger(BcPanel.class.getName());
 	private RmaJTable _bcInfoTable;
 	private JButton _createButton;
 	private NavPlotPanel _plotPanel;
@@ -119,10 +129,10 @@ public class BcPanel extends AbstractForecastPanel
 		}
 		List<BcData> bcDataList = dlg.getBcData();
 		ForecastTable bcTable = getTableForPanel();
-		BcData bcData;
 		for (int i = 0; i < bcDataList.size(); i++ )
 		{
-			bcData = bcDataList.get(i);
+			BcData bcData = bcDataList.get(i);
+			runScript(bcData);
 			Vector<BcData> row = new Vector<>();
 			row.add(bcData);
 			bcTable.appendRow(row);
@@ -130,6 +140,54 @@ public class BcPanel extends AbstractForecastPanel
 		}
 		_fsg.setModified(true);
 
+	}
+
+	private void runScript(BcData bcData)
+	{
+		createSimGroupDir();
+		WatAnalysisPeriod analysisPeriod = _fsg.getAnalysisPeriod();
+		if(analysisPeriod != null)
+		{
+			OperationsData opsData = _fsg.getOperationsData().stream()
+					.filter(ops -> ops.getName().equalsIgnoreCase(bcData.getOpsDataName()))
+					.findFirst()
+					.orElse(null);
+			MeteorlogicData metData = _fsg.getMeteorlogyData().stream()
+					.filter(met -> met.getName().equalsIgnoreCase(bcData.getMetDataName()))
+					.findFirst()
+					.orElse(null);
+			if(opsData != null && metData != null)
+			{
+				int targetYear = analysisPeriod.getRunTimeWindow().getStartTime().year();
+				String bcFPart = bcData.getName();
+				String bcOutputDssFile = Project.getCurrentProject().getAbsolutePath("forecastData/" + _fsg.getName() + "/bc.dss");
+				String opsFileName = opsData.getOperationsFile();
+				String dssMapFile = Project.getCurrentProject().getAbsolutePath("forecastData/" + _fsg.getName() + "/" + bcData.getName() + ".txt");
+				int positionAnalysisYear = metData.getYear();
+				String positionalAnalysisConfigFile = Project.getCurrentProject().getAbsolutePath("shared/config/historical_met.config");
+				String metFPart = bcFPart;
+				String metOutputDssFileName = bcOutputDssFile;
+				String opsImportFPart = bcFPart;
+				String flowPatternConfigFile = Project.getCurrentProject().getAbsolutePath("shared/config/flow_pattern.config");
+				PythonScriptUtil.runScript(Paths.get("scripts/BoundaryConditionScript.py"), "build_BC_data_sets",
+						targetYear, bcFPart, bcOutputDssFile, opsFileName, dssMapFile, positionAnalysisYear, positionalAnalysisConfigFile,
+						metFPart, metOutputDssFileName, flowPatternConfigFile, opsImportFPart);
+			}
+		}
+	}
+
+	private void createSimGroupDir()
+	{
+		String forecastSimGroupDirectory = "forecastData/" + _fsg.getName();
+		try
+		{
+			Path newDssFilesDirectory = Paths.get(Project.getCurrentProject().getAbsolutePath(forecastSimGroupDirectory));
+			Files.createDirectories(newDssFilesDirectory);
+		}
+		catch (IOException e)
+		{
+			LOGGER.log(Level.CONFIG, e, () -> "Failed to create " + forecastSimGroupDirectory + " directories");
+		}
 	}
 
 	@Override

@@ -71,4 +71,14 @@ public class BcData extends NamedType
 			_metDataName = metData.getName();
 		}
 	}
+
+	public String getOpsDataName()
+	{
+		return _opsDataName;
+	}
+
+	public String getMetDataName()
+	{
+		return _metDataName;
+	}
 }
