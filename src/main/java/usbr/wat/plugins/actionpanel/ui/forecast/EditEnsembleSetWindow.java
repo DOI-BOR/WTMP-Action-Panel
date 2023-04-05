@@ -15,6 +15,7 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -26,8 +27,6 @@ import rma.swing.RmaJTable;
 import usbr.wat.plugins.actionpanel.model.forecast.BcData;
 import usbr.wat.plugins.actionpanel.model.forecast.EnsembleSet;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
-import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
-import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 
 public class EditEnsembleSetWindow extends RmaJDialog
@@ -170,10 +169,10 @@ public class EditEnsembleSetWindow extends RmaJDialog
 	{
 		List<BcData> bcData = getSelectedBcData();
 		List<TemperatureTargetSet>ttsData = getSelectedTempTargetSets();
-		int bcCnt = bcData.size()*ttsData.size();
-		if ( bcCnt > 0 )
+		int esCnt = bcData.size()*ttsData.size();
+		if ( esCnt > 0 )
 		{
-			_infoLabel.setText("Selections will craate " + bcCnt + " Ensemble Members");
+			_infoLabel.setText("Selections will create " + esCnt + " Ensemble Sets");
 		}
 		else
 		{
@@ -199,15 +198,35 @@ public class EditEnsembleSetWindow extends RmaJDialog
 	}
 	public void fillForm(ForecastSimGroup simulationGroup)
 	{
-		simulationGroup.getBcData();
-		simulationGroup.getTemperatureTargetSets();
+		List<BcData> bcData = simulationGroup.getBcData();
+		List<TemperatureTargetSet> tempTargetSets = simulationGroup.getTemperatureTargetSets();
+
+		_bcTable.deleteCells();
+		Vector<Object> row;
+		for (int i = 0;i < bcData.size(); i++ )
+		{
+			row = new Vector<>();
+			row.add(Boolean.FALSE);
+			row.add(bcData.get(i));
+			_bcTable.appendRow(row);
+		}
+
+		_tempTargetSetTable.deleteCells();
+		for (int i = 0;i < tempTargetSets.size(); i++ )
+		{
+			row = new Vector<>();
+			row.add(Boolean.FALSE);
+			row.add(tempTargetSets.get(i));
+			_tempTargetSetTable.appendRow(row);
+		}
+
 	}
 
 	public boolean isCanceled()
 	{
 		return _canceled;
 	}
-	public List<EnsembleSet> getBcData()
+	public List<EnsembleSet> getEnsembleSets()
 	{
 		List<EnsembleSet>selectedEnsembleSets = new ArrayList<>();
 		List<BcData>bcData = getSelectedBcData();
@@ -223,7 +242,7 @@ public class EditEnsembleSetWindow extends RmaJDialog
 				EnsembleSet ensembleSet = new EnsembleSet();
 				ensembleSet.setName(bc.getName()+"-"+tts.getName());
 				ensembleSet.setSelectedBcData(bc);
-				ensembleSet.setSelectedTempuratureTargetSets(tts);
+				ensembleSet.setSelectedTemperatureTargetSets(tts);
 				selectedEnsembleSets.add(ensembleSet);
 			}
 		}

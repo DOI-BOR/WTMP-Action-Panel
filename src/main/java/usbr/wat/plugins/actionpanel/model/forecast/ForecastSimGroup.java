@@ -10,7 +10,6 @@ package usbr.wat.plugins.actionpanel.model.forecast;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdom.Document;
 import org.jdom.Element;
 
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
@@ -26,6 +25,7 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	private List<MeteorlogicData> _metData = new ArrayList<>();
 	private List<OperationsData> _opsData = new ArrayList<>();
 	private List<BcData> _bcData = new ArrayList<>();
+	private List<EnsembleSet> _ensembleSets = new ArrayList();
 
 	public ForecastSimGroup()
 	{
@@ -46,9 +46,45 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		loadOpsData(root);
 		loadMetData(root);
 		loadBcData(root);
+		loadEnsembleSets(root);
 
 		
 	}
+
+	private void loadEnsembleSets(Element root)
+	{
+		_ensembleSets.clear();
+		Element esetsElem = root.getChild("EnsembleSets");
+		if ( esetsElem == null )
+		{
+			return;
+		}
+		List kids = esetsElem.getChildren();
+		EnsembleSet eset;
+		for (int i = 0;i < kids.size(); i++ )
+		{
+			Element child = (Element) kids.get(i);
+			eset = new EnsembleSet();
+			if ( eset.loadData(child))
+			{
+				_ensembleSets.add(eset);
+			}
+		}
+		BcData bcData;
+		for (int i = 0;i < _ensembleSets.size();i++ )
+		{
+			eset = _ensembleSets.get(i);
+			String bcDataName = eset.getBcDataName();
+			bcData = getBcData(bcDataName);
+			eset.setSelectedBcData(bcData);
+
+			String ttsName = eset.getTemperatureTargetSetName();
+			TemperatureTargetSet ttset = getTemperatureTargetSet(ttsName);
+			eset.setSelectedTemperatureTargetSets(ttset);
+		}
+	}
+
+
 
 	private void loadBcData(Element root)
 	{
@@ -72,7 +108,85 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		for (int i = 0;i < _bcData.size();i++ )
 		{
 			bcData = _bcData.get(i);
+			String metDataName = bcData.getMetDataName();
+			MeteorlogicData metData = getMetData(metDataName);
+			bcData.setSelectedMet(metData);
+
+			String opsDataName = bcData.getOpsDataName();
+			OperationsData opsData = getOpsData(opsDataName);
+			bcData.setSelectedOps(opsData);
 		}
+	}
+
+	private OperationsData getOpsData(String opsDataName)
+	{
+		if ( opsDataName == null )
+		{
+			return null;
+		}
+		OperationsData opsData;
+		for (int i = 0;i < _opsData.size(); i++ )
+		{
+			opsData = _opsData.get(i);
+			if ( opsDataName.equals(opsData.getName()))
+			{
+				return opsData;
+			}
+		}
+		return null;
+	}
+	public BcData getBcData(String bcDataName)
+	{
+		if ( bcDataName == null )
+		{
+			return null;
+		}
+		BcData bcData;
+		for (int i = 0;i < _bcData.size(); i++ )
+		{
+			bcData = _bcData.get(i);
+			if ( bcDataName.equals(bcData.getName()))
+			{
+				return bcData;
+			}
+		}
+		return null;
+	}
+
+	public MeteorlogicData getMetData(String metDataName)
+	{
+		if ( metDataName == null )
+		{
+			return null;
+		}
+		MeteorlogicData metData;
+		for (int i = 0;i < _metData.size(); i++ )
+		{
+			metData = _metData.get(i);
+			if ( metDataName.equals(metData.getName()))
+			{
+				return metData;
+			}
+		}
+		return null;
+	}
+
+	public TemperatureTargetSet getTemperatureTargetSet(String ttsName)
+	{
+		if ( ttsName == null )
+		{
+			return null;
+		}
+		TemperatureTargetSet tts;
+		for (int i = 0;i < _tempTargetSets.size(); i++ )
+		{
+			tts = _tempTargetSets.get(i);
+			if ( ttsName.equals(tts.getName()))
+			{
+				return tts;
+			}
+		}
+		return null;
 	}
 
 	private void loadOpsData(Element root)
@@ -198,7 +312,20 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		saveOpsData(root);
 		saveMetData(root);
 		saveBcData(root);
+		saveEnsembleSets(root);
 		
+	}
+
+	private void saveEnsembleSets(Element root)
+	{
+		Element ecElem = new Element("EnsembleSets");
+		root.addContent(ecElem);
+		EnsembleSet eSet;
+		for (int i = 0;i < _ensembleSets.size(); i++ )
+		{
+			eSet = _ensembleSets.get(i);
+			eSet.saveData(ecElem);
+		}
 	}
 
 	private void saveBcData(Element root)
@@ -344,4 +471,19 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	{
 		return _bcData;
 	}
+
+	public void setEnsembleSets(List<EnsembleSet> ensembleSets)
+	{
+		_ensembleSets.clear();
+		if ( ensembleSets != null )
+		{
+			_ensembleSets.addAll(ensembleSets);
+		}
+		setModified(true);
+	}
+	public List<EnsembleSet>getEnsembleSets()
+	{
+		return _ensembleSets;
+	}
+
 }

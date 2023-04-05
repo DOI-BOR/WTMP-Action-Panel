@@ -11,6 +11,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -33,6 +34,7 @@ import usbr.wat.plugins.actionpanel.SimulationActionsPanel;
 import usbr.wat.plugins.actionpanel.actions.forecast.EditEnsembleSetAction;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
+import usbr.wat.plugins.actionpanel.model.forecast.EnsembleSet;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.ui.AbstractSimulationPanel;
 import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
@@ -288,7 +290,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.insets = RmaInsets.INSETS0000;
 		add(panel, gbc);
 
-		EditEnsembleSetAction editAction = new EditEnsembleSetAction();
+		EditEnsembleSetAction editAction = new EditEnsembleSetAction(this);
 		_editEnsembleButton = new JButton(editAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -341,7 +343,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 			ForecastSimGroup fsg = (ForecastSimGroup) asg;
 			_parentPanel.setSimulationGroup(fsg);
 			fillSimulationTable();
-			fillEnsembleTable();
+			setEnsembleSets(fsg.getEnsembleSets());
 			fillAnalysisWindow();
 			setEnabled(true);
 		}
@@ -349,7 +351,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		{
 			_parentPanel.setSimulationGroup(null);
 			fillSimulationTable();
-			fillEnsembleTable();
+			setEnsembleSets(null);
 			fillAnalysisWindow();
 			setEnabled(true);
 		}
@@ -388,12 +390,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 	/**
 	 * 
 	 */
-	private void fillEnsembleTable()
-	{
-		// TODO Auto-generated method stub
-		System.out.println("fillEnsembleTable TODO implement me");
-		
-	}
+
 
 	@Override
 	public AbstractSimulationGroup getSimulationGroup()
@@ -404,5 +401,28 @@ public class SimulationPanel extends AbstractSimulationPanel
 	public List<ResultsData> getSelectedResults()
 	{
 		return _simulationTable.getSelectedResults();
+	}
+
+	public void setEnsembleSets(List<EnsembleSet> ensembleSets)
+	{
+		_simEnsembleTable.deleteCells();
+		if ( ensembleSets == null )
+		{
+			return;
+		}
+		Vector<Object> row;
+		EnsembleSet eset;
+		for(int i = 0; i < ensembleSets.size(); i++ )
+		{
+			eset = ensembleSets.get(i);
+			row = new Vector();
+			row.add(Boolean.FALSE);
+			row.add(eset.getBcData());
+			row.add(eset.getTemperatureTargetSet());
+			row.add("");
+			row.add(eset.getComputedMembers());
+
+			_simEnsembleTable.appendRow(row);
+		}
 	}
 }

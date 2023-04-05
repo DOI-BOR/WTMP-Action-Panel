@@ -19,6 +19,7 @@ public class EnsembleSet extends NamedType
 	private TemperatureTargetSet _tempTargetSet;
 	private String _bcDataName;
 	private String _tempTargetSetName;
+	private int[] _computedMembers;
 
 	public EnsembleSet()
 	{
@@ -38,7 +39,7 @@ public class EnsembleSet extends NamedType
 		}
 	}
 
-	public void setSelectedTempuratureTargetSets(TemperatureTargetSet tts)
+	public void setSelectedTemperatureTargetSets(TemperatureTargetSet tts)
 	{
 		_tempTargetSet = tts;
 		if ( _tempTargetSet != null )
@@ -63,6 +64,12 @@ public class EnsembleSet extends NamedType
 		Element ttsElem = new Element("TemperatureTargetSet");
 		myElem.addContent(ttsElem);
 		ttsElem.setText(_tempTargetSetName);
+
+		if ( _computedMembers != null )
+		{
+			Element computedMembersElem = new Element("ComputedMembers");
+			XMLUtilities.createArrayElements(computedMembersElem, _computedMembers);
+		}
 	}
 
 	public boolean loadData(Element myElem)
@@ -78,5 +85,30 @@ public class EnsembleSet extends NamedType
 		_tempTargetSetName = XMLUtilities.getChildElementAsString(myElem,"TemperatureTargetSet", "");
 
 		return true;
+	}
+
+	public BcData getBcData()
+	{
+		return _bcData;
+	}
+
+	public TemperatureTargetSet getTemperatureTargetSet()
+	{
+		return _tempTargetSet;
+	}
+
+	public int[] getComputedMembers()
+	{
+		return _computedMembers;
+	}
+
+	public String getBcDataName()
+	{
+		return _bcDataName;
+	}
+
+	public String getTemperatureTargetSetName()
+	{
+		return _tempTargetSetName;
 	}
 }

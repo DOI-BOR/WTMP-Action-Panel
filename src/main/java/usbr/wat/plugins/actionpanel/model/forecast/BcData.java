@@ -19,6 +19,9 @@ public class BcData extends NamedType
 {
 	private String _opsDataName = "";
 	private String _metDataName = "";
+	private OperationsData _opsData;
+	private MeteorlogicData _metData;
+
 	public BcData()
 	{
 		super();
@@ -57,6 +60,7 @@ public class BcData extends NamedType
 	public void setSelectedOps(OperationsData opsData)
 	{
 		_opsDataName = "";
+		_opsData = opsData;
 		if ( opsData != null )
 		{
 			_opsDataName = opsData.getName();
@@ -66,6 +70,7 @@ public class BcData extends NamedType
 	public void setSelectedMet(MeteorlogicData metData)
 	{
 		_metDataName = "";
+		_metData = metData;
 		if ( metData != null )
 		{
 			_metDataName = metData.getName();
@@ -81,4 +86,15 @@ public class BcData extends NamedType
 	{
 		return _metDataName;
 	}
+
+	public OperationsData getOperationsData()
+	{
+		return _opsData;
+	}
+
+	public MeteorlogicData getMeteorogicalData()
+	{
+		return _metData;
+	}
+
 }
