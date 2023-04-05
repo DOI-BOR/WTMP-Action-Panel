@@ -256,34 +256,45 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		_metTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_metTable));
 		_bcTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_bcTable));
 		_tempTargetTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_tempTargetTable));
-		_opsTable.addMouseListener(new MouseAdapter()
-	   {
+		MouseAdapter opsMa =new MouseAdapter()
+		{
 			public void mouseReleased(MouseEvent e)
 			{
 				_forecastPanel.setSelectedTab(getPanelForTable(_opsTable));
 			}
-	   });
-		_metTable.addMouseListener(new MouseAdapter()
+		} ;
+		_opsTable.addMouseListener(opsMa);
+		_opsTable.getScrollPane().addMouseListener(opsMa);
+
+		MouseAdapter metMa = new MouseAdapter()
 		{
 			public void mouseReleased(MouseEvent e)
 			{
 				_forecastPanel.setSelectedTab(getPanelForTable(_metTable));
 			}
-		});
-		_bcTable.addMouseListener(new MouseAdapter()
+		};
+		_metTable.addMouseListener(metMa);
+		_metTable.getScrollPane().addMouseListener(metMa);
+
+		MouseAdapter bcMa =new MouseAdapter()
 		{
 			public void mouseReleased(MouseEvent e)
 			{
 				_forecastPanel.setSelectedTab(getPanelForTable(_bcTable));
 			}
-		});
-		_tempTargetTable.addMouseListener(new MouseAdapter()
+		};
+		_bcTable.addMouseListener(bcMa);
+		_bcTable.getScrollPane().addMouseListener(bcMa);
+
+		MouseAdapter ttMa = new MouseAdapter()
 		{
 			public void mouseReleased(MouseEvent e)
 			{
 				_forecastPanel.setSelectedTab(getPanelForTable(_tempTargetTable));
 			}
-		});
+		};
+		_tempTargetTable.addMouseListener(ttMa);
+		_tempTargetTable.getScrollPane().addMouseListener(ttMa);
 
 	}	
 	/**

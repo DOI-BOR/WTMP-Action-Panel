@@ -46,6 +46,7 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		loadOpsData(root);
 		loadMetData(root);
 		loadBcData(root);
+
 		
 	}
 
@@ -66,7 +67,11 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 			{
 				_bcData.add(bcData);
 			}
-
+		}
+		BcData bcData;
+		for (int i = 0;i < _bcData.size();i++ )
+		{
+			bcData = _bcData.get(i);
 		}
 	}
 

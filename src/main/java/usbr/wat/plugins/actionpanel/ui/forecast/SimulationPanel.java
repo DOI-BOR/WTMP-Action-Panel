@@ -30,6 +30,7 @@ import rma.swing.table.MleHeadRenderer;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.SimulationActionsPanel;
+import usbr.wat.plugins.actionpanel.actions.forecast.EditEnsembleSetAction;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
@@ -275,8 +276,20 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(_simEnsembleTable.getScrollPane(), gbc);
-		
-		_editEnsembleButton = new JButton("Edit Ensemble Set...");
+
+		JPanel panel = new JPanel(new GridBagLayout());
+		gbc.gridx = GridBagConstraints.RELATIVE;
+		gbc.gridy = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx = 0.0;
+		gbc.weighty = 0.0;
+		gbc.anchor = GridBagConstraints.NORTHWEST;
+		gbc.fill = GridBagConstraints.NONE;
+		gbc.insets = RmaInsets.INSETS0000;
+		add(panel, gbc);
+
+		EditEnsembleSetAction editAction = new EditEnsembleSetAction();
+		_editEnsembleButton = new JButton(editAction);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -285,7 +298,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.insets(20,5,0,5);
-		add(_editEnsembleButton, gbc);
+		panel.add(_editEnsembleButton, gbc);
 		
 		_recomputeAllChk = new RmaJCheckBox("Recompute All");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -296,7 +309,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.insets(20,5,0,5);
-		add(_recomputeAllChk, gbc);
+		panel.add(_recomputeAllChk, gbc);
 	
 	}
 
@@ -330,6 +343,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 			fillSimulationTable();
 			fillEnsembleTable();
 			fillAnalysisWindow();
+			setEnabled(true);
 		}
 		else
 		{
@@ -337,7 +351,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 			fillSimulationTable();
 			fillEnsembleTable();
 			fillAnalysisWindow();
-			
+			setEnabled(true);
 		}
 	}
 
