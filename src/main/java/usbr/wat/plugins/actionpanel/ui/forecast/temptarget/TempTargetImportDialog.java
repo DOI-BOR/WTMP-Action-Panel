@@ -316,13 +316,10 @@ public final class TempTargetImportDialog extends RmaJDialog
         {
             List<DSSPathname> pathnames = getSelectedTempTargetSetPathNames();
             retVal.setDssPathNames(pathnames);
-            if(!pathnames.isEmpty())
+            Object collectionId = _temperatureSetsComboBox.getSelectedItem();
+            if(collectionId != null)
             {
-                Object collectionId = _temperatureSetsComboBox.getSelectedItem();
-                if(collectionId != null)
-                {
-                    retVal.setName(collectionId.toString());
-                }
+                retVal.setName(collectionId.toString());
             }
             retVal.setUserDefined(false);
             retVal.setFilePath(Paths.get(_importFileChooserField.getText()));

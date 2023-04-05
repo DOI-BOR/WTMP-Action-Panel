@@ -46,10 +46,16 @@ final class TempTargetTableModel extends RmaTableModel
             Double val = rowData.getValueForTempTargetColumn(col);
             if(val != null && val != RMAConst.HEC_UNDEFINED_DOUBLE)
             {
-                retVal = val;
+                retVal = roundToNDigits(val, 6);
             }
         }
         return retVal;
+    }
+
+    private double roundToNDigits(double input, int n) {
+        double powerOf10 = Math.pow(10, n);
+        double output = Math.round(input * powerOf10) / powerOf10;
+        return output;
     }
 
     @Override
@@ -134,4 +140,5 @@ final class TempTargetTableModel extends RmaTableModel
             }
         }
     }
+
 }

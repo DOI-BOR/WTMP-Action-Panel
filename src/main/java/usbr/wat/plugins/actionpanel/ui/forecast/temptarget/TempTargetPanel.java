@@ -9,6 +9,12 @@ package usbr.wat.plugins.actionpanel.ui.forecast.temptarget;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,8 +31,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.JButton;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
@@ -40,6 +45,7 @@ import hec.io.TimeSeriesContainer;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
+import rma.swing.table.RmaCellEditor;
 import rma.swing.table.RmaTableModel;
 import rma.util.RMAConst;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
@@ -59,6 +65,8 @@ public class TempTargetPanel extends AbstractForecastPanel
 	private RmaJTable _ttTable;
 	private TempTargetTableModel _ttTableModel;
 	private TemperatureTargetSet _selectedTempTargetSet;
+	private int _topTableRowSelected;
+	private ForecastSimGroup _fsg;
 
 	/**
 	 * @param forecastPanel - parent forecast panel
@@ -108,9 +116,6 @@ public class TempTargetPanel extends AbstractForecastPanel
 	private void fillTempTargetInfoTable(TemperatureTargetSet tempTargetSet)
 	{
 		_ttInfoTable.setValueAt(tempTargetSet, 0, 0);
-		_ttInfoTable.setEditable(false);
-		_ttInfoTable.setEnabled(false);
-		_ttInfoTable.setRowEnabled(false, 0);
 		_ttInfoTable.setColumnEnabled(false, 0);
 	}
 
@@ -149,7 +154,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = 1;
 		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.03;
+		gbc.weighty   = 0.05;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
@@ -212,7 +217,22 @@ public class TempTargetPanel extends AbstractForecastPanel
 			{
 				_selectedTempTargetSet.setDssPathNames(saveUserDefinedTable(_selectedTempTargetSet, simGrp));
 			}
+			updateSetName();
 			simGrp.setTemperatureTargetSets(sets);
+		}
+	}
+
+	private void updateSetName()
+	{
+		Object val = _ttInfoTable.getValueAt(0, 0);
+		if(val != null && !val.toString().trim().isEmpty() && !val.toString().trim().equalsIgnoreCase(_selectedTempTargetSet.getName()))
+		{
+			String name = val.toString().trim();
+			_fsg.getTemperatureTargetSets().stream().filter(tt -> tt.equals(_selectedTempTargetSet))
+					.findFirst()
+					.ifPresent(tt -> tt.setName(name));
+			_selectedTempTargetSet.setName(name);
+			((TempTargetForecastTableModel)_tempTargetTable.getModel()).updateName(name, _topTableRowSelected);
 		}
 	}
 
@@ -305,6 +325,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 	{
 		if ( fsg != null )
 		{
+			_fsg = fsg;
 			List<TemperatureTargetSet> tempTargetSets = fsg.getTemperatureTargetSets();
 			for(int row = _tempTargetTable.getRowCount()-1; row >=0; row--)
 			{
@@ -385,6 +406,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 			}
 
 		}
+		_topTableRowSelected = row;
 	}
 
 	private void clearPanel()
