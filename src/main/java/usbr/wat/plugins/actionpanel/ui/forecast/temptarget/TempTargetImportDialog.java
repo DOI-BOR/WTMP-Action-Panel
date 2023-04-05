@@ -183,7 +183,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         }
         finally
         {
-            DssFileManagerImpl.getDssFileManager().close(_importFileChooserField.getText());
+            DssFileManagerImpl.getDssFileManager().close(Project.getCurrentProject().getAbsolutePath(fileNameTxt));
         }
     }
 

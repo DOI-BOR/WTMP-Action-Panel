@@ -207,7 +207,8 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		}
 		if ( _tempTargetTableModel == null )
 		{
-			_tempTargetTableModel = (RmaTableModel) _tempTargetTable.getModel();
+			_tempTargetTableModel = new TempTargetForecastTableModel();
+			_tempTargetTable.setModel(_tempTargetTableModel);
 		}
 		_tempTargetTable.setName("Temperature Target Sets");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
