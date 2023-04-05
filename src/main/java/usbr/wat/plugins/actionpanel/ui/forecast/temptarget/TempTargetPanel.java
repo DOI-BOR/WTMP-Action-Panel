@@ -149,6 +149,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 				return d;
 			}
 		};
+		_ttInfoTable.getScrollPane().setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
