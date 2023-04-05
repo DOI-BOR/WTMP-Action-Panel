@@ -355,7 +355,12 @@ public class TempTargetPanel extends AbstractForecastPanel
 		List<TimeSeriesContainer> temperatureTargetData = temperatureTargetSet.getTimeSeriesData();
 		for(int column = 1; column <= temperatureTargetData.size(); column++)
 		{
-			_ttTableModel.addColumn(String.valueOf(column));
+			String columnName = getColumnNameFromFPart(temperatureTargetData.get(column - 1));
+			if(columnName == null)
+			{
+				columnName = "" + column;
+			}
+			_ttTableModel.addColumn(columnName);
 			_ttTableModel.setColEnabled(temperatureTargetSet.isUserDefined(), column);
 		}
 		_ttTable.setColumnEnabled(false, TempTargetTableModel.DATE_COL_INDEX);
@@ -367,6 +372,24 @@ public class TempTargetPanel extends AbstractForecastPanel
 		dateColumn.setMaxWidth(50);
 		_ttTableModel.setTempTargetSet(temperatureTargetSet);
 		_ttTableModel.fireTableStructureChanged();
+	}
+
+	private String getColumnNameFromFPart(TimeSeriesContainer timeSeriesContainer)
+	{
+		DSSPathname pathname = new DSSPathname(timeSeriesContainer.fullName);
+		String fPart = pathname.getFPart();
+		String retVal = fPart;
+		if(fPart != null && fPart.contains("|"))
+		{
+			String[] split = fPart.split("\\|");
+			if(split.length > 1)
+			{
+				String indexNum = split[0];
+				indexNum = indexNum.replace("C:", "");
+				retVal = indexNum.replaceFirst("^0+(?!$)", "");
+			}
+		}
+		return retVal;
 	}
 
 	private void removeAllColumns()
