@@ -49,7 +49,7 @@ public class RunSimulationAction extends AbstractAction
 	{
 		boolean recomputeAll = (e.getModifiers() & ActionEvent.CTRL_MASK) != 0;
 		
-		SimulationGroup simGroup = _parent.getSimulationGroup();
+		SimulationGroup simGroup = _parent.getCalibrationPanel().getSimulationGroup();
 		if ( simGroup == null )
 		{
 			JOptionPane.showMessageDialog(_parent,"Please create or select a Simulation Group first",

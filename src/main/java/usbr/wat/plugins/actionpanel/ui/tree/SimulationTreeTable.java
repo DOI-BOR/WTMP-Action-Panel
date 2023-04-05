@@ -180,7 +180,7 @@ public class SimulationTreeTable extends RmaJXTreeTable
 	private void saveSimulationAs(WatSimulation sim)
 	{
 		SaveSimulationAsAction ssa = new SaveSimulationAsAction(_parentPanel);
-		ssa.saveSimulationAs(ActionPanelPlugin.getInstance().getActionsWindow().getSimulationGroup(), sim);
+		ssa.saveSimulationAs(ActionPanelPlugin.getInstance().getActionsWindow().getCalibrationPanel().getSimulationGroup(),  sim);
 	}
 	/**
 	 * @param popup

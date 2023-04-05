@@ -19,11 +19,13 @@ import java.util.Vector;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.table.TableRowSorter;
 
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
+import hec.util.NumericComparator;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaInsets;
@@ -301,6 +303,13 @@ public class ImportMetDataWindow extends RmaJDialog
 			{
 			}
 		}
+		TableRowSorter sorter = new TableRowSorter(_metTable.getModel());
+		int cols = _metTable.getColumnCount();
+		for (int c = 0;c < cols; c++ )
+		{
+			sorter.setComparator(c, new NumericComparator());
+		}
+		_metTable.setRowSorter(sorter);
 		
 	}
 	/**

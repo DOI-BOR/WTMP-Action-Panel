@@ -29,6 +29,7 @@ import hec2.wat.model.WatSimulation;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationResultsAction;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.BaseComputeSettings;
 import usbr.wat.plugins.actionpanel.model.ComputeType;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
@@ -84,7 +85,7 @@ public class SimulationTreeTableNode extends AbstractMutableTreeTableNode
 		}
 	}
 	/**
-	 * @param file
+	 * @param resultsFolder
 	 */
 	private void addResultsFolder(File resultsFolder)
 	{
@@ -100,7 +101,7 @@ public class SimulationTreeTableNode extends AbstractMutableTreeTableNode
 		}
 	}
 	/**
-	 * @param result
+	 * @param results
 	 */
 	public void removeResultsFor(ResultsData results)
 	{
@@ -221,10 +222,10 @@ public class SimulationTreeTableNode extends AbstractMutableTreeTableNode
 		return getToolTipText(ActionPanelPlugin.getInstance().getActionsWindow().getSimulationGroup());
 	}
 	/**
-	 * @param simulationGroup 
+	 * @param simGroup
 	 * @return
 	 */
-	public String getToolTipText(SimulationGroup simGroup)
+	public String getToolTipText(AbstractSimulationGroup simGroup)
 	{
 		if ( _sim != null )
 		{
@@ -252,14 +253,15 @@ public class SimulationTreeTableNode extends AbstractMutableTreeTableNode
 					tip.append("<br>");
 				}
 			}
-			if ( simGroup != null ) 
+			if ( simGroup instanceof SimulationGroup )
 			{
-				ComputeType computeType = simGroup.getComputeType(_sim.getName());
+				SimulationGroup simulationGroup = (SimulationGroup) simGroup;
+				ComputeType computeType = simulationGroup.getComputeType(_sim.getName());
 				tip.append("<b>Compute Type: </b>");
 				tip.append(computeType.toString());
 				if ( computeType != ComputeType.Standard )
 				{
-					BaseComputeSettings computeSettings = simGroup.getComputeSettings(_sim.getName(), computeType);
+					BaseComputeSettings computeSettings = simulationGroup.getComputeSettings(_sim.getName(), computeType);
 					
 					tip.append("<br><b>Members to Compute: </b>");
 					tip.append(Arrays.toString(computeSettings.getMembersToCompute()));

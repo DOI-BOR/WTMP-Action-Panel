@@ -39,6 +39,7 @@ import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.utils.GitRepoUtils;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.MissingManagersChecker;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
@@ -81,7 +82,7 @@ public class ActionsWindow extends RmaJDialog
 		addListeners();
 		loadPlugins();
 		pack();
-		setSize(950, 1000);
+		setSize(950, 700);
 		setLocationRelativeTo(Browser.getBrowserFrame());
 		
 		addTabToProjectPane();
@@ -107,13 +108,13 @@ public class ActionsWindow extends RmaJDialog
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
-		getContentPane().add(_tabbedPane, gbc);	
-		
-		_forecastPanel = new ForecastPanel(this);
-		_tabbedPane.addTab("Forecast", _forecastPanel);
+		getContentPane().add(_tabbedPane, gbc);
+
 		_calibrationPanel = new CalibrationPanel(this);
 		_tabbedPane.addTab("Validation", _calibrationPanel);
-		
+		_forecastPanel = new ForecastPanel(this);
+		_tabbedPane.addTab("Forecast", _forecastPanel);
+
 	}
 
 	public CalibrationPanel getCalibrationPanel()
@@ -295,10 +296,6 @@ public class ActionsWindow extends RmaJDialog
 	}
 	
 	
-	/**
-	 * @param sg
-	 */
-	
 
 	
 
@@ -320,24 +317,46 @@ public class ActionsWindow extends RmaJDialog
 	public List<WatSimulation> getSelectedSimulations()
 	{
 		Component comp = _tabbedPane.getSelectedComponent();
-		//return comp.getSelectedSimulations();
-		
+		if ( comp == _calibrationPanel )
+		{
+			return _calibrationPanel.getSelectedSimulations();
+		}
+		else if ( comp == _forecastPanel )
+		{
+			return _forecastPanel.getSelectedSimulations();
+		}
 		return null;
 	}
 	
 	public List<ResultsData> getSelectedResults()
 	{
 		Component comp = _tabbedPane.getSelectedComponent();
-		
+		if ( comp == _calibrationPanel )
+		{
+			return _calibrationPanel.getSelectedResults();
+		}
+		else if ( comp == _forecastPanel )
+		{
+			return _forecastPanel.getSelectedResults();
+		}
 		return null;
 	}
 
 	/**
 	 * @return
 	 */
-	public SimulationGroup getSimulationGroup()
+	public AbstractSimulationGroup getSimulationGroup()
 	{
-		return _sg;
+		Component comp = _tabbedPane.getSelectedComponent();
+		if ( comp == _calibrationPanel )
+		{
+			return _calibrationPanel.getSimulationGroup();
+		}
+		else if ( comp == _forecastPanel )
+		{
+			return _forecastPanel.getSimulationGroup();
+		}
+		return null;
 	}
 
 	/**
@@ -417,7 +436,7 @@ public class ActionsWindow extends RmaJDialog
 			}
 			
 			String name = proxy.getName();
-			SimulationGroup simGroup = getSimulationGroup();
+			AbstractSimulationGroup simGroup = getSimulationGroup();
 			WatSimulation sim;
 			if ( simGroup != null )
 			{

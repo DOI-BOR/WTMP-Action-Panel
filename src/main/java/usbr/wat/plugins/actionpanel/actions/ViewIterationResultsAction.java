@@ -47,7 +47,7 @@ public class ViewIterationResultsAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		SimulationGroup simGroup = _parent.getSimulationGroup();
+		SimulationGroup simGroup = _parent.getCalibrationPanel().getSimulationGroup();
 		if ( simGroup == null )
 		{
 			JOptionPane.showMessageDialog(_parent,"Please create or select a Simulation Group first",

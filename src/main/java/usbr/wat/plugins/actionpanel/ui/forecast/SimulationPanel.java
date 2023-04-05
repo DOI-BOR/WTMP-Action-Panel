@@ -10,6 +10,7 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -30,6 +31,7 @@ import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.SimulationActionsPanel;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
+import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.ui.AbstractSimulationPanel;
 import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
@@ -383,5 +385,10 @@ public class SimulationPanel extends AbstractSimulationPanel
 	public AbstractSimulationGroup getSimulationGroup()
 	{
 		return _parentPanel.getSimulationGroup();
+	}
+
+	public List<ResultsData> getSelectedResults()
+	{
+		return _simulationTable.getSelectedResults();
 	}
 }

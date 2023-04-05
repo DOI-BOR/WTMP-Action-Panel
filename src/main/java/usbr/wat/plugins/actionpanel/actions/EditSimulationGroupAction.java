@@ -43,7 +43,7 @@ public class EditSimulationGroupAction extends AbstractAction
 	{
 		NewSimulationGroupDialog dlg = new NewSimulationGroupDialog(_parent, true, "Edit Simulation Group");
 			
-		SimulationGroup simGroup = _parent.getSimulationGroup();
+		SimulationGroup simGroup = _parent.getCalibrationPanel().getSimulationGroup();
 		dlg.fillForm(simGroup);
 		
 		dlg.setVisible(true);

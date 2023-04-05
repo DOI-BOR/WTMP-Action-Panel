@@ -85,7 +85,6 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		setTitle(title);
 		buildControls();
 		addListeners();
-		fillForm();
 		pack();
 		setLocationRelativeTo(getParent());
 	}
@@ -263,7 +262,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	/**
 	 * 
 	 */
-	private void fillForm()
+	public void fillForm()
 	{
 		fillAnalysisPeriodCombo();
 	
@@ -277,11 +276,15 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		List<WatSimulation> sims = proj.getManagerListForType(WatSimulation.class);
 		WatSimulation sim;
 		Vector row;
-		List<AbstractSimulationGroup>simGroups = (List<AbstractSimulationGroup>) proj.getManagerListForType(_simGroupClass);
+		List<SimulationGroup>simGroups = proj.getManagerListForType(SimulationGroup.class);
+		List<ForecastSimGroup>fsimGroups = proj.getManagerListForType(ForecastSimGroup.class);
+		List<AbstractSimulationGroup>allSimGroups = new ArrayList<>();
+		allSimGroups.addAll(simGroups);
+		allSimGroups.addAll(fsimGroups);
 		for (int i = 0;i < sims.size(); i++ )
 		{
 			sim = sims.get(i);
-			if ( sim.getClass().equals(WatSimulation.class)&& !simPartOfGroup(sim, simGroups))   // no FRA simulations for now
+			if ( sim.getClass().equals(WatSimulation.class)&& !simPartOfGroup(sim, allSimGroups))   // no FRA simulations for now
 			{
 				row = new Vector();
 				row.add(Boolean.FALSE);

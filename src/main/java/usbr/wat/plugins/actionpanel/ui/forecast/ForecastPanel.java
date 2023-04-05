@@ -10,12 +10,15 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.List;
 
 import javax.swing.JTabbedPane;
 
+import hec2.wat.model.WatSimulation;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJPanel;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 import usbr.wat.plugins.actionpanel.ui.SimulationGroupPanel;
@@ -41,7 +44,7 @@ public class ForecastPanel extends RmaJPanel
 	private AbstractForecastPanel _currentPanel;
 
 	/**
-	 * @param actionsWindow
+	 * @param parent
 	 */
 	public ForecastPanel(ActionsWindow parent)
 	{
@@ -191,5 +194,15 @@ public class ForecastPanel extends RmaJPanel
 		{
 			_tabbedPane.setSelectedComponent(panel);
 		}
+	}
+
+	public List<WatSimulation> getSelectedSimulations()
+	{
+		return _simulationPanel.getSelectedSimulations();
+	}
+
+	public List<ResultsData> getSelectedResults()
+	{
+		return _simulationPanel.getSelectedResults();
 	}
 }

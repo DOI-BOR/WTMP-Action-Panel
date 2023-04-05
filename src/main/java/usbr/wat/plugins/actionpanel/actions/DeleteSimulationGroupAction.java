@@ -19,6 +19,7 @@ import com.rma.factories.DeleteManagerFactory;
 import hec2.wat.model.WatSimulation;
 
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 
 /**
@@ -43,7 +44,7 @@ public class DeleteSimulationGroupAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
-		SimulationGroup simGroup = _parent.getSimulationGroup();
+		AbstractSimulationGroup simGroup = _parent.getSimulationGroup();
 		if ( simGroup == null )
 		{
 			JOptionPane.showMessageDialog(_parent,"Please create or select a Simulation Group first",
@@ -72,7 +73,7 @@ public class DeleteSimulationGroupAction extends AbstractAction
 	/**
 	 * @param simGroup
 	 */
-	public boolean deleteSimulationGroup(SimulationGroup simGroup)
+	public boolean deleteSimulationGroup(AbstractSimulationGroup simGroup)
 	{
 		if ( simGroup == null )
 		{
