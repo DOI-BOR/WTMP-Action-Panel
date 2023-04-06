@@ -145,7 +145,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 			public Dimension getPreferredScrollableViewportSize()
 			{
 				Dimension d = super.getPreferredScrollableViewportSize();
-				d.height = getRowHeight();
+				d.height = getRowHeight() * 2;
 				return d;
 			}
 		};
@@ -155,7 +155,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = 1;
 		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.05;
+		gbc.weighty   = 0.06;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
@@ -357,7 +357,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 		for(int column = 1; column <= temperatureTargetData.size(); column++)
 		{
 			String columnName = getColumnNameFromFPart(temperatureTargetData.get(column - 1));
-			if(columnName == null)
+			if(columnName == null || columnName.trim().isEmpty())
 			{
 				columnName = "" + column;
 			}

@@ -311,6 +311,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		AbstractForecastPanel panel = getPanelForTable(table);
 		if ( panel != null )
 		{
+			panel.savePanel();
 			panel.tableRowSelected();
 		}
 	}

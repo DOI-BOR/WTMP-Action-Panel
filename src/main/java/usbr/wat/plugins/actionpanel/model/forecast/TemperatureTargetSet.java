@@ -88,10 +88,7 @@ public final class TemperatureTargetSet extends NamedType
 
     public List<TimeSeriesContainer> getTimeSeriesData()
     {
-        if(_timeSeriesData.isEmpty())
-        {
-            loadTimeSeriesData();
-        }
+        loadTimeSeriesData();
         return new ArrayList<>(_timeSeriesData);
     }
 

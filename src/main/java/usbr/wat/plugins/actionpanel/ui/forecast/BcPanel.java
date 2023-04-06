@@ -151,10 +151,16 @@ public class BcPanel extends AbstractForecastPanel
 	private void applyScriptToBCDataWithAnalysisPeriod(List<BcData> bcDataList, ForecastTable bcTable)
 	{
 		Path scriptFile = Paths.get("forecast/scripts/BoundaryConditionScript.py");
+		Path cvpModuleFile = Paths.get("forecast/scripts/CVP_ops_tools.py");
 		if(!Paths.get(Project.getCurrentProject().getAbsolutePath(scriptFile.toString())).toFile().exists())
 		{
 			JOptionPane.showMessageDialog(this, "Failed to find script file: \n"
 					+ Project.getCurrentProject().getAbsolutePath(scriptFile.toString()), "Script Not Found", JOptionPane.ERROR_MESSAGE);
+		}
+		else if(!Paths.get(Project.getCurrentProject().getAbsolutePath(cvpModuleFile.toString())).toFile().exists())
+		{
+			JOptionPane.showMessageDialog(this, "Failed to find script file: \n"
+					+ Project.getCurrentProject().getAbsolutePath(cvpModuleFile.toString()), "Script Not Found", JOptionPane.ERROR_MESSAGE);
 		}
 		else
 		{
