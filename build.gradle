@@ -25,6 +25,7 @@ dependencies {
     implementation 'org.gitlab4j:gitlab4j-api:4.19.0'
     implementation 'mil.army.usace.hec.swingx:swingx-core:1.6.6'
     implementation 'gov.usbr.wq:merlin-data-exchange:1.6.1'
+    runtimeOnly 'org.codehaus.groovy:groovy:3.0.7'
 }
 
 
