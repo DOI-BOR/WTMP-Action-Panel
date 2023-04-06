@@ -205,4 +205,10 @@ public class ForecastPanel extends RmaJPanel
 	{
 		return _simulationPanel.getSelectedResults();
 	}
+
+	public SimulationPanel getSimulationPanel()
+	{
+		return _simulationPanel;
+	}
+
 }

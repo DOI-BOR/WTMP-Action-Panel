@@ -108,6 +108,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		else
 		{
 			_opsSelectionModel = _opsTable.getSelectionModel();
+			_opsSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		}
 		if ( _opsTableModel == null )
 		{
@@ -140,6 +141,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		else
 		{
 			_metSelectionModel = _metTable.getSelectionModel();
+			_metSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		}
 		if ( _metTableModel == null )
 		{
@@ -172,6 +174,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		else
 		{
 			_bcSelectionModel = _bcTable.getSelectionModel();
+			_bcSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		}
 		if ( _bcTableModel == null )
 		{
@@ -204,6 +207,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		else
 		{
 			_tempTargetSelectionModel = _tempTargetTable.getSelectionModel();
+			_tempTargetSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		}
 		if ( _tempTargetTableModel == null )
 		{
@@ -265,6 +269,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		} ;
 		_opsTable.addMouseListener(opsMa);
 		_opsTable.getScrollPane().addMouseListener(opsMa);
+		_opsTable.getTableHeader().addMouseListener(opsMa);
 
 		MouseAdapter metMa = new MouseAdapter()
 		{
@@ -275,6 +280,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		};
 		_metTable.addMouseListener(metMa);
 		_metTable.getScrollPane().addMouseListener(metMa);
+		_metTable.getTableHeader().addMouseListener(metMa);
 
 		MouseAdapter bcMa =new MouseAdapter()
 		{
@@ -285,6 +291,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		};
 		_bcTable.addMouseListener(bcMa);
 		_bcTable.getScrollPane().addMouseListener(bcMa);
+		_bcTable.getTableHeader().addMouseListener(bcMa);
 
 		MouseAdapter ttMa = new MouseAdapter()
 		{
@@ -295,6 +302,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		};
 		_tempTargetTable.addMouseListener(ttMa);
 		_tempTargetTable.getScrollPane().addMouseListener(ttMa);
+		_tempTargetTable.getTableHeader().addMouseListener(ttMa);
 
 	}	
 	/**

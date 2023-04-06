@@ -179,7 +179,7 @@ public class CreateBcWindow extends RmaJDialog
 		int bcCnt = opsData.size()*metData.size();
 		if ( bcCnt > 0 )
 		{
-			_infoLabel.setText("Selections will craate " + bcCnt + " Boundary Coundition Sets");
+			_infoLabel.setText("Selections will create " + bcCnt + " Boundary Condition Sets");
 		}
 		else
 		{

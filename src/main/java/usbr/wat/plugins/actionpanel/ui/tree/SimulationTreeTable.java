@@ -22,10 +22,13 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
@@ -45,8 +48,15 @@ import hec2.wat.model.WatSimulation;
 import hec2.wat.ui.WatSimulationNode;
 
 import rma.swing.RmaJCheckBox;
+import rma.swing.RmaJDecimalField;
+import rma.swing.RmaJIntegerField;
+import rma.swing.RmaJIntegerSetField;
+import rma.swing.RmaJTable;
 import rma.swing.RmaJXTreeTable;
+import rma.swing.table.AlignTableCellRenderer;
+import rma.swing.table.DecimalCellRenderer;
 import rma.swing.table.RmaCellEditor;
+import rma.swing.table.RmaTableModelInterface;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationAsAction;
@@ -61,12 +71,13 @@ import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 public class SimulationTreeTable extends RmaJXTreeTable
 {
 	public static final Color _oddRowBackground = new Color(239,247,254);
-	
+
 	private Border _defaultBorder;
 	private Highlighter _tableRowHighlighter = new ReportRowHighligher();
 
 	private UsbrPanel _parentPanel;
-	
+	private int _precision = 3;
+
 	public SimulationTreeTable(UsbrPanel parentPanel)
 	{
 		super(createTreeModel());
@@ -289,6 +300,114 @@ public class SimulationTreeTable extends RmaJXTreeTable
 		getColumnModel().getColumn(col).setCellRenderer(new ButtonRenderer());
 		return button;
 	}
+	public RmaJDecimalField setDoubleCellEditor(int col)
+	{
+		TableColumnModel tcm = getColumnModel();
+		//if (showFormatting && _decCellRend == null) {
+			//_decCellRend = new DecimalCellRenderer(_precision);
+		//}
+
+		if (col < tcm.getColumnCount() && col >= 0) {
+			TableColumn tc = getColumnModel().getColumn(col);
+			if (tc == null)
+			{
+				return null;
+			}
+			else
+			{
+				RmaJDecimalField df = createDecimalField(col, _precision);
+				RmaCellEditor dcf = new RmaCellEditor(df);
+				//dcf.setDisplayUnitSystem(getDisplayUnitSystem());
+				//RmaJTable.ParameterScale ps = (RmaJTable.ParameterScale)this._parameterScaleTable.get(new Integer(this.convertColumnIndexToModel(col)));
+				//if (ps != null) {
+				//	dcf.setDisplayScaleFactor(ps.paramId, ps.scale);
+				//}
+
+				//dcf.setClickCountToStart(getClickCountToStart());
+				tc.setCellEditor(dcf);
+				//if (showFormatting) {
+				//	tc.setCellRenderer(this._decCellRend);
+				//} else {
+					setHorizontalAlignment(4, col);
+				//}
+
+				if (this.getModel() instanceof RmaTableModelInterface)
+				{
+					((RmaTableModelInterface)this.getModel()).setColumnClass(col, Number.class);
+				}
+
+				return df;
+			}
+		}
+		return null;
+	}
+	public RmaJIntegerSetField setIntegerSetCellEditor(int col)
+	{
+		TableColumnModel tcm = this.getColumnModel();
+		if (col < tcm.getColumnCount() && col >= 0)
+		{
+			TableColumn tc = this.getColumnModel().getColumn(col);
+			if (tc == null)
+			{
+				return null;
+			}
+			else
+			{
+				RmaJIntegerSetField df = new RmaJIntegerSetField();
+				//df.setHorizontalAlignment(SwingConstants.RIGHT);
+				df.addMouseListener(this);
+				RmaCellEditor dcf = new RmaCellEditor(df);
+				//dcf.setDisplayUnitSystem(this.getDisplayUnitSystem());
+				//RmaJTable.ParameterScale ps = (RmaJTable.ParameterScale)this._parameterScaleTable.get(new Integer(this.convertColumnIndexToModel(col)));
+				//if (ps != null)
+				//{
+				//	dcf.setDisplayScaleFactor(ps.paramId, ps.scale);
+				//}
+
+				//dcf.setClickCountToStart(this._clickCountToStart);
+				tc.setCellEditor(dcf);
+				setHorizontalAlignment(4, col);
+				if (getModel() instanceof RmaTableModelInterface)
+				{
+					((RmaTableModelInterface)getModel()).setColumnClass(col, Number.class);
+				}
+
+				return df;
+			}
+		}
+		return null;
+	}
+	public void setHorizontalAlignment(int align, int col)
+	{
+		if (col < this.getColumnCount())
+		{
+			AlignTableCellRenderer rtcr = createAlignTableCellRenderer(align);
+			//rtcr.setDisplayUnitsSystem(this.getDisplayUnitSystem());
+			TableColumn tc = this.getColumnModel().getColumn(col);
+			if (tc != null)
+			{
+				//RmaJTable.ParameterScale ps = (RmaJTable.ParameterScale)this._parameterScaleTable.get(new Integer(this.convertColumnIndexToModel(col)));
+				//if (ps != null) {
+				//	rtcr.setDisplayScaleFactor(col, ps.paramId, ps.scale);
+				//}
+
+				tc.setCellRenderer(rtcr);
+			}
+		}
+	}
+	protected RmaJDecimalField createDecimalField(int col, int precision)
+	{
+		RmaJDecimalField df = new RmaJDecimalField(0, 5);
+		df.setPrecision(precision);
+		df.setHorizontalAlignment(SwingConstants.RIGHT);
+		df.addMouseListener(this);
+		return df;
+	}
+	public AlignTableCellRenderer createAlignTableCellRenderer(int align)
+	{
+		return new AlignTableCellRenderer(align);
+	}
+
 	@Override
 	public Class<?> getColumnClass(int column)
 	{

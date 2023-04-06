@@ -294,10 +294,12 @@ public class MeteorologyPanel extends AbstractForecastPanel
 				_metInfoTable.appendRow(row);
 				_plotPanel.setYear(metData.getYear());
 				_plotPanel.setEnabled(true);
-			} else
+			}
+			else
 			{
 				_plotPanel.setEnabled(false);
 			}
+			_plotPanel.fillPlotPanel();
 		}
 	}
 

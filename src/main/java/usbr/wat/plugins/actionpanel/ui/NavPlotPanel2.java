@@ -161,6 +161,10 @@ public class NavPlotPanel2 extends EnabledJPanel
 		List<DssLocation> dssLocations = metLocation.getDssLocations();
 		RmaListModel<DssLocation> newModel = new RmaListModel<>(true, dssLocations);
 		_dssRecordCombo.setModel(newModel);
+		if ( _year > 0 && newModel.getSize() > 0 )
+		{
+			_dssRecordCombo.setSelectedIndex(0);
+		}
 
 	}
 
@@ -173,6 +177,17 @@ public class NavPlotPanel2 extends EnabledJPanel
 		DssLocation dssLocation = (DssLocation) _dssRecordCombo.getSelectedItem();
 		fillPlotPanel(dssLocation);
 	}
+	public void fillPlotPanel()
+	{
+		DssLocation location = (DssLocation) _dssRecordCombo.getSelectedItem();
+		if ( location == null )
+		{
+			_plotPanel.clearPanel();
+		}
+		else {
+			fillPlotPanel(location);
+		}
+	}
 
 	private void fillPlotPanel(DssLocation dssLocation)
 	{
@@ -183,7 +198,6 @@ public class NavPlotPanel2 extends EnabledJPanel
 		DSSIdentifier dssId = new DSSIdentifier(dssFile, dssPath);
 		dssId.setStartTime(new HecTime("01Jan"+_year, "0000"));
 		dssId.setEndTime(new HecTime("31Dec"+_year, "2400"));
-		JOptionPane.showMessageDialog(this,"Starttime="+dssId.getStartTime()+" endTime="+dssId.getEndTime());
 		TimeSeriesContainer tsc = DssFileManagerImpl.getDssFileManager().readTS(dssId, true);
 		TimeSeriesDataSet tsds = new TimeSeriesDataSet(tsc);
 		List<G2dObject> v = new ArrayList<>();
@@ -211,5 +225,9 @@ public class NavPlotPanel2 extends EnabledJPanel
 	public void setYear(int year)
 	{
 		_year = year;
+		if ( _locationCombo.getItemCount() > 0 )
+		{
+			_locationCombo.setSelectedIndex(0);
+		}
 	}
 }

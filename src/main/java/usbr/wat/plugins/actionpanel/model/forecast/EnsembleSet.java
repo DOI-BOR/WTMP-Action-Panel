@@ -20,6 +20,7 @@ public class EnsembleSet extends NamedType
 	private String _bcDataName;
 	private String _tempTargetSetName;
 	private int[] _computedMembers;
+	private String _membersToCompute;
 
 	public EnsembleSet()
 	{
@@ -110,5 +111,14 @@ public class EnsembleSet extends NamedType
 	public String getTemperatureTargetSetName()
 	{
 		return _tempTargetSetName;
+	}
+
+	public void setMemberSetToCompute(String members)
+	{
+		_membersToCompute = members;
+	}
+	public  String getMemberSetToCompute()
+	{
+		return _membersToCompute;
 	}
 }

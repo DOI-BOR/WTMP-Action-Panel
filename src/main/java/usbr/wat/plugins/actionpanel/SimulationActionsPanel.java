@@ -10,6 +10,7 @@ package usbr.wat.plugins.actionpanel;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
+import javax.swing.Action;
 import javax.swing.JButton;
 
 import rma.swing.EnabledJPanel;
@@ -18,7 +19,11 @@ import usbr.wat.plugins.actionpanel.actions.DeleteSimulationResultsAction;
 import usbr.wat.plugins.actionpanel.actions.DisplayReportSelectorAction;
 import usbr.wat.plugins.actionpanel.actions.RunSimulationAction;
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationResultsAction;
+import usbr.wat.plugins.actionpanel.actions.forecast.RunForecastSimulationAction;
+import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;
 import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
+import usbr.wat.plugins.actionpanel.ui.forecast.ForecastPanel;
+import usbr.wat.plugins.actionpanel.ui.forecast.SimulationPanel;
 
 /**
  * panel for the Simulation Actions
@@ -30,7 +35,7 @@ public class SimulationActionsPanel extends EnabledJPanel
 {
 	private ActionsWindow _parent;
 	
-	private RunSimulationAction _runSimulationAction;
+	private Action _runSimulationAction;
 	private DisplayReportSelectorAction _displayReportsSelectorAction;
 
 	private SaveSimulationResultsAction _saveResultsAction;
@@ -53,7 +58,14 @@ public class SimulationActionsPanel extends EnabledJPanel
 	 */
 	private void buildControls()
 	{
-		_runSimulationAction = new RunSimulationAction(_parent, _parentPanel);
+		if ( _parentPanel instanceof CalibrationPanel)
+		{
+			_runSimulationAction = new RunSimulationAction(_parent, _parentPanel);
+		}
+		else
+		{
+			_runSimulationAction = new RunForecastSimulationAction(_parent, (SimulationPanel)_parentPanel);
+		}
 		JButton button = new JButton(_runSimulationAction);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -103,7 +115,7 @@ public class SimulationActionsPanel extends EnabledJPanel
 		add(button, gbc);
 	}
 	
-	
+
 	public void updateActions()
 	{
 		if ( _parent.getSimulationGroup() == null )

@@ -10,13 +10,17 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import hec2.wat.model.WatAnalysisPeriod;
@@ -24,10 +28,16 @@ import hec2.wat.model.WatAnalysisPeriod;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJCheckBox;
+import rma.swing.RmaJIntegerField;
+import rma.swing.RmaJIntegerSetField;
 import rma.swing.RmaJTable;
 import rma.swing.table.ColumnGroup;
 import rma.swing.table.GroupableTableHeader;
 import rma.swing.table.MleHeadRenderer;
+import rma.swing.table.RmaCellEditor;
+import rma.swing.table.RmaTableModel;
+import rma.swing.table.RmaTableModelInterface;
+import rma.util.IntArray;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.SimulationActionsPanel;
@@ -60,6 +70,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 	private JButton _editEnsembleButton;
 	private ColumnGroup _columnGroup;
 	private RmaJCheckBox _recomputeAllChk;
+	private List<EnsembleSet> _esetsInTable;
 
 	public SimulationPanel(ActionsWindow parentWindow, ForecastPanel parentPanel)
 	{
@@ -197,13 +208,11 @@ public class SimulationPanel extends AbstractSimulationPanel
 			}
 		};
 		
-		
-		
 		_simulationTable.setColumnWidths(350,150,110,110);
 		
 		_simulationTable.setRowHeight(_simulationTable.getRowHeight()+5);
-		
-		
+
+
 		JButton button = _simulationTable.setButtonCellEditor(2);
 		button.addActionListener(e->displaySimulationInMap());
 		button.setText("Show on Map");
@@ -236,7 +245,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		
 		}
 		
-		_simActionsPanel = new SimulationActionsPanel(ActionPanelPlugin.getInstance().getActionsWindow(), this);
+		_simActionsPanel = new SimulationActionsPanel(_parentWindow, this);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -253,11 +262,48 @@ public class SimulationPanel extends AbstractSimulationPanel
 			@Override
 			public boolean isCellEditable(int row, int column)
 			{
-				return column == 0 || column == 3;
+				if ( column == 0 )
+				{
+					Object obj = getValueAt(row, 3);
+					if ( obj == null )
+					{
+						return false;
+					}
+					if ( obj instanceof String )
+					{
+						String str = (String) obj;
+						return str.length() > 0 ;
+
+					}
+				}
+				return column == 3;
+			}
+			public void setValueAt(Object obj, int row, int col)
+			{
+				super.setValueAt(obj, row, col);
+				if ( col == 3)
+				{
+					RmaTableModel model = (RmaTableModel) getModel();
+					model.fireTableRowsUpdated(row, row);
+					if (obj == null )
+					{
+						super.setValueAt(Boolean.FALSE, row, 0);
+					}
+					else if ( obj instanceof String )
+					{
+						String str = (String) obj;
+						if ( str.isEmpty() )
+						{
+							super.setValueAt(Boolean.FALSE, row, 0);
+						}
+					}
+				}
 			}
 		};
 		_simEnsembleTable.setRowHeight(_simEnsembleTable.getRowHeight()+5);
 		MleHeadRenderer renderer = _simEnsembleTable.setMlHeaderRenderer();
+		setIntegerSetCellEditor(_simEnsembleTable, 3);
+		setIntegerSetCellEditor(_simEnsembleTable, 4);
 		_simEnsembleTable.setTableHeader(new GroupableTableHeader(_simEnsembleTable.getColumnModel()));
 		TableColumnModel cm = _simEnsembleTable.getColumnModel();
 		_columnGroup = new ColumnGroup(renderer, "Simulation Name");
@@ -315,7 +361,46 @@ public class SimulationPanel extends AbstractSimulationPanel
 	
 	}
 
-	
+	private RmaJIntegerSetField setIntegerSetCellEditor(RmaJTable table, int col)
+	{
+		TableColumnModel tcm = table.getColumnModel();
+		if (col < tcm.getColumnCount() && col >= 0)
+		{
+			TableColumn tc = table.getColumnModel().getColumn(col);
+			if (tc == null)
+			{
+				return null;
+			}
+			else
+			{
+				RmaJIntegerSetField df = new RmaJIntegerSetField();
+				//df.setHorizontalAlignment(4);
+				df.addMouseListener(table);
+				RmaCellEditor dcf = new RmaCellEditor(df);
+				dcf.setDisplayUnitSystem(table.getDisplayUnitSystem());
+				/*
+				RmaJTable.ParameterScale ps = (RmaJTable.ParameterScale)this._parameterScaleTable.get(new Integer(this.convertColumnIndexToModel(col)));
+				if (ps != null) {
+					dcf.setDisplayScaleFactor(ps.paramId, ps.scale);
+				}
+				*/
+
+
+				dcf.setClickCountToStart(table.getClickCountToStart());
+				tc.setCellEditor(dcf);
+				table.setHorizontalAlignment(SwingConstants.RIGHT, col);
+				if (table.getModel() instanceof RmaTableModelInterface)
+				{
+					((RmaTableModelInterface)table.getModel()).setColumnClass(col, Number.class);
+				}
+
+				return df;
+			}
+		}
+		return null;
+	}
+
+
 	/**
 	 * 
 	 */
@@ -333,7 +418,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 	}
 
 	/**
-	 * @param sg
+	 * @param asg
 	 */
 	@Override
 	public void setSimulationGroup(AbstractSimulationGroup asg)
@@ -410,6 +495,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		{
 			return;
 		}
+		_esetsInTable = ensembleSets;
 		Vector<Object> row;
 		EnsembleSet eset;
 		for(int i = 0; i < ensembleSets.size(); i++ )
@@ -425,4 +511,34 @@ public class SimulationPanel extends AbstractSimulationPanel
 			_simEnsembleTable.appendRow(row);
 		}
 	}
+
+	public List<EnsembleSet>getSelectedEnsembleSets()
+	{
+		_simEnsembleTable.commitEdit(true);
+		List<EnsembleSet>selectedEsets = new ArrayList<>();
+		if ( _esetsInTable == null )
+		{
+			return selectedEsets;
+		}
+		int rowCnt = _simEnsembleTable.getRowCount();
+		Object obj;
+		EnsembleSet eset;
+		String members;
+		for(int r = 0;r < rowCnt; r++ )
+		{
+			obj = _simEnsembleTable.getValueAt(r, 0);
+			if ( obj == Boolean.TRUE || "true".equals(obj.toString()) )
+			{
+				eset = _esetsInTable.get(r);
+				selectedEsets.add(eset);
+				members = (String)_simEnsembleTable.getValueAt(r,3);
+
+				eset.setMemberSetToCompute(members);
+			}
+		}
+		return selectedEsets;
+	}
+
+
+
 }

@@ -21,6 +21,7 @@ import hec2.wat.model.WatSimulation;
 
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.editors.iterationCompute.UsgsComputeSelectorDialog;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.ActionComputable;
 import usbr.wat.plugins.actionpanel.model.IterationSettings;
 import usbr.wat.plugins.actionpanel.model.PositionAnalysisSettings;

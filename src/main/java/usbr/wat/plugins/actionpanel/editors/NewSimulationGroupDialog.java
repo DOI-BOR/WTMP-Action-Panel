@@ -77,7 +77,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 
 	/**
 	 * @param parent
-	 * @param b
+	 * @param modal
 	 */
 	public NewSimulationGroupDialog(ActionsWindow parent, boolean modal, String title)
 	{
@@ -512,7 +512,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 
 
 	/**
-	 * @param delSimName
+	 * @param baseSimName
 	 * @return
 	 */
 	private WatSimulation findSimGroupSimulationByOrigName(String baseSimName)
@@ -673,7 +673,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 
 
 	/**
-	 * @param class1
+	 * @param simGroupClass
 	 */
 	public void setSimulationGroupClass(Class<? extends AbstractSimulationGroup> simGroupClass)
 	{
