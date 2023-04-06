@@ -7,8 +7,7 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,7 +17,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.JButton;
+import javax.swing.*;
 
 import com.rma.model.Project;
 import hec2.wat.model.WatAnalysisPeriod;
@@ -127,20 +126,55 @@ public class BcPanel extends AbstractForecastPanel
 		}
 		List<BcData> bcDataList = dlg.getBcData();
 		ForecastTable bcTable = getTableForPanel();
-		for (int i = 0; i < bcDataList.size(); i++ )
+		try
 		{
-			BcData bcData = bcDataList.get(i);
-			runScript(bcData);
-			Vector<BcData> row = new Vector<>();
-			row.add(bcData);
-			bcTable.appendRow(row);
-			_fsg.getBcData().add(bcData);
+			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			WatAnalysisPeriod analysisPeriod = _fsg.getAnalysisPeriod();
+			if(analysisPeriod == null)
+			{
+				JOptionPane.showMessageDialog(this, "Failed to find analysis period for simulation: "
+						+ _fsg.getName(), "Analysis Period Not Found", JOptionPane.ERROR_MESSAGE);
+			}
+			else
+			{
+				applyScriptToBCDataWithAnalysisPeriod(bcDataList, bcTable);
+			}
+		}
+		finally
+		{
+			setCursor(Cursor.getDefaultCursor());
 		}
 		_fsg.setModified(true);
 
 	}
 
-	private void runScript(BcData bcData)
+	private void applyScriptToBCDataWithAnalysisPeriod(List<BcData> bcDataList, ForecastTable bcTable)
+	{
+		Path scriptFile = Paths.get("forecast/scripts/BoundaryConditionScript.py");
+		if(!Paths.get(Project.getCurrentProject().getAbsolutePath(scriptFile.toString())).toFile().exists())
+		{
+			JOptionPane.showMessageDialog(this, "Failed to find script file: \n"
+					+ Project.getCurrentProject().getAbsolutePath(scriptFile.toString()), "Script Not Found", JOptionPane.ERROR_MESSAGE);
+		}
+		else
+		{
+			runScriptOnBCDataList(bcDataList, bcTable, scriptFile);
+		}
+	}
+
+	private void runScriptOnBCDataList(List<BcData> bcDataList, ForecastTable bcTable, Path scriptFile)
+	{
+		for (BcData bcData : bcDataList)
+		{
+			runScript(bcData, scriptFile);
+			Vector<BcData> row = new Vector<>();
+			row.add(bcData);
+			bcTable.appendRow(row);
+			_fsg.getBcData().add(bcData);
+		}
+	}
+
+	private void runScript(BcData bcData, Path scriptFile)
 	{
 		createScriptsDir();
 		WatAnalysisPeriod analysisPeriod = _fsg.getAnalysisPeriod();
@@ -167,9 +201,10 @@ public class BcPanel extends AbstractForecastPanel
 				String metOutputDssFileName = bcOutputDssFile;
 				String opsImportFPart = bcFPart;
 				String flowPatternConfigFile = Project.getCurrentProject().getAbsolutePath("shared/config/flow_pattern.config");
-				PythonScriptUtil.runScript(Paths.get("forecast/scripts/BoundaryConditionScript.py"), "build_BC_data_sets",
+				Integer result = PythonScriptUtil.runScript(scriptFile, "build_BC_data_sets", Integer.class,
 						targetYear, bcFPart, bcOutputDssFile, opsFileName, dssMapFile, positionAnalysisYear, positionalAnalysisConfigFile,
 						metFPart, metOutputDssFileName, flowPatternConfigFile, opsImportFPart);
+				LOGGER.log(Level.CONFIG, () -> "Result from " + scriptFile + ": " + result);
 			}
 		}
 	}

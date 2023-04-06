@@ -5,7 +5,6 @@ import org.python.core.Py;
 import org.python.core.PyObject;
 import org.python.core.PySystemState;
 import org.python.util.PythonInterpreter;
-import usbr.wat.plugins.actionpanel.model.ActionComputable;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +28,7 @@ public final class PythonScriptUtil
         initInterpreter();
     }
 
-    public static void runScript(Path scriptFilePath, String functionName, Object... args)
+    public static <T> T runScript(Path scriptFilePath, String functionName, Class<T> returnType, Object... args)
     {
         try (PythonInterpreter pythonInterpreter = new PythonInterpreter())
         {
@@ -46,7 +45,7 @@ public final class PythonScriptUtil
                 pyArgs[i] = Py.java2py(args[i]);
             }
             PyObject result = function.__call__(pyArgs);
-            System.out.println(result.toString());
+            return returnType.cast(result.__tojava__(returnType));
         }
     }
 
@@ -71,16 +70,14 @@ public final class PythonScriptUtil
         // make sure we have a valid application home directory //
         //------------------------------------------------------//
         String appHome = hec.lang.ApplicationProperties.getAppHome();
-        if (appHome == null) appHome = ".";
-        try {
-            appHome = (new File(appHome)).getAbsolutePath();
-            if (appHome.endsWith(File.separator+".")) {
-                appHome = appHome.substring(0, appHome.length() - 2);
-            }
-        }
-        catch (Exception e)
+        if (appHome == null)
         {
-            LOGGER.log(Level.CONFIG, "Error determining app home directory", e);
+            appHome = ".";
+        }
+        appHome = (new File(appHome)).getAbsolutePath();
+        if (appHome.endsWith(File.separator+"."))
+        {
+            appHome = appHome.substring(0, appHome.length() - 2);
         }
 
         long t1 = System.currentTimeMillis();
@@ -98,7 +95,8 @@ public final class PythonScriptUtil
                 if (token.contains("jythonlib.jar"))
                 {
                     found = true;
-                    Logger.getLogger(ActionComputable.class.getName()).info("found jythonlib.jar in classpath"+token);
+                    String msg = String.format("found jythonlib.jar in classpath%s", token);
+                    LOGGER.info(() -> msg);
                     break;
                 }
             }
@@ -123,9 +121,9 @@ public final class PythonScriptUtil
 
         PythonInterpreter.initialize(System.getProperties(), props,
                 new String[] {""});
-        PySystemState sys = Py.getSystemState();
-        sys.add_package("hec.rss.model");
-        LOGGER.info("initInterp(): creating interpreter took "
-                +(System.currentTimeMillis()-t1)+" ms");
+        PySystemState.add_package("hec.rss.model");
+        String timeMsg = "initInterp(): creating interpreter took "
+                +(System.currentTimeMillis()-t1)+" ms";
+        LOGGER.info(timeMsg);
     }
 }
