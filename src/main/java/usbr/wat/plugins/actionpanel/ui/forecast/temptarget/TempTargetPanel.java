@@ -9,12 +9,6 @@ package usbr.wat.plugins.actionpanel.ui.forecast.temptarget;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +25,9 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
@@ -45,7 +41,6 @@ import hec.io.TimeSeriesContainer;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
-import rma.swing.table.RmaCellEditor;
 import rma.swing.table.RmaTableModel;
 import rma.util.RMAConst;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
@@ -79,7 +74,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 
 	private void addPanelListeners()
 	{
-		_createButton.addActionListener(e -> new TempTargetImportDialog(SwingUtilities.getWindowAncestor(this), getExistingSetNames(), this::tempTargetSetSelected));
+		_createButton.addActionListener(e -> new TempTargetImportDialog(SwingUtilities.getWindowAncestor(this), getExistingSetNames(), this::tempTargetSetsSelected));
 	}
 
 	private List<String> getExistingSetNames()
@@ -96,21 +91,52 @@ public class TempTargetPanel extends AbstractForecastPanel
 		return retVal;
 	}
 
-	private void tempTargetSetSelected(TemperatureTargetSet tempTargetSet)
+	private void tempTargetSetsSelected(List<TemperatureTargetSet> tempTargetSets)
 	{
-		RmaTableModel tableModel = (RmaTableModel) getTableForPanel().getModel();
-		Integer rowThatContainsName = getRowThatContainsName(tableModel, tempTargetSet);
-		if(rowThatContainsName != null)
+		RmaTableModel upperTableModel = (RmaTableModel) getTableForPanel().getModel();
+		for(TemperatureTargetSet tempTargetSet : tempTargetSets)
 		{
-			tableModel.insertRow(rowThatContainsName, new Vector<>(Collections.singletonList(tempTargetSet)));
-			tableModel.deleteRow(rowThatContainsName + 1);
+			Integer rowThatContainsName = getRowThatContainsName(upperTableModel, tempTargetSet);
+			if(rowThatContainsName != null)
+			{
+				upperTableModel.insertRow(rowThatContainsName, new Vector<>(Collections.singletonList(tempTargetSet)));
+				upperTableModel.deleteRow(rowThatContainsName + 1);
+			}
+			else
+			{
+				upperTableModel.addRow(new Vector<>(Collections.singletonList(tempTargetSet)));
+			}
 		}
-		else
+		if(!tempTargetSets.isEmpty())
 		{
-			tableModel.addRow(new Vector<>(Collections.singletonList(tempTargetSet)));
+			TemperatureTargetSet selectedSet = tempTargetSets.get(tempTargetSets.size() - 1);
+			_selectedTempTargetSet = selectedSet;
+			fillTempTargetInfoTable(selectedSet);
+			fillTempTargetTable(selectedSet);
 		}
-		fillTempTargetInfoTable(tempTargetSet);
-		fillTempTargetTable(tempTargetSet);
+		initializeSaveOfNewTempTargets(tempTargetSets);
+	}
+
+	private void initializeSaveOfNewTempTargets(List<TemperatureTargetSet> tempTargetSets)
+	{
+		if(_fsg != null && tempTargetSets != null && !tempTargetSets.isEmpty())
+		{
+			List<TemperatureTargetSet> sets = new ArrayList<>(_fsg.getTemperatureTargetSets());
+			for (TemperatureTargetSet set : tempTargetSets)
+			{
+				if (!sets.contains(set))
+				{
+					sets.add(set);
+				}
+				else
+				{
+					int existingSetIndex = sets.indexOf(set);
+					sets.add(existingSetIndex, set);
+					sets.remove(existingSetIndex +1);
+				}
+			}
+			_fsg.setTemperatureTargetSets(sets);
+		}
 	}
 
 	private void fillTempTargetInfoTable(TemperatureTargetSet tempTargetSet)
@@ -162,7 +188,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 		lowerPanel.add(_ttInfoTable.getScrollPane(), gbc);
 
 		_createButton = new JButton("Import/Create T.T. Set...");
-		_createButton.setEnabled(true);
+		_createButton.setEnabled(false);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -185,16 +211,6 @@ public class TempTargetPanel extends AbstractForecastPanel
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
 		lowerPanel.add(_ttTable.getScrollPane(), gbc);
-	}
-
-	@Override
-	public void setVisible(boolean visible)
-	{
-		if(visible)
-		{
-			_createButton.setEnabled(true);
-		}
-		super.setVisible(visible);
 	}
 
 	@Override
@@ -241,7 +257,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 	{
 		List<DSSPathname> retVal = new ArrayList<>();
 		int[] times = new int[_ttTableModel.getRowCount()];
-		String forecastSimGroupDirectory = "forecastData/" + simGrp.getName();
+		String forecastSimGroupDirectory = "forecast/simGroups/" + simGrp.getName();
 		try
 		{
 			Path newDssFilesDirectory = Paths.get(Project.getCurrentProject().getAbsolutePath(forecastSimGroupDirectory));

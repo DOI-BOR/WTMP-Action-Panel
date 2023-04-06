@@ -197,10 +197,12 @@ public class BcPanel extends AbstractForecastPanel
 			if(opsData != null && metData != null)
 			{
 				int targetYear = analysisPeriod.getRunTimeWindow().getStartTime().year();
-				String bcFPart = bcData.getName();
-				String bcOutputDssFile = Project.getCurrentProject().getAbsolutePath("forecast/" + _fsg.getName() + "/bc.dss");
+				String bcFPart = bcData.getName();//fPart -> collection fpart
+				Path bcOutputDssFileRelativePath = Paths.get("forecast/simGroups/" + _fsg.getName() + "/bc.dss");
+				String bcOutputDssFile = Project.getCurrentProject().getAbsolutePath(bcOutputDssFileRelativePath.toString());
+				bcData.setOutputDssFile(bcOutputDssFileRelativePath);
 				String opsFileName = opsData.getOperationsFile();
-				String dssMapFile = Project.getCurrentProject().getAbsolutePath("forecast/" + _fsg.getName() + "/" + bcData.getName() + ".txt");
+				String dssMapFile = Project.getCurrentProject().getAbsolutePath("forecast/simGroups/" + _fsg.getName() + "/" + bcData.getName() + ".txt");
 				int positionAnalysisYear = metData.getYear();
 				String positionalAnalysisConfigFile = Project.getCurrentProject().getAbsolutePath("shared/config/historical_met.config");
 				String metFPart = bcFPart;
@@ -217,7 +219,7 @@ public class BcPanel extends AbstractForecastPanel
 
 	private void createScriptsDir()
 	{
-		String forecastSimGroupDirectory = "forecast/" + _fsg.getName();
+		String forecastSimGroupDirectory = "forecast/simGroups/" + _fsg.getName();
 		String scriptsDir = "forecast/scripts";
 		try
 		{

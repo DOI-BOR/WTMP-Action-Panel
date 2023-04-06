@@ -9,18 +9,21 @@
 
 package usbr.wat.plugins.actionpanel.model.forecast;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import com.rma.util.XMLUtilities;
 import hec.lang.NamedType;
 import org.jdom.Element;
 
 public class BcData extends NamedType
 {
+
+	private static final String OUTPUT_DSS_FILE_ELEM_ID = "Output-DSS-File";
 	private String _opsDataName = "";
 	private String _metDataName = "";
 	private OperationsData _opsData;
 	private MeteorlogicData _metData;
+	private Path _outputDssFile;
 
 	public BcData()
 	{
@@ -32,6 +35,12 @@ public class BcData extends NamedType
 		Element myElem = new Element("BcData");
 		parent.addContent(myElem);
 		XMLUtilities.saveNamedType(myElem, this);
+		Element outputDssFileElem = new Element(OUTPUT_DSS_FILE_ELEM_ID);
+		if(_outputDssFile != null)
+		{
+			outputDssFileElem.setText(_outputDssFile.toString());
+		}
+		myElem.addContent(outputDssFileElem);
 
 		Element opsElem = new Element("Operations");
 		myElem.addContent(opsElem);
@@ -49,6 +58,16 @@ public class BcData extends NamedType
 			return false;
 		}
 		XMLUtilities.loadNamedType(myElem, this);
+
+		Element outputDssFileElem = myElem.getChild(OUTPUT_DSS_FILE_ELEM_ID);
+		if(outputDssFileElem != null)
+		{
+			String filePath = outputDssFileElem.getText();
+			if(filePath != null)
+			{
+				_outputDssFile = Paths.get(filePath);
+			}
+		}
 
 		_opsDataName = XMLUtilities.getChildElementAsString(myElem, "Operations",  "");
 
@@ -97,4 +116,13 @@ public class BcData extends NamedType
 		return _metData;
 	}
 
+    public void setOutputDssFile(Path outputDssFile)
+    {
+		_outputDssFile = outputDssFile;
+    }
+
+	public Path getOutputDssFile()
+	{
+		return _outputDssFile;
+	}
 }

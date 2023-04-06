@@ -7,24 +7,28 @@ import hec.heclib.dss.CondensedReference;
 import hec.heclib.dss.DSSPathname;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.RmaInsets;
-import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDescriptionField;
 import rma.swing.RmaJDialog;
 import rma.swing.RmaJPanel;
 import rma.swing.RmaJRadioButton;
+import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
+import rma.swing.table.RmaTableModel;
 import rma.util.RMAFilenameFilter;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -42,11 +46,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,7 +63,7 @@ public final class TempTargetImportDialog extends RmaJDialog
     private static final Logger LOGGER = Logger.getLogger(TempTargetImportDialog.class.getName());
     private static final String IMPORT_PANEL_ID = "IMPORT_PANEL";
     private static final String CREATE_PANEL_ID = "CREATE_PANEL";
-    private final Consumer<TemperatureTargetSet> _consumeTempTargetSetAction;
+    private final Consumer<List<TemperatureTargetSet>> _consumeTempTargetSetAction;
     private final List<String> _existingSetNames;
     private RmaJRadioButton _importFromExistingRadioButton;
     private RmaJRadioButton _createNewRadioButton;
@@ -66,13 +72,14 @@ public final class TempTargetImportDialog extends RmaJDialog
     private RmaFileChooserField _importFileChooserField;
     private RmaJTextField _nameTextField;
     private RmaJDescriptionField _descriptionField;
-    private RmaJComboBox<String> _temperatureSetsComboBox;
     private final Map<String, List<DSSPathname>> _dssCollectionMapping = new TreeMap<>();
     private boolean _ignoreFocusLost;
     private final List<String> _invalidFilesToDelete = new ArrayList<>();
     private ButtonGroup _importCreateButtonGroup;
+    private RmaJTable _temperatureSetsTable;
+    private JCheckBox _checkBoxEditorCheckBox;
 
-    public TempTargetImportDialog(Window parent, List<String> existingSetNames, Consumer<TemperatureTargetSet> consumeTempTargetSetAction)
+    public TempTargetImportDialog(Window parent, List<String> existingSetNames, Consumer<List<TemperatureTargetSet>> consumeTempTargetSetAction)
     {
         super(parent, true);
         setTitle("Select Temperature Target Set");
@@ -84,7 +91,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         pack();
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         setMinimumSize(getSize());
-        setSize(new Dimension(400, getPreferredSize().height));
+        setSize(new Dimension(400, 350));
         setLocationRelativeTo(getParent());
         setVisible(true);
     }
@@ -96,7 +103,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         _importFileChooserField.addFocusListener(getImportFocusListener());
         _importFileChooserField.addFileSelectedListener(f -> dssFileSelected());
         ((JButton)_importFileChooserField.getComponents()[0]).addActionListener(e -> ellipsesPressed());
-        _temperatureSetsComboBox.addActionListener(e -> validateOkButton());
+        _checkBoxEditorCheckBox.addActionListener(e -> validateOkButton());
         _importFromExistingRadioButton.addActionListener(e -> importRadioAction());
         _createNewRadioButton.addActionListener(e -> createNewRadioAction());
         _okCancelPanel.getButton(ButtonCmdPanel.CANCEL_BUTTON).addActionListener(e -> closeDialogAction());
@@ -109,6 +116,7 @@ public final class TempTargetImportDialog extends RmaJDialog
                 closeDialogAction();
             }
         });
+        _temperatureSetsTable.getModel().addTableModelListener(e -> validateOkButton());
     }
 
     private void ellipsesPressed()
@@ -153,6 +161,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         }
         try
         {
+            _importFileChooserField.setDefaultPath(Project.getCurrentProject().getAbsolutePath(fileNameTxt));
             deleteInvalidFiles(_invalidFilesToDelete);
             fileNameTxt = Project.getCurrentProject().getRelativePath(fileNameTxt);
             _importFileChooserField.setText(fileNameTxt);
@@ -167,7 +176,7 @@ public final class TempTargetImportDialog extends RmaJDialog
                             .collect(Collectors.toList())));
             _dssCollectionMapping.clear();
             _dssCollectionMapping.putAll(collectionMapping);
-            updateAvailableTempSetsInCombo();
+            updateAvailableTempSets();
             validateOkButton();
         }
         catch (NonexistentFileException | InvalidDssFileTypeException e)
@@ -205,15 +214,17 @@ public final class TempTargetImportDialog extends RmaJDialog
         }
     }
 
-    private void updateAvailableTempSetsInCombo()
+    private void updateAvailableTempSets()
     {
-        DefaultComboBoxModel<String> updatedModel = new DefaultComboBoxModel<>();
         SortedSet<String> keys = new TreeSet<>(_dssCollectionMapping.keySet());
+        for(int row = _temperatureSetsTable.getRowCount()-1; row >=0; row--)
+        {
+            _temperatureSetsTable.deleteRow(row);
+        }
         for(String collectionId : keys)
         {
-            updatedModel.addElement(collectionId);
+            ((RmaTableModel)_temperatureSetsTable.getModel()).addRow(new Vector<>(Arrays.asList(false, collectionId)));
         }
-        _temperatureSetsComboBox.setModel(updatedModel);
     }
 
     private String getCollectionId(CondensedReference ref)
@@ -275,8 +286,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         JButton okButton = _okCancelPanel.getButton(ButtonCmdPanel.OK_BUTTON);
         boolean invalidCreate = _nameTextField.getText() == null || _nameTextField.getText().trim().isEmpty();
         String absPath = Project.getCurrentProject().getAbsolutePath(_importFileChooserField.getText());
-        boolean invalidImport = !(Paths.get(absPath).toFile().exists())
-                || _temperatureSetsComboBox.getSelectedIndex() < 0 || _temperatureSetsComboBox.getSelectedItem() == null;
+        boolean invalidImport = !(Paths.get(absPath).toFile().exists()) || getNumCheckedRows() == 0;
         if(_createNewRadioButton.isSelected())
         {
             okButton.setEnabled(!invalidCreate);
@@ -288,42 +298,87 @@ public final class TempTargetImportDialog extends RmaJDialog
         deleteInvalidFiles(_invalidFilesToDelete);
     }
 
+    private int getNumCheckedRows()
+    {
+        int checkRows = 0;
+        for(int row =0; row < _temperatureSetsTable.getRowCount(); row++)
+        {
+            Object checkVal = _temperatureSetsTable.getValueAt(row, 0);
+            if(checkVal != null && Boolean.parseBoolean(checkVal.toString()))
+            {
+                checkRows++;
+            }
+        }
+        return checkRows;
+    }
+
     private void okAction()
     {
         deleteInvalidFiles(_invalidFilesToDelete);
-        TemperatureTargetSet set = buildTempTargetSet();
-        if(_existingSetNames.contains(set.getName().trim()))
+        if(checkDuplicateNames())
         {
-            int opt = JOptionPane.showConfirmDialog(this, set.getName() + " already exists. Overwrite it?", "Confirm Override",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-            if(opt == JOptionPane.YES_OPTION)
+            try
             {
-                _consumeTempTargetSetAction.accept(set);
+                List<TemperatureTargetSet> sets = buildTempTargetSets();
+                _consumeTempTargetSetAction.accept(sets);
                 dispose();
             }
-        }
-        else
-        {
-            _consumeTempTargetSetAction.accept(set);
-            dispose();
+            finally
+            {
+                setCursor(Cursor.getDefaultCursor());
+            }
         }
     }
 
-    private TemperatureTargetSet buildTempTargetSet()
+    private boolean checkDuplicateNames()
     {
-        TemperatureTargetSet retVal = new TemperatureTargetSet();
+        boolean retVal = true;
+        for(int row =0; row < _temperatureSetsTable.getRowCount(); row++)
+        {
+            Object checkedVal = _temperatureSetsTable.getValueAt(row, 0);
+            if(checkedVal != null && Boolean.parseBoolean(checkedVal.toString()))
+            {
+                Object name = _temperatureSetsTable.getValueAt(row, 1);
+                if(name != null && !name.toString().trim().isEmpty() && _existingSetNames.contains(name.toString().trim()))
+                {
+                    int opt = JOptionPane.showConfirmDialog(this, name.toString() + " already exists. Overwrite it?", "Confirm Override",
+                            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                    if(opt == JOptionPane.NO_OPTION)
+                    {
+                        retVal = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return retVal;
+    }
+
+    private List<TemperatureTargetSet> buildTempTargetSets()
+    {
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        List<TemperatureTargetSet> retVal = new ArrayList<>();
         if(_importFromExistingRadioButton.isSelected())
         {
-            List<DSSPathname> pathnames = getSelectedTempTargetSetPathNames();
-            retVal.setDssPathNames(pathnames);
-            Object collectionId = _temperatureSetsComboBox.getSelectedItem();
-            if(collectionId != null)
+            for(int row =0; row < _temperatureSetsTable.getRowCount(); row++)
             {
-                retVal.setName(collectionId.toString());
+                TemperatureTargetSet temperatureTargetSet = new TemperatureTargetSet();
+                Object checkedVal = _temperatureSetsTable.getValueAt(row, 0);
+                if(checkedVal != null && Boolean.parseBoolean(checkedVal.toString()))
+                {
+                    Object name = _temperatureSetsTable.getValueAt(row, 1);
+                    if(name != null && !name.toString().trim().isEmpty())
+                    {
+                        List<DSSPathname> pathnames = getSelectedTempTargetSetPathNames(name.toString());
+                        temperatureTargetSet.setDssPathNames(pathnames);
+                        temperatureTargetSet.setName(name.toString());
+                        temperatureTargetSet.setUserDefined(false);
+                        temperatureTargetSet.setFilePath(Paths.get(_importFileChooserField.getText()));
+                        temperatureTargetSet.setModified(true);
+                    }
+                    retVal.add(temperatureTargetSet);
+                }
             }
-            retVal.setUserDefined(false);
-            retVal.setFilePath(Paths.get(_importFileChooserField.getText()));
-            retVal.setModified(true);
         }
         else
         {
@@ -332,7 +387,7 @@ public final class TempTargetImportDialog extends RmaJDialog
             temperatureTargetSet.setDescription(_descriptionField.getText());
             temperatureTargetSet.setUserDefined(true);
             temperatureTargetSet.setModified(true);
-            retVal = temperatureTargetSet;
+            retVal.add(temperatureTargetSet);
         }
         return retVal;
     }
@@ -344,13 +399,12 @@ public final class TempTargetImportDialog extends RmaJDialog
         super.dispose();
     }
 
-    private List<DSSPathname> getSelectedTempTargetSetPathNames()
+    private List<DSSPathname> getSelectedTempTargetSetPathNames(String collectionName)
     {
         List<DSSPathname> retVal = new ArrayList<>();
-        Object selectedSet = _temperatureSetsComboBox.getSelectedItem();
-        if(selectedSet != null)
+        if(collectionName != null && !collectionName.isEmpty())
         {
-            retVal = _dssCollectionMapping.get(selectedSet.toString());
+            retVal = _dssCollectionMapping.get(collectionName);
         }
         return retVal;
     }
@@ -521,28 +575,36 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.insets    = RmaInsets.INSETS5505;
         importPanel.add(_importFileChooserField, gbc);
 
+        _temperatureSetsTable = new RmaJTable(this, new String[]{"", "Temperature Target Set"})
+        {
+            @Override
+            public Dimension getPreferredScrollableViewportSize()
+            {
+                Dimension d = super.getPreferredScrollableViewportSize();
+                d.height = getRowHeight() * 4;
+                return d;
+            }
+        };
+        _checkBoxEditorCheckBox = _temperatureSetsTable.setCheckBoxCellEditor(0);
+        _temperatureSetsTable.setColumnEnabled(false, 1);
+        TableColumnModel columnModel = _temperatureSetsTable.getColumnModel();
+        TableColumn column = columnModel.getColumn(0);
+        column.setPreferredWidth(30);
+        column.setMaxWidth(30);
+        if(_temperatureSetsTable.getRowCount() > 0)
+        {
+            _temperatureSetsTable.deleteRow(0);
+        }
         gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
-        gbc.gridwidth = GridBagConstraints.RELATIVE;
-        gbc.weightx   = 0.0;
-        gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.WEST;
-        gbc.fill      = GridBagConstraints.NONE;
-        gbc.insets    = RmaInsets.INSETS5505;
-        importPanel.add(new JLabel("Select set:"), gbc);
-
-        _temperatureSetsComboBox = new RmaJComboBox<>();
-        gbc = new GridBagConstraints();
-        gbc.gridx     = GridBagConstraints.RELATIVE;
-        gbc.gridy     = GridBagConstraints.RELATIVE;
-        gbc.gridwidth = GridBagConstraints.RELATIVE;
-        gbc.weightx   = 1.0;
-        gbc.weighty   = 0.001;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx   = 0.001;
+        gbc.weighty   = 1.0;
         gbc.anchor    = GridBagConstraints.NORTHWEST;
-        gbc.fill      = GridBagConstraints.HORIZONTAL;
+        gbc.fill      = GridBagConstraints.BOTH;
         gbc.insets    = RmaInsets.INSETS5505;
-        importPanel.add(_temperatureSetsComboBox, gbc);
+        importPanel.add(_temperatureSetsTable.getScrollPane(), gbc);
 
         return importPanel;
     }
