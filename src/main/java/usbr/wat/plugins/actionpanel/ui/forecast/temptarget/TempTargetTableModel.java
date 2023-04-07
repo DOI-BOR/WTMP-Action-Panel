@@ -140,14 +140,29 @@ final class TempTargetTableModel extends RmaTableModel
                 {
                     int time = tempTargetTimeSeries.times[i];
                     Double value = tempTargetTimeSeries.values[i];
-                    _rowDataList.stream()
-                            .filter(dataForRow -> dataForRow.getTime() == time)
-                            .findFirst()
-                            .ifPresent(rowData -> rowData.setValueForTempTargetColumn(columnForTimeSeries, value));
+                    TempTargetRowData foundRowData = findRowDataByTime(time);
+                    if(foundRowData != null)
+                    {
+                        foundRowData.setValueForTempTargetColumn(columnForTimeSeries, value);
+                    }
                 }
                 column++;
             }
         }
+    }
+
+    private TempTargetRowData findRowDataByTime(int time)
+    {
+        TempTargetRowData retVal = null;
+        for(TempTargetRowData rowData : _rowDataList)
+        {
+            if(rowData.getTime() == time)
+            {
+                retVal = rowData;
+                break;
+            }
+        }
+        return retVal;
     }
 
 }

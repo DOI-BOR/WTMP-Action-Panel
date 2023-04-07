@@ -137,6 +137,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 
 	private void fillTempTargetInfoTable(TemperatureTargetSet tempTargetSet)
 	{
+		_ttInfoTable.commitEdit(true);
 		_ttInfoTable.setValueAt(tempTargetSet, 0, 0);
 		_ttInfoTable.setColumnEnabled(false, 0);
 	}
@@ -219,7 +220,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 	protected void savePanel()
 	{
 		ForecastSimGroup simGrp = _forecastPanel.getSimulationGroup();
-		if(simGrp != null && _selectedTempTargetSet != null)
+		if(simGrp != null && simGrp.equals(_fsg) && _selectedTempTargetSet != null)
 		{
 			List<TemperatureTargetSet> sets = new ArrayList<>(simGrp.getTemperatureTargetSets());
 			if(!sets.contains(_selectedTempTargetSet))
@@ -232,6 +233,10 @@ public class TempTargetPanel extends AbstractForecastPanel
 			}
 			updateSetName();
 			simGrp.setTemperatureTargetSets(sets);
+		}
+		else
+		{
+			clearPanel();
 		}
 	}
 
@@ -335,18 +340,15 @@ public class TempTargetPanel extends AbstractForecastPanel
 	{
 		if ( fsg != null )
 		{
+			clearPanel();
+			_selectedTempTargetSet = null;
 			_fsg = fsg;
 			List<TemperatureTargetSet> tempTargetSets = fsg.getTemperatureTargetSets();
-			for(int row = _tempTargetTable.getRowCount()-1; row >=0; row--)
+			((TempTargetForecastTableModel)_tempTargetTable.getModel()).clearTempTargets();
+			List<TemperatureTargetSet> temperatureTargetSets = new ArrayList<>(tempTargetSets);
+			for(TemperatureTargetSet set : temperatureTargetSets)
 			{
-				((TempTargetForecastTableModel)_tempTargetTable.getModel()).deleteRow(row);
-			}
-			if(!tempTargetSets.isEmpty())
-			{
-				for(TemperatureTargetSet set : tempTargetSets)
-				{
-					((TempTargetForecastTableModel)_tempTargetTable.getModel()).addRow(new Vector<>(Collections.singletonList(set)));
-				}
+				((TempTargetForecastTableModel)_tempTargetTable.getModel()).addRow(new Vector<>(Collections.singletonList(set)));
 			}
 		}
 
@@ -446,6 +448,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 	{
 		_ttTable.clearAll();
 		removeAllColumns();
+		_ttInfoTable.commitEdit(true);
 		_ttInfoTable.setValueAt("", 0,0);
 	}
 
