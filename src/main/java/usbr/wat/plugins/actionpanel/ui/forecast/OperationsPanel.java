@@ -104,7 +104,6 @@ public class OperationsPanel extends AbstractForecastPanel
 	{
 		super.addListeners();
 		_importButton.addActionListener(e->importOperationsAction());
-		getTableForPanel().getSelectionModel().addListSelectionListener(e->tableRowSelected());
 	}
 
 	private void importOperationsAction()
@@ -165,12 +164,11 @@ public class OperationsPanel extends AbstractForecastPanel
 	}
 
 	@Override
-	protected void tableRowSelected()
+	protected void tableRowSelected(int selRow)
 	{
 		if (_fsg != null )
 		{
 			ForecastTable table = getTableForPanel();
-			int selRow = table.getSelectedRow();
 			_opInfoTable.deleteCells();
 			if (selRow > -1)
 			{

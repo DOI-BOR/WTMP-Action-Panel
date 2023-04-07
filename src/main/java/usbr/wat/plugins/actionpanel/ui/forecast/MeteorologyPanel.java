@@ -132,7 +132,7 @@ public class MeteorologyPanel extends AbstractForecastPanel
 	{
 		super.addListeners();
 		_importButton.addActionListener(e->displayImportDataWindow());
-		getTableForPanel().getSelectionModel().addListSelectionListener(e->tableRowSelected());
+		getTableForPanel().getSelectionModel().addListSelectionListener(e->tableRowSelected(_metTable.getSelectedRow()));
 	}
 
 	/**
@@ -276,12 +276,11 @@ public class MeteorologyPanel extends AbstractForecastPanel
 
 
 	@Override
-	protected void tableRowSelected()
+	protected void tableRowSelected(int selRow)
 	{
 		if ( _fsg != null )
 		{
 			ForecastTable table = getTableForPanel();
-			int selRow = table.getSelectedRow();
 			_metInfoTable.deleteCells();
 			if (selRow > -1)
 			{

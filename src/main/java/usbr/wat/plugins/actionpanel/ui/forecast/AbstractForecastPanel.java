@@ -320,7 +320,8 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		if ( panel != null )
 		{
 			panel.savePanel();
-			panel.tableRowSelected();
+			int row = table.getSelectedRow();
+			panel.tableRowSelected(row);
 		}
 	}
 
@@ -351,7 +352,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	/**
 	 * 
 	 */
-	protected abstract void tableRowSelected();
+	protected abstract void tableRowSelected(int selectedRow);
 
 
 

@@ -13,17 +13,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import com.rma.util.XMLUtilities;
 import hec.lang.NamedType;
+import org.jdom.Attribute;
 import org.jdom.Element;
 
 public class BcData extends NamedType
 {
 
 	private static final String OUTPUT_DSS_FILE_ELEM_ID = "Output-DSS-File";
+	private static final String F_PART_ATTRIBUTE_ID = "f-part";
 	private String _opsDataName = "";
 	private String _metDataName = "";
 	private OperationsData _opsData;
 	private MeteorlogicData _metData;
 	private Path _outputDssFile;
+	private String _fPart;
 
 	public BcData()
 	{
@@ -33,6 +36,12 @@ public class BcData extends NamedType
 	public void saveData(Element parent)
 	{
 		Element myElem = new Element("BcData");
+		String fPart = "";
+		if(_fPart != null)
+		{
+			fPart = _fPart;
+		}
+		myElem.setAttribute(F_PART_ATTRIBUTE_ID, fPart);
 		parent.addContent(myElem);
 		XMLUtilities.saveNamedType(myElem, this);
 		Element outputDssFileElem = new Element(OUTPUT_DSS_FILE_ELEM_ID);
@@ -58,7 +67,11 @@ public class BcData extends NamedType
 			return false;
 		}
 		XMLUtilities.loadNamedType(myElem, this);
-
+		Attribute fPartAttribute = myElem.getAttribute(F_PART_ATTRIBUTE_ID);
+		if(fPartAttribute != null)
+		{
+			_fPart = fPartAttribute.getValue();
+		}
 		Element outputDssFileElem = myElem.getChild(OUTPUT_DSS_FILE_ELEM_ID);
 		if(outputDssFileElem != null)
 		{
@@ -124,5 +137,15 @@ public class BcData extends NamedType
 	public Path getOutputDssFile()
 	{
 		return _outputDssFile;
+	}
+
+	public void setFPart(String bcFPart)
+	{
+		_fPart = bcFPart;
+	}
+
+	public String getFPart()
+	{
+		return _fPart;
 	}
 }

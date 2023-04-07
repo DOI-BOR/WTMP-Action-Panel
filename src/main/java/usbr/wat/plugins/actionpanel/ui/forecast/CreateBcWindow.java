@@ -147,28 +147,23 @@ public class CreateBcWindow extends RmaJDialog
 	{
 		_opsTable.getSelectionModel().addListSelectionListener(e->tableRowsSelected());
 		_metTable.getSelectionModel().addListSelectionListener(e->tableRowsSelected());
-		_cmdPanel.addCmdPanelListener(new ButtonCmdPanelListener()
+		_cmdPanel.addCmdPanelListener(e ->
 		{
-			public void buttonCmdActionPerformed(ActionEvent e)
+			switch (e.getID())
 			{
-				switch (e.getID())
-				{
-					case ButtonCmdPanel.OK_BUTTON:
-					   	if ( validForm())
-						{
-							saveForm();
-							_canceled = false;
-							setVisible(false);
-						}
-						break;
-					case ButtonCmdPanel.CANCEL_BUTTON:
+				case ButtonCmdPanel.OK_BUTTON:
+					   if ( validForm())
+					{
+						saveForm();
 						_canceled = false;
 						setVisible(false);
-						break;
-				}
+					}
+					break;
+				case ButtonCmdPanel.CANCEL_BUTTON:
+					_canceled = true;
+					setVisible(false);
+					break;
 			}
-
-
 		});
 	}
 

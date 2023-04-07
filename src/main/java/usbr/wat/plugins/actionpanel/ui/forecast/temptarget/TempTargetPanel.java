@@ -139,7 +139,10 @@ public class TempTargetPanel extends AbstractForecastPanel
 	{
 		_ttInfoTable.commitEdit(true);
 		_ttInfoTable.setValueAt(tempTargetSet, 0, 0);
+		_ttInfoTable.setValueAt(tempTargetSet.getDescription(), 0, 1);
 		_ttInfoTable.setColumnEnabled(false, 0);
+		_ttInfoTable.setColumnEnabled(false, 1);
+		_ttInfoTable.setColumnEnabled(false, 2);
 	}
 
 	private Integer getRowThatContainsName(RmaTableModel tableModel, TemperatureTargetSet tempTargetSet)
@@ -160,7 +163,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 	@Override
 	protected void buildLowerPanel(EnabledJPanel lowerPanel)
 	{
-		String[] headers = new String[] {"Temperature Target Set"};
+		String[] headers = new String[] {"Temperature Target Set", "Description"};
 
 		_ttInfoTable = new RmaJTable(this, headers)
 		{
@@ -220,8 +223,9 @@ public class TempTargetPanel extends AbstractForecastPanel
 	protected void savePanel()
 	{
 		ForecastSimGroup simGrp = _forecastPanel.getSimulationGroup();
-		if(simGrp != null && simGrp.equals(_fsg) && _selectedTempTargetSet != null)
+		if(simGrp != null && simGrp.equals(_fsg) && _selectedTempTargetSet != null && _ttTable.getRowCount() > 0)
 		{
+			_ttInfoTable.commitEdit(true);
 			List<TemperatureTargetSet> sets = new ArrayList<>(simGrp.getTemperatureTargetSets());
 			if(!sets.contains(_selectedTempTargetSet))
 			{
@@ -229,9 +233,12 @@ public class TempTargetPanel extends AbstractForecastPanel
 			}
 			if(_selectedTempTargetSet.isUserDefined())
 			{
-				_selectedTempTargetSet.setDssPathNames(saveUserDefinedTable(_selectedTempTargetSet, simGrp));
+				List<DSSPathname> pathNames = saveUserDefinedTable(_selectedTempTargetSet, simGrp);
+				updatePathNamesInSimGroupList(pathNames);
+				_selectedTempTargetSet.setDssPathNames(pathNames);
 			}
 			updateSetName();
+			updateDescription();
 			simGrp.setTemperatureTargetSets(sets);
 		}
 		else
@@ -246,11 +253,58 @@ public class TempTargetPanel extends AbstractForecastPanel
 		if(val != null && !val.toString().trim().isEmpty() && !val.toString().trim().equalsIgnoreCase(_selectedTempTargetSet.getName()))
 		{
 			String name = val.toString().trim();
-			_fsg.getTemperatureTargetSets().stream().filter(tt -> tt.equals(_selectedTempTargetSet))
-					.findFirst()
-					.ifPresent(tt -> tt.setName(name));
+			updateNameInSimGroupList(name);
 			_selectedTempTargetSet.setName(name);
 			((TempTargetForecastTableModel)_tempTargetTable.getModel()).updateName(name, _topTableRowSelected);
+		}
+	}
+
+	private void updateDescription()
+	{
+		Object val = _ttInfoTable.getValueAt(0, 1);
+		if(val != null && !val.toString().trim().equalsIgnoreCase(_selectedTempTargetSet.getDescription()))
+		{
+			String desc = val.toString().trim();
+			updateDescInSimGroupList(desc);
+			_selectedTempTargetSet.setDescription(desc);
+			((TempTargetForecastTableModel)_tempTargetTable.getModel()).updatedDescription(desc, _topTableRowSelected);
+		}
+	}
+
+	private void updateNameInSimGroupList(String name)
+	{
+		List<TemperatureTargetSet> sets = _fsg.getTemperatureTargetSets();
+		for(TemperatureTargetSet set : sets)
+		{
+			if(set.equals(_selectedTempTargetSet))
+			{
+				set.setName(name);
+			}
+		}
+	}
+
+	private void updateDescInSimGroupList(String desc)
+	{
+		List<TemperatureTargetSet> sets = _fsg.getTemperatureTargetSets();
+		for(TemperatureTargetSet set : sets)
+		{
+			if(set.equals(_selectedTempTargetSet))
+			{
+				set.setDescription(desc);
+			}
+		}
+	}
+
+	private void updatePathNamesInSimGroupList(List<DSSPathname> pathNames)
+	{
+		List<TemperatureTargetSet> sets = _fsg.getTemperatureTargetSets();
+		for(TemperatureTargetSet set : sets)
+		{
+			if(set.equals(_selectedTempTargetSet))
+			{
+				set.setDssPathNames(pathNames);
+				break;
+			}
 		}
 	}
 
@@ -283,7 +337,8 @@ public class TempTargetPanel extends AbstractForecastPanel
 			pathname.setBPart(tempTargetSet.getName());
 			pathname.setCPart("TEMP-WATER-TARGET");
 			pathname.setEPart("IR-MONTH");
-			pathname.setFPart("C:00000" + col + "|USER-DEFINED");
+			String leadingString = getLeadingString(col);
+			pathname.setFPart(leadingString + col + "|USER-DEFINED");
 			tsc.fullName = pathname.getPathname();
 			ZoneId dataZoneId = ZoneId.systemDefault();
 			tsc.setTimeZoneID(dataZoneId.getId());
@@ -305,6 +360,32 @@ public class TempTargetPanel extends AbstractForecastPanel
 			retVal.add(pathname);
 		}
 		return retVal;
+	}
+
+	private String getLeadingString(int col)
+	{
+		String leadingString = "C:00000";
+		if(col > 9 && col < 100)
+		{
+			leadingString = "C:0000";
+		}
+		else if(col > 99 && col < 1000)
+		{
+			leadingString = "C:000";
+		}
+		else if(col > 999 && col < 10000)
+		{
+			leadingString = "C:00";
+		}
+		else if(col > 9999 && col < 100000)
+		{
+			leadingString = "C:0";
+		}
+		else if(col > 99999 && col < 1000000)
+		{
+			leadingString = "C:";
+		}
+		return leadingString;
 	}
 
 	private void saveUserDefinedTimeSeries(TimeSeriesContainer tsc)
@@ -414,10 +495,9 @@ public class TempTargetPanel extends AbstractForecastPanel
 	}
 
 	@Override
-	protected void tableRowSelected()
+	protected void tableRowSelected(int row)
 	{
 		ForecastTable table = getTableForPanel();
-		int row = table.getSelectedRow();
 		if ( row == -1 )
 		{
 			clearPanel();

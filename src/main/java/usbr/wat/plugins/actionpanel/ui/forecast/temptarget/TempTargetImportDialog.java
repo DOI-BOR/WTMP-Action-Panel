@@ -9,6 +9,7 @@ import rma.swing.ButtonCmdPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDescriptionField;
 import rma.swing.RmaJDialog;
+import rma.swing.RmaJIntegerField;
 import rma.swing.RmaJPanel;
 import rma.swing.RmaJRadioButton;
 import rma.swing.RmaJTable;
@@ -17,12 +18,7 @@ import rma.swing.table.RmaTableModel;
 import rma.util.RMAFilenameFilter;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.BorderLayout;
@@ -63,6 +59,7 @@ public final class TempTargetImportDialog extends RmaJDialog
     private static final Logger LOGGER = Logger.getLogger(TempTargetImportDialog.class.getName());
     private static final String IMPORT_PANEL_ID = "IMPORT_PANEL";
     private static final String CREATE_PANEL_ID = "CREATE_PANEL";
+    private static final int MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET = 12;
     private final Consumer<List<TemperatureTargetSet>> _consumeTempTargetSetAction;
     private final List<String> _existingSetNames;
     private RmaJRadioButton _importFromExistingRadioButton;
@@ -78,6 +75,8 @@ public final class TempTargetImportDialog extends RmaJDialog
     private ButtonGroup _importCreateButtonGroup;
     private RmaJTable _temperatureSetsTable;
     private JCheckBox _checkBoxEditorCheckBox;
+    private RmaJDescriptionField _descriptionFieldImport;
+    private RmaJIntegerField _numberTempTargetsField;
 
     public TempTargetImportDialog(Window parent, List<String> existingSetNames, Consumer<List<TemperatureTargetSet>> consumeTempTargetSetAction)
     {
@@ -100,6 +99,7 @@ public final class TempTargetImportDialog extends RmaJDialog
     {
         _nameTextField.addKeyListener(getValidateKeyListener());
         _importFileChooserField.addKeyListener(getValidateKeyListener());
+        _numberTempTargetsField.addKeyListener(getNumberTempTargetsKeyListener());
         _importFileChooserField.addFocusListener(getImportFocusListener());
         _importFileChooserField.addFileSelectedListener(f -> dssFileSelected());
         ((JButton)_importFileChooserField.getComponents()[0]).addActionListener(e -> ellipsesPressed());
@@ -117,6 +117,26 @@ public final class TempTargetImportDialog extends RmaJDialog
             }
         });
         _temperatureSetsTable.getModel().addTableModelListener(e -> validateOkButton());
+    }
+
+    private KeyListener getNumberTempTargetsKeyListener()
+    {
+        return new KeyAdapter()
+        {
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                int value = _numberTempTargetsField.getValue();
+                if(value < 1)
+                {
+                    _numberTempTargetsField.setValue(1);
+                }
+                else if(value > MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET)
+                {
+                    _numberTempTargetsField.setValue(MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET);
+                }
+            }
+        };
     }
 
     private void ellipsesPressed()
@@ -372,6 +392,7 @@ public final class TempTargetImportDialog extends RmaJDialog
                         List<DSSPathname> pathnames = getSelectedTempTargetSetPathNames(name.toString());
                         temperatureTargetSet.setDssPathNames(pathnames);
                         temperatureTargetSet.setName(name.toString());
+                        temperatureTargetSet.setDescription(_descriptionFieldImport.getText());
                         temperatureTargetSet.setUserDefined(false);
                         temperatureTargetSet.setFilePath(Paths.get(_importFileChooserField.getText()));
                         temperatureTargetSet.setModified(true);
@@ -386,6 +407,7 @@ public final class TempTargetImportDialog extends RmaJDialog
             temperatureTargetSet.setName(_nameTextField.getText());
             temperatureTargetSet.setDescription(_descriptionField.getText());
             temperatureTargetSet.setUserDefined(true);
+            temperatureTargetSet.setNumberOfUserDefinedTempTargets(_numberTempTargetsField.getValue());
             temperatureTargetSet.setModified(true);
             retVal.add(temperatureTargetSet);
         }
@@ -498,6 +520,7 @@ public final class TempTargetImportDialog extends RmaJDialog
     private RmaJPanel buildCreatePanel()
     {
         RmaJPanel createPanel = new RmaJPanel(new GridBagLayout());
+        RmaJPanel nameDescPanel = new RmaJPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -507,7 +530,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.anchor    = GridBagConstraints.NORTHWEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
-        createPanel.add(new JLabel("Name:"), gbc);
+        nameDescPanel.add(new JLabel("Name:"), gbc);
 
         _nameTextField = new RmaJTextField();
         gbc = new GridBagConstraints();
@@ -519,7 +542,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.anchor    = GridBagConstraints.NORTHWEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
-        createPanel.add(_nameTextField, gbc);
+        nameDescPanel.add(_nameTextField, gbc);
 
         gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
@@ -530,7 +553,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.anchor    = GridBagConstraints.NORTHWEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
-        createPanel.add(new JLabel("Description:"), gbc);
+        nameDescPanel.add(new JLabel("Description:"), gbc);
 
         _descriptionField = new RmaJDescriptionField();
         gbc = new GridBagConstraints();
@@ -542,7 +565,43 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.anchor    = GridBagConstraints.NORTHWEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
-        createPanel.add(_descriptionField, gbc);
+        nameDescPanel.add(_descriptionField, gbc);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx     = GridBagConstraints.RELATIVE;
+        gbc.gridy     = GridBagConstraints.RELATIVE;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx   = 0.001;
+        gbc.weighty   = 0.0;
+        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.fill      = GridBagConstraints.HORIZONTAL;
+        gbc.insets    = RmaInsets.INSETS0000;
+        createPanel.add(nameDescPanel, gbc);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx     = GridBagConstraints.RELATIVE;
+        gbc.gridy     = GridBagConstraints.RELATIVE;
+        gbc.gridwidth = GridBagConstraints.RELATIVE;
+        gbc.weightx   = 0.0;
+        gbc.weighty   = 0.0;
+        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.fill      = GridBagConstraints.NONE;
+        gbc.insets    = RmaInsets.INSETS5505;
+        createPanel.add(new JLabel("Number of Temperature Targets (Max " + MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET + "):"), gbc);
+
+        _numberTempTargetsField = new RmaJIntegerField();
+        _numberTempTargetsField.setValue(1);
+        gbc = new GridBagConstraints();
+        gbc.gridx     = GridBagConstraints.RELATIVE;
+        gbc.gridy     = GridBagConstraints.RELATIVE;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx   = 0.001;
+        gbc.weighty   = 0.001;
+        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.fill      = GridBagConstraints.HORIZONTAL;
+        gbc.insets    = RmaInsets.INSETS5505;
+        createPanel.add(_numberTempTargetsField, gbc);
+
         return createPanel;
     }
 
@@ -574,6 +633,29 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         importPanel.add(_importFileChooserField, gbc);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx     = GridBagConstraints.RELATIVE;
+        gbc.gridy     = GridBagConstraints.RELATIVE;
+        gbc.gridwidth = GridBagConstraints.RELATIVE;
+        gbc.weightx   = 0.0;
+        gbc.weighty   = 0.0;
+        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.fill      = GridBagConstraints.NONE;
+        gbc.insets    = RmaInsets.INSETS5505;
+        importPanel.add(new JLabel("Description:"), gbc);
+
+        _descriptionFieldImport = new RmaJDescriptionField();
+        gbc = new GridBagConstraints();
+        gbc.gridx     = 1;
+        gbc.gridy     = GridBagConstraints.RELATIVE;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx   = 0.001;
+        gbc.weighty   = 0.0;
+        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.fill      = GridBagConstraints.HORIZONTAL;
+        gbc.insets    = RmaInsets.INSETS5505;
+        importPanel.add(_descriptionFieldImport, gbc);
 
         _temperatureSetsTable = new RmaJTable(this, new String[]{"", "Temperature Target Set"})
         {

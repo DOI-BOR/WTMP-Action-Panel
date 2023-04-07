@@ -25,6 +25,7 @@ import hec2.wat.model.WatAnalysisPeriod;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
+import rma.swing.table.RmaTableModel;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.model.forecast.BcData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
@@ -113,7 +114,6 @@ public class BcPanel extends AbstractForecastPanel
 	{
 		super.addListeners();
 		_createButton.addActionListener(e->createBcAction());
-		getTableForPanel().getSelectionModel().addListSelectionListener(e->tableRowSelected());
 	}
 
 	private void createBcAction()
@@ -127,6 +127,7 @@ public class BcPanel extends AbstractForecastPanel
 		}
 		List<BcData> bcDataList = dlg.getBcData();
 		ForecastTable bcTable = getTableForPanel();
+		bcTable.clearCells();
 		try
 		{
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -179,6 +180,7 @@ public class BcPanel extends AbstractForecastPanel
 			bcTable.appendRow(row);
 			_fsg.getBcData().add(bcData);
 		}
+		tableRowSelected(bcTable.getRowCount() -1);
 	}
 
 	private void runScript(BcData bcData, Path scriptFile)
@@ -199,7 +201,8 @@ public class BcPanel extends AbstractForecastPanel
 			{
 				HecTime startTime = new HecTime(analysisPeriod.getRunTimeWindow().getStartTime());
 				HecTime endTime = new HecTime(analysisPeriod.getRunTimeWindow().getEndTime());
-				String bcFPart = bcData.getName();//fPart -> collection fpart
+				String bcFPart = bcData.getName();
+				bcData.setFPart(bcFPart);
 				Path bcOutputDssFileRelativePath = Paths.get("forecast/simGroups/" + _fsg.getName() + "/bc.dss");
 				String bcOutputDssFile = Project.getCurrentProject().getAbsolutePath(bcOutputDssFileRelativePath.toString());
 				bcData.setOutputDssFile(bcOutputDssFileRelativePath);
@@ -275,17 +278,16 @@ public class BcPanel extends AbstractForecastPanel
 	}
 
 	@Override
-	protected void tableRowSelected()
+	protected void tableRowSelected(int selRow)
 	{
 		if ( _fsg != null )
 		{
 			ForecastTable table = getTableForPanel();
-			int selRow = table.getSelectedRow();
 			_bcInfoTable.deleteCells();
 			if (selRow > -1)
 			{
 				BcData bcData = (BcData) table.getValueAt(selRow, 0);
-				Vector row = new Vector();
+				Vector<String> row = new Vector<>();
 				row.add(bcData.getName());
 
 				_bcInfoTable.appendRow(row);

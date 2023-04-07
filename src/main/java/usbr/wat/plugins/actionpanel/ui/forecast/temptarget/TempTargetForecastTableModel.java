@@ -96,5 +96,13 @@ public final class TempTargetForecastTableModel extends RmaTableModel
         _sets.clear();
         fireTableDataChanged();
     }
+
+    void updatedDescription(String desc, int row)
+    {
+        if(row >=0 && row < _sets.size())
+        {
+            _sets.get(row).setDescription(desc);
+        }
+    }
 }
 

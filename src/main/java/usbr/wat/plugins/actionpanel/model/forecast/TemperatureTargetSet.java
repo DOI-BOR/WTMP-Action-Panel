@@ -33,8 +33,9 @@ public final class TemperatureTargetSet extends NamedType
     private final List<DSSPathname> _dssPathNames = new ArrayList<>();
     private boolean _isUserDefined;
     private Path _filePath;
+    private int _numberOfUserDefinedTempTargets;
 
-	public TemperatureTargetSet()
+    public TemperatureTargetSet()
     {
         super();
     }
@@ -126,8 +127,11 @@ public final class TemperatureTargetSet extends NamedType
         _timeSeriesData.clear();
         if(_isUserDefined && _filePath == null)
         {
-            TimeSeriesContainer fixedTscForUserDefined = buildFixedDataForUserDefined();
-            _timeSeriesData.add(fixedTscForUserDefined);
+            for(int i=1; i <= _numberOfUserDefinedTempTargets; i++)
+            {
+                TimeSeriesContainer fixedTscForUserDefined = buildFixedDataForUserDefined();
+                _timeSeriesData.add(fixedTscForUserDefined);
+            }
         }
         else
         {
@@ -200,4 +204,8 @@ public final class TemperatureTargetSet extends NamedType
         return tsc;
     }
 
+    public void setNumberOfUserDefinedTempTargets(int value)
+    {
+        _numberOfUserDefinedTempTargets = value;
+    }
 }

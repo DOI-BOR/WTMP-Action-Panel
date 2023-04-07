@@ -702,7 +702,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	}
 
 	@Override
-	protected void tableRowSelected()
+	protected void tableRowSelected(int selectedRow)
 	{
 		// no table for IC panel so nothing to do here
 	}

@@ -123,21 +123,25 @@ final class TempTargetTableModel extends RmaTableModel
         List<TimeSeriesContainer> tempTargets = tempTargetSet.getTimeSeriesData();
         int column = 1;
         initializeRowsWithTimes(tempTargets); //note this is assuming temp targets time series are all using the same times for a given set
+        //if that is not a good assumption will need to use an efficient algo for determining if a row has been created for a give time
         for(TimeSeriesContainer tempTargetTimeSeries : tempTargets)
         {
             int columnForTimeSeries = column;
             //add in row values for each temp target in corresponding temp target column
-            for(int i=0; i < tempTargetTimeSeries.times.length; i++)
+            if(tempTargetTimeSeries != null && tempTargetTimeSeries.times != null)
             {
-                int time = tempTargetTimeSeries.times[i];
-                Double value = tempTargetTimeSeries.values[i];
-                TempTargetRowData foundRowData = findRowDataByTime(time);
-                if(foundRowData != null)
+                for(int i=0; i < tempTargetTimeSeries.times.length; i++)
                 {
-                    foundRowData.setValueForTempTargetColumn(columnForTimeSeries, value);
+                    int time = tempTargetTimeSeries.times[i];
+                    Double value = tempTargetTimeSeries.values[i];
+                    TempTargetRowData foundRowData = findRowDataByTime(time);
+                    if(foundRowData != null)
+                    {
+                        foundRowData.setValueForTempTargetColumn(columnForTimeSeries, value);
+                    }
                 }
+                column++;
             }
-            column++;
         }
     }
 
