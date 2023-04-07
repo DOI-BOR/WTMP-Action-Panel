@@ -18,21 +18,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JOptionPane;
 import com.rma.client.Browser;
 import hec2.wat.model.WatSimulation;
 import rma.util.IntArray;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.editors.iterationCompute.UsgsComputeSelectorDialog;
-import usbr.wat.plugins.actionpanel.model.ActionComputable;
-import usbr.wat.plugins.actionpanel.model.IterationSettings;
-import usbr.wat.plugins.actionpanel.model.PositionAnalysisSettings;
-import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.EnsembleSet;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastActionComputable;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
-import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 import usbr.wat.plugins.actionpanel.ui.forecast.SimulationPanel;
 
 public class RunForecastSimulationAction extends AbstractAction
@@ -104,8 +98,6 @@ public class RunForecastSimulationAction extends AbstractAction
 		Iterator<Map.Entry<EnsembleSet, int[]>> esetIter = esetSet.iterator();
 		ForecastActionComputable computable;
 		WatSimulation sim ;
-		IterationSettings iterSettings;
-		PositionAnalysisSettings posAnalysisSettings;
 		UsgsComputeSelectorDialog computeDlg = new UsgsComputeSelectorDialog(Browser.getBrowserFrame(),WatSimulation.class);
 		Map.Entry<EnsembleSet, int[]> esetEntry;
 		while ( simsIter.hasNext())
