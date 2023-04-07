@@ -122,31 +122,37 @@ final class TempTargetTableModel extends RmaTableModel
         _rowDataList.clear();
         List<TimeSeriesContainer> tempTargets = tempTargetSet.getTimeSeriesData();
         int column = 1;
+        initializeRowsWithTimes(tempTargets); //note this is assuming temp targets time series are all using the same times for a given set
         for(TimeSeriesContainer tempTargetTimeSeries : tempTargets)
         {
+            int columnForTimeSeries = column;
+            //add in row values for each temp target in corresponding temp target column
+            for(int i=0; i < tempTargetTimeSeries.times.length; i++)
+            {
+                int time = tempTargetTimeSeries.times[i];
+                Double value = tempTargetTimeSeries.values[i];
+                TempTargetRowData foundRowData = findRowDataByTime(time);
+                if(foundRowData != null)
+                {
+                    foundRowData.setValueForTempTargetColumn(columnForTimeSeries, value);
+                }
+            }
+            column++;
+        }
+    }
+
+    private void initializeRowsWithTimes(List<TimeSeriesContainer> tempTargets)
+    {
+        if(!tempTargets.isEmpty())
+        {
             //initialize rowData using dates
+            TimeSeriesContainer tempTargetTimeSeries = tempTargets.get(0);
             if(tempTargetTimeSeries.getTimes() != null)
             {
-                for(int time : tempTargetTimeSeries.times)
+                for (int time : tempTargetTimeSeries.times)
                 {
-                    if(_rowDataList.stream().noneMatch(dataForRow -> dataForRow.getTime() == time))
-                    {
-                        _rowDataList.add(new TempTargetRowData(time));
-                    }
+                    _rowDataList.add(new TempTargetRowData(time));
                 }
-                int columnForTimeSeries = column;
-                //add in row values for each temp target in corresponding temp target column
-                for(int i=0; i < tempTargetTimeSeries.times.length; i++)
-                {
-                    int time = tempTargetTimeSeries.times[i];
-                    Double value = tempTargetTimeSeries.values[i];
-                    TempTargetRowData foundRowData = findRowDataByTime(time);
-                    if(foundRowData != null)
-                    {
-                        foundRowData.setValueForTempTargetColumn(columnForTimeSeries, value);
-                    }
-                }
-                column++;
             }
         }
     }
