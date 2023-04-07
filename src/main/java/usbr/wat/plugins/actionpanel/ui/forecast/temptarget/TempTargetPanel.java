@@ -13,10 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +33,6 @@ import com.rma.model.Project;
 import hec.data.Units;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecTimeSeriesBase;
-import hec.heclib.util.HecTime;
 import hec.io.TimeSeriesContainer;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
@@ -273,10 +269,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 		for(int row=0; row < _ttTableModel.getRowCount(); row++)
 		{
 			TempTargetRowData rowData = _ttTableModel.getTempTargetRowData(row);
-			LocalDate date = rowData.getDate();
-			LocalTime localTime = LocalTime.of(0, 1);
-			ZoneId zoneId = ZoneId.systemDefault();
-			times[row] = HecTime.fromZonedDateTime(ZonedDateTime.of(date, localTime, zoneId)).value();
+			times[row] = rowData.getTime();
 		}
 		for(int col=1; col < _ttTableModel.getColumnCount(); col++)
 		{

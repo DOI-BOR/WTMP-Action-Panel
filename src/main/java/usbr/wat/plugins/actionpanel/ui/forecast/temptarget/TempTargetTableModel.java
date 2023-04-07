@@ -7,6 +7,9 @@ import rma.util.RMAConst;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +17,7 @@ final class TempTargetTableModel extends RmaTableModel
 {
     static final int DATE_COL_INDEX = 0;
     private final List<TempTargetRowData> _rowDataList = new ArrayList<>();
+    HecTime _hecTime = new HecTime();
 
     @Override
     public void clearAll()
@@ -34,11 +38,9 @@ final class TempTargetTableModel extends RmaTableModel
         TempTargetRowData rowData = _rowDataList.get(row);
         if(col == DATE_COL_INDEX)
         {
-            retVal = rowData.getDate();
-            if(retVal != null)
-            {
-                retVal = retVal.toString();
-            }
+            _hecTime.set(rowData.getTime());
+            LocalDate date = _hecTime.getLocalDateTime().toLocalDate();
+            retVal = date.toString();
         }
         else
         {
@@ -52,10 +54,10 @@ final class TempTargetTableModel extends RmaTableModel
         return retVal;
     }
 
-    private double roundToNDigits(double input, int n) {
+    private double roundToNDigits(double input, int n)
+    {
         double powerOf10 = Math.pow(10, n);
-        double output = Math.round(input * powerOf10) / powerOf10;
-        return output;
+        return Math.round(input * powerOf10) / powerOf10;
     }
 
     @Override
@@ -68,7 +70,16 @@ final class TempTargetTableModel extends RmaTableModel
         TempTargetRowData rowData = _rowDataList.get(row);
         if(col == DATE_COL_INDEX)
         {
-            rowData.setDate(aValue == null ? null : parseLocalDateString(aValue.toString()));
+            int time = RMAConst.HEC_UNDEFINED_INT;
+            if(aValue != null && !aValue.toString().isEmpty())
+            {
+                LocalDate localDate = parseLocalDateString(aValue.toString());
+                _hecTime.set(aValue.toString());
+                LocalTime localTime = LocalTime.of(0,1);
+                ZoneId zoneId = ZoneId.systemDefault();
+                time = HecTime.fromZonedDateTime(ZonedDateTime.of(localDate,localTime, zoneId)).value();
+            }
+            rowData.setTime(time);
         }
         else
         {
@@ -116,23 +127,21 @@ final class TempTargetTableModel extends RmaTableModel
             //initialize rowData using dates
             if(tempTargetTimeSeries.getTimes() != null)
             {
-                for(HecTime time : tempTargetTimeSeries.getTimes().timeArray())
+                for(int time : tempTargetTimeSeries.times)
                 {
-                    LocalDate date = time.getLocalDateTime().toLocalDate();
-                    if(_rowDataList.stream().noneMatch(dataForRow -> dataForRow.getDate().equals(date)))
+                    if(_rowDataList.stream().noneMatch(dataForRow -> dataForRow.getTime() == time))
                     {
-                        _rowDataList.add(new TempTargetRowData(date));
+                        _rowDataList.add(new TempTargetRowData(time));
                     }
                 }
                 int columnForTimeSeries = column;
                 //add in row values for each temp target in corresponding temp target column
                 for(int i=0; i < tempTargetTimeSeries.times.length; i++)
                 {
-                    HecTime time = tempTargetTimeSeries.getTimes().elementAt(i);
-                    LocalDate date = time.getLocalDateTime().toLocalDate();
+                    int time = tempTargetTimeSeries.times[i];
                     Double value = tempTargetTimeSeries.values[i];
                     _rowDataList.stream()
-                            .filter(dataForRow -> dataForRow.getDate().equals(date))
+                            .filter(dataForRow -> dataForRow.getTime() == time)
                             .findFirst()
                             .ifPresent(rowData -> rowData.setValueForTempTargetColumn(columnForTimeSeries, value));
                 }

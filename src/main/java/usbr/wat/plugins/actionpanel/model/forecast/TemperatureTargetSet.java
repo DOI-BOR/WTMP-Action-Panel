@@ -88,7 +88,10 @@ public final class TemperatureTargetSet extends NamedType
 
     public List<TimeSeriesContainer> getTimeSeriesData()
     {
-        loadTimeSeriesData();
+        if(_isUserDefined || _timeSeriesData.isEmpty())
+        {
+            loadTimeSeriesData();
+        }
         return new ArrayList<>(_timeSeriesData);
     }
 
@@ -100,12 +103,6 @@ public final class TemperatureTargetSet extends NamedType
     public Path getFilePath()
     {
         return _filePath;
-    }
-
-    public void setData(List<TimeSeriesContainer> data)
-    {
-        _timeSeriesData.clear();
-        _timeSeriesData.addAll(data);
     }
 
     public void setUserDefined(boolean userDefined)

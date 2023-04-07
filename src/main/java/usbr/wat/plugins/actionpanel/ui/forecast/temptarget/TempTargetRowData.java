@@ -1,6 +1,5 @@
 package usbr.wat.plugins.actionpanel.ui.forecast.temptarget;
 
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,17 +7,17 @@ import java.util.Map;
 final class TempTargetRowData
 {
     static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE;
-    private LocalDate _localDate;
+    private int _time;
     private final Map<Integer, Double> _tempTargetColumnToValueMapInRow = new HashMap<>();
 
-    TempTargetRowData(LocalDate localDate)
+    TempTargetRowData(int time)
     {
-        _localDate = localDate;
+        _time = time;
     }
 
-    LocalDate getDate()
+    int getTime()
     {
-        return _localDate;
+        return _time;
     }
 
     Double getValueForTempTargetColumn(Integer column)
@@ -26,9 +25,9 @@ final class TempTargetRowData
         return _tempTargetColumnToValueMapInRow.get(column);
     }
 
-    void setDate(LocalDate date)
+    void setTime(int time)
     {
-        _localDate = date;
+        _time = time;
     }
 
     void setValueForTempTargetColumn(Integer temperatureTargetColumn, Double value)
