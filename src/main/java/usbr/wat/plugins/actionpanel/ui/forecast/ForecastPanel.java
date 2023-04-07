@@ -89,7 +89,7 @@ public class ForecastPanel extends RmaJPanel
 		
 		_tabbedPane = new JTabbedPane();
 		String pos = System.getProperty("WTMP.ForecastTabs.Placement");
-		int tabPlacement = JTabbedPane.TOP;
+		int tabPlacement = JTabbedPane.LEFT;
 		if ( "left".equalsIgnoreCase(pos))
 		{
 			tabPlacement = JTabbedPane.LEFT;
@@ -101,6 +101,10 @@ public class ForecastPanel extends RmaJPanel
 		else if ("bottom".equalsIgnoreCase(pos))
 		{
 			tabPlacement = JTabbedPane.BOTTOM;
+		}
+		else if ( "top".equalsIgnoreCase(pos))
+		{
+			tabPlacement = JTabbedPane.TOP;
 		}
 		_tabbedPane.setTabPlacement(tabPlacement);
 		gbc.gridx     = GridBagConstraints.RELATIVE;

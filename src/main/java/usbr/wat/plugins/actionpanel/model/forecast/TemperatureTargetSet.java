@@ -149,6 +149,10 @@ public final class TemperatureTargetSet extends NamedType
         _dssPathNames.clear();
         _dssPathNames.addAll(dssPathNames);
     }
+    public List<DSSPathname>getDssPathNames()
+    {
+        return _dssPathNames;
+    }
 
     private void loadTimeSeriesData()
     {

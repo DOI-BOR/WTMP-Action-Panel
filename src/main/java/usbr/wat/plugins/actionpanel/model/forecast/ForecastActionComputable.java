@@ -4,6 +4,7 @@ package usbr.wat.plugins.actionpanel.model.forecast;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,7 +15,6 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
-import com.google.common.flogger.FluentLogger;
 import com.rma.client.Browser;
 import com.rma.io.DssFileManagerImpl;
 import com.rma.io.FileManagerImpl;
@@ -55,10 +55,7 @@ import usbr.wat.plugins.actionpanel.editors.iterationCompute.UsgsComputeSelector
 import usbr.wat.plugins.actionpanel.model.BaseComputeSettings;
 import usbr.wat.plugins.actionpanel.model.ComputeSettings;
 import usbr.wat.plugins.actionpanel.model.ComputeType;
-import usbr.wat.plugins.actionpanel.model.IterationSettings;
 import usbr.wat.plugins.actionpanel.model.ModelAltIterationSettings;
-import usbr.wat.plugins.actionpanel.model.PositionAnalysisSettings;
-import usbr.wat.plugins.actionpanel.model.SensitivitySettings;
 
 /**
  * @author Mark Ackerman
@@ -67,12 +64,17 @@ import usbr.wat.plugins.actionpanel.model.SensitivitySettings;
 public class ForecastActionComputable
 		implements Computable
 {
+
+	private static final String BC_CONFIG_FILE = System.getProperty("WTMP.bcPathsMapFile", "shared/config/bcPathsMap.config");
+	private static final String TEMP_TARGET_CONFIG_FILE = System.getProperty("WTMP.tempTargetPathsMapFile", "shared/config/target_temp.config");
 	private static final String SAVE_SUFFEX = "-save";
 	public static final String ITERATION_DSS_FILE = "iterationResults.dss";
 	private static final String DSSFILE = "DSS File";
 	public static final String METHOD_SIGNATURE = "runIteration(modelAlternative, currentIteration, maxIteration)";
 	private final EnsembleSet _ensembleSet;
 	private final int[] _members;
+	/** the starting collection number to copy the data to the collections output file */
+	private final int _outputCollectionStart;
 
 	private WatSimulation _sim;
 	private String _iterDssFile;
@@ -85,18 +87,22 @@ public class ForecastActionComputable
 	private boolean _canceled;
 	private ComputeType _computeType;
 
-	private DssPathMap _dssPathMap;
+	private DssPathMap _bcDssPathMap;
+	private DssPathMap _tempTargetDssPathMap;
+
 	/**
 	 * @param sim
 	 * @param eset
 	 * @param members
+	 * @param outputCollectionStart
 	 */
-	public ForecastActionComputable(WatSimulation sim, EnsembleSet eset, int[] members)
+	public ForecastActionComputable(WatSimulation sim, EnsembleSet eset, int[] members, int outputCollectionStart)
 	{
 		super();
 		_sim = sim;
 		_ensembleSet = eset;
 		_members = members;
+		_outputCollectionStart = outputCollectionStart;
 	}
 
 	@Override
@@ -150,16 +156,25 @@ public class ForecastActionComputable
 		{
 			JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Saving Original Data ");
 		}
-
-		_dssPathMap = new DssPathMap(_sim);
+		String prjDir = Project.getCurrentProject().getProjectDirectory();
+		String configPath = RMAIO.concatPath(prjDir, BC_CONFIG_FILE);
+		_bcDssPathMap = new DssPathMap(_sim, configPath);
 		BcData bcData = _ensembleSet.getBcData();
-		//_dssPathMap.setSourceFPart(bcData..);
-		//_dssPathMap.setSourceDssFile();
-		if ( !_dssPathMap.readDssPathsFile())
+		//_bcDssPathMap.setSourceFPart(bcData.getOutputFPart());
+		_bcDssPathMap.setSourceDssFile(Project.getCurrentProject().getAbsolutePath(bcData.getOutputDssFile().toString()));
+		if ( !_bcDssPathMap.readDssPathsFile())
 		{
 			return false;
 		}
-		List<DSSIdentifier>savedDssPaths = saveDssPaths();
+
+		configPath = RMAIO.concatPath(prjDir, TEMP_TARGET_CONFIG_FILE);
+		_tempTargetDssPathMap = new DssPathMap(_sim, configPath);
+		if ( !_tempTargetDssPathMap.readDssPathsFile())
+		{
+			return false;
+		}
+
+		List<DSSIdentifier>savedDssPaths = saveDssPaths(_bcDssPathMap, _tempTargetDssPathMap);
 		if ( savedDssPaths == null )
 		{
 			return false;
@@ -175,6 +190,15 @@ public class ForecastActionComputable
 		}
 		try
 		{
+			// copy in the new iteration data
+			if ( _debug )
+			{
+				JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying in boundary condition data ");
+			}
+			if ( !copyBcDssData())
+			{
+				return false;
+			}
 			int currentMember;
 			for(int m = 0; m < _members.length;m ++ )
 			{
@@ -195,13 +219,13 @@ public class ForecastActionComputable
 				}
 				if ( _debug )
 				{
-					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying in data for Ensemble member "+currentMember);
+					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying in temp target data for Ensemble member "+currentMember);
 				}
-				// copy in the new iteration data
-				if ( !copyDssMembers(currentMember))
+				if ( !copyTempTargetMember(currentMember))
 				{
 					return false;
 				}
+
 				if ( _canceled )
 				{
 					return false;
@@ -245,7 +269,7 @@ public class ForecastActionComputable
 				{
 					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying results for ensemble member "+currentMember);
 				}
-//copyDssResultsToCollectionsDss(currentMember, _iterSettings);
+				copyDssResultsToCollectionsDss(currentMember, _outputCollectionStart);
 				if ( _canceled )
 				{
 					return false;
@@ -650,7 +674,7 @@ public class ForecastActionComputable
 	/**
 	 * @return
 	 */
-	private List<DSSIdentifier> saveDssPaths()
+	private List<DSSIdentifier> saveDssPaths(DssPathMap bcDssPathMap, DssPathMap tempTargetDssPathMap)
 	{
 		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
 		ModelAlternative modelAlt;
@@ -683,7 +707,7 @@ public class ForecastActionComputable
 			for(int d = 0;d < dataLocs.size(); d++ )
 			{
 				dataLoc = dataLocs.get(d);
-				dssId = _dssPathMap.getDSSIdentifierFor(dataLoc);
+				dssId = bcDssPathMap.getDSSIdentifierFor(dataLoc);
 				if ( dssId == null || dssId.getDSSPath() == null || dssId.getDSSPath().isEmpty() )
 				{
 					continue;
@@ -1020,11 +1044,10 @@ public class ForecastActionComputable
 	}
 
 	/**
-	 * copy in the new iteration data
-	 * @param member
+	 * copy in the bc data
 	 * @return
 	 */
-	private boolean copyDssMembers(int member)
+	private boolean copyBcDssData()
 	{
 		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
 		ModelAlternative modelAlt;
@@ -1032,69 +1055,122 @@ public class ForecastActionComputable
 		DataLocation dataLoc, linkedDl;
 		DSSIdentifier dssId, srcDssId;
 
-		DSSPathname pathname = new DSSPathname();
 		String dssPath, fileName;
 		DssDataLocation dssDl;
 		boolean copySuccessful = true;
 		HecTime startTime = null, endTime = null;
-		if (Boolean.getBoolean("Forecast.OnlyCopyTimeWindow"))
-		{
-			RunTimeWindow rtw = _sim.getRunTimeWindow();
-			startTime = (HecTime) rtw.getStartTime().clone();
-			endTime = (HecTime) rtw.getEndTime().clone();
+		HecTime[] times =  getCopyTimeWindow();
 
-			int startDaysToSubtract = -Integer.getInteger("Forecast.StartDaysToSubtract", 0);
-			startTime.addDays(startDaysToSubtract);
-
-
-			int endDaysToAdd = -Integer.getInteger("Forecast.EndDaysToAdd", 0);
-			endTime.addDays(endDaysToAdd);
-		}
 		
 		_sim.addComputeMessage("Copying over iterative DSS records...");
+
+
+		//copy the boundary condition data
 		// dest to source map
-		Map<DSSIdentifier, DSSIdentifier> copyMap = _dssPathMap.getDssCopyMap();
+		Map<DSSIdentifier, DSSIdentifier> copyMap = _bcDssPathMap.getDssCopyMap();
 		Set<Map.Entry<DSSIdentifier, DSSIdentifier>> copyMapSet = copyMap.entrySet();
 		Iterator<Map.Entry<DSSIdentifier, DSSIdentifier>> copyMapIter = copyMapSet.iterator();
 		while ( copyMapIter.hasNext() )
 		{
 			Map.Entry<DSSIdentifier, DSSIdentifier> copyMapElement = copyMapIter.next();
 			srcDssId = copyMapElement.getValue();
-			srcDssId.setStartTime(startTime);
-			srcDssId.setEndTime(endTime);
-			TimeSeriesContainer srcTsc = DssFileManagerImpl.getDssFileManager().readTS(srcDssId, true);
-			if ( srcTsc != null && srcTsc.numberValues > 0 )
+			if ( times != null )
 			{
-				DSSIdentifier destDssId = copyMapElement.getKey();
-				srcTsc.fileName = destDssId.getFileName();
-				srcTsc.fullName = destDssId.getDSSPath();
-				int rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
-				if ( rv != 0 )
-				{
-					copySuccessful= false;
-					Logger.getLogger(ForecastActionComputable.class.getName()).warning("Failed to write DSS record for "+destDssId+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
-					_sim.addErrorMessage("Falied to write DSS record for "+destDssId+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
-				}
-				else
-				{
-					/// save off the source DSS data into the collection dss file with the F part appended with -Forecast
-					srcTsc.fileName = getCollectionsOutputDssFile(getCollectionDssFilename());
-					pathname.setPathname(srcTsc.fullName);
-					pathname.setCollectionSequence(member);
-					pathname.setFPart(pathname.getFPart()+"-FORECAST");
-					srcTsc.fullName = pathname.getPathname();
-					rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
-					_sim.addComputeMessage("   Copied " + srcDssId+ " to "+destDssId);
-				}
+				srcDssId.setStartTime(times[0]);
+				srcDssId.setEndTime(times[1]);
 			}
-			else
-			{
-				_sim.addErrorMessage("No Data Found for "+srcDssId+" for Time Window "+srcDssId.getStartTime()+" to "+srcDssId.getEndTime());
-			}
+			DSSIdentifier destDssId = copyMapElement.getKey();
+			copySuccessful |= copyDssRecord(srcDssId, destDssId);
+
 		}
 		return copySuccessful;
 	}
 
+	private boolean copyDssRecord(DSSIdentifier srcDssId, DSSIdentifier destDssId)
+	{
+		boolean copySuccessful = true;
+		TimeSeriesContainer srcTsc = DssFileManagerImpl.getDssFileManager().readTS(srcDssId, true);
+		if ( srcTsc != null && srcTsc.numberValues > 0 )
+		{
+			srcTsc.fileName = destDssId.getFileName();
+			srcTsc.fullName = destDssId.getDSSPath();
+			int rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
+			if ( rv != 0 )
+			{
+				copySuccessful= false;
+				Logger.getLogger(ForecastActionComputable.class.getName()).warning("Failed to write DSS record for "+destDssId+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
+				_sim.addErrorMessage("Falied to write DSS record for "+destDssId+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
+			}
+			else
+			{
+				DSSPathname pathname = new DSSPathname();
+				/// save off the source DSS data into the collection dss file with the F part appended with -Forecast
+				srcTsc.fileName = getCollectionsOutputDssFile(getCollectionDssFilename());
+				pathname.setPathname(srcTsc.fullName);
+				//pathname.setCollectionSequence(member);
+				pathname.setFPart(pathname.getFPart()+"-FORECAST");
+				srcTsc.fullName = pathname.getPathname();
+				rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
+				_sim.addComputeMessage("   Copied " + srcDssId+ " to "+destDssId);
+			}
+		}
+		else
+		{
+			_sim.addErrorMessage("No Data Found for "+srcDssId+" for Time Window "+srcDssId.getStartTime()+" to "+srcDssId.getEndTime());
+		}
+		return copySuccessful;
+	}
+
+	/**
+	 * [0] = start time
+	 * [1] = end time
+	 * @return can be null
+	 */
+	private HecTime[] getCopyTimeWindow()
+	{
+		if (Boolean.getBoolean("Forecast.OnlyCopyTimeWindow"))
+		{
+			HecTime[] times = new HecTime[2];
+			RunTimeWindow rtw = _sim.getRunTimeWindow();
+			times[0] = (HecTime) rtw.getStartTime().clone();
+			times[1] = (HecTime) rtw.getEndTime().clone();
+
+			int startDaysToSubtract = -Integer.getInteger("Forecast.StartDaysToSubtract", 0);
+			times[0].addDays(startDaysToSubtract);
+
+
+			int endDaysToAdd = -Integer.getInteger("Forecast.EndDaysToAdd", 0);
+			times[1].addDays(endDaysToAdd);
+			return times;
+		}
+		return null;
+	}
+
+	private boolean copyTempTargetMember(int currentMember)
+	{
+		TemperatureTargetSet ttSet = _ensembleSet.getTemperatureTargetSet();
+		List<DSSPathname> pathnames = ttSet.getDssPathNames();
+		if ( pathnames.size() < currentMember )
+		{
+			_sim.addErrorMessage("Temperature Target collection size "+pathnames.size()+" smaller than current member "+currentMember);
+			return false;
+		}
+		DSSPathname pathname = pathnames.get(currentMember);
+		Path filePath = ttSet.getFilePath();
+		List<DSSIdentifier> destDssIdentifiers = _tempTargetDssPathMap.getDestDssIdentifiersFor(pathname.getPathname());
+		DSSIdentifier srcDssId = new DSSIdentifier(filePath.toString(),pathname.getPathname());
+		HecTime[] times = getCopyTimeWindow();
+		boolean copySuccessful = true;
+		DSSIdentifier destDssId;
+		for (int i = 0;i < destDssIdentifiers.size(); i ++ )
+		{
+			destDssId = destDssIdentifiers.get(i);
+			_sim.addComputeMessage("Copying Temperature Target pathname from "+srcDssId+" to " + destDssId);
+			copySuccessful |= copyDssRecord(srcDssId, destDssId);
+		}
+
+		return copySuccessful;
+	}
 	/**
 	 * @return  <simulation dss file>-forecast.dss
 	 */
@@ -1171,7 +1247,7 @@ public class ForecastActionComputable
 	/**
 	 * 
 	 */
-	private void copyDssResultsToCollectionsDss(int interationId, BaseComputeSettings computeSettings)
+	private void copyDssResultsToCollectionsDss(int interationId, int outputCollectionStart)
 	{
 		_sim.addComputeMessage("Saving Computed DSS records to collections");
 		
@@ -1184,7 +1260,7 @@ public class ForecastActionComputable
 			{
 				continue;
 			}
-			updateIterationDssWithDssData(modelAlt, interationId, computeSettings);
+			updateIterationDssWithDssData(modelAlt, interationId+outputCollectionStart);
 		}
 	}	
 	/**
@@ -1192,7 +1268,7 @@ public class ForecastActionComputable
 	 * forecast DSS file
 	 * @param modelAlt
 	 */
-	private boolean updateIterationDssWithDssData(ModelAlternative modelAlt, int interationId, BaseComputeSettings computeSettings)
+	private boolean updateIterationDssWithDssData(ModelAlternative modelAlt, int interationId)
 	{
 			
 		_sim.addComputeMessage("Saving Computed DSS records to collections for "+modelAlt);
@@ -1210,7 +1286,7 @@ public class ForecastActionComputable
 			return true;
 		}
 		_sim.addComputeMessage("Copying output DSS for "+modelAlt.getProgram()
-			+" model "+modelAlt+" to "+computeSettings.getCollectionDssFilename());
+			+" model "+modelAlt+" to "+getCollectionDssFilename());
 		DSSPathname pathname = new DSSPathname();
 		Vector<String>destPaths = new Vector<>(srcPaths.size());
 		String path;
@@ -1221,7 +1297,7 @@ public class ForecastActionComputable
 			pathname.setCollectionSequence(interationId);
 			destPaths.add(pathname.getPathname());
 		}
-		String iterDssFile = getCollectionsOutputDssFile(computeSettings.getCollectionDssFilename());
+		String iterDssFile = getCollectionsOutputDssFile(getCollectionDssFilename());
 		int rv = copyRecords(dssFile, iterDssFile, srcPaths, destPaths);
 		boolean success = rv == srcPaths.size();
 		if ( !success )

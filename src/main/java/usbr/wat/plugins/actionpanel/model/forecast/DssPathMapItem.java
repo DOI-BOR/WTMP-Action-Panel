@@ -20,6 +20,7 @@ import rma.util.RMAIO;
 
 public class DssPathMapItem extends NamedType
 {
+	private String _srcDssFpart;
 	private String _srcDssFile;
 	private String _srcDssPath;
 
@@ -27,9 +28,11 @@ public class DssPathMapItem extends NamedType
 	/** dest and source DSSIdentifiers */
 	private Map<DSSIdentifier, DSSIdentifier> _dssIdMap = new HashMap<>();
 
-	public DssPathMapItem()
+	public DssPathMapItem(String sourceDssFile, String sourceDssFPart)
 	{
 		super();
+		_srcDssFile = sourceDssFile;
+		_srcDssFpart = sourceDssFPart;
 	}
 
 	public boolean parseLine(String[] parts)
@@ -42,9 +45,19 @@ public class DssPathMapItem extends NamedType
 		// 0         1               2                3                   4                     5                       6
 
 		setName(parts[0].trim()+"-"+parts[1].trim());
-
-		_srcDssFile = parts[2].trim();
+		if ( _srcDssFile == null )
+		{
+			_srcDssFile = parts[2].trim();
+		}
 		_srcDssPath = parts[3].trim();
+		if (_srcDssFpart != null )
+		{
+			DSSPathname pathname = new DSSPathname();
+			pathname.setPathname(_srcDssPath);
+			pathname.setFPart(_srcDssFpart);
+			_srcDssPath = pathname.getPathname();
+		}
+
 		int numDests = RMAIO.parseInt(parts[4].trim());
 		for(int i =5; i< 5+numDests; i+=2)
 		{
@@ -119,7 +132,12 @@ public class DssPathMapItem extends NamedType
 		return null;
 	}
 
-	private boolean dssPathsEqual(DSSPathname path1, DSSPathname path2)
+	public static boolean dssPathsEqual(String path1, String path2)
+	{
+		return dssPathsEqual(new DSSPathname(path1), new DSSPathname(path2));
+	}
+
+	public static boolean dssPathsEqual(DSSPathname path1, DSSPathname path2)
 	{
 		return ( path1.getAPart().equalsIgnoreCase(path2.getAPart())
 			&& path1.getBPart().equalsIgnoreCase(path2.getBPart())

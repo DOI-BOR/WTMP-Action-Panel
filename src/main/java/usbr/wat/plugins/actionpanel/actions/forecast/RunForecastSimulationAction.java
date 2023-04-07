@@ -92,6 +92,8 @@ public class RunForecastSimulationAction extends AbstractAction
 			esetMap.put(eset, members);
 		}
 
+		int ensembleSetRange = Integer.getInteger("Forecast.EnsembleSetRange", 500);
+		int currentEnsembleNum = 0;
 		List<ForecastActionComputable>computables = new ArrayList<>();
 		Iterator<WatSimulation> simsIter = sims.iterator();
 		Set<Map.Entry<EnsembleSet, int[]>> esetSet = esetMap.entrySet();
@@ -110,9 +112,10 @@ public class RunForecastSimulationAction extends AbstractAction
 				members = esetEntry.getValue();
 				eset = esetEntry.getKey();
 
-				computable = new ForecastActionComputable(sim, eset, members);
+				computable = new ForecastActionComputable(sim, eset, members, currentEnsembleNum);
 				computable.setProgressDialog(computeDlg);
 				computables.add(computable);
+				currentEnsembleNum += ensembleSetRange;
 			}
 		}
 		computeDlg.setRecomputeAll(recomputeAll);
