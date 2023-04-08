@@ -412,6 +412,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			{
 			}
 		});
+		addUpperTableSelectionListeners();
 	}
 
 	/**

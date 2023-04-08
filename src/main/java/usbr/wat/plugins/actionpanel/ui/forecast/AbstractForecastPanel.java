@@ -7,21 +7,14 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Vector;
 
-import javax.swing.JSeparator;
-import javax.swing.ListSelectionModel;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -32,7 +25,6 @@ import rma.swing.RmaJPanel;
 import rma.swing.RmaJTable;
 import rma.swing.table.RmaTableModel;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
-import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 import usbr.wat.plugins.actionpanel.ui.forecast.temptarget.TempTargetForecastTableModel;
 
 /**
@@ -260,51 +252,30 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		_metTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_metTable));
 		_bcTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_bcTable));
 		_tempTargetTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_tempTargetTable));
-		MouseAdapter opsMa =new MouseAdapter()
-		{
-			public void mouseReleased(MouseEvent e)
-			{
-				_forecastPanel.setSelectedTab(getPanelForTable(_opsTable));
-			}
-		} ;
-		_opsTable.addMouseListener(opsMa);
-		_opsTable.getScrollPane().addMouseListener(opsMa);
-		_opsTable.getTableHeader().addMouseListener(opsMa);
+		addUpperTableSelectionListeners();
+	}
 
-		MouseAdapter metMa = new MouseAdapter()
+	void addUpperTableSelectionListeners()
+	{
+		for(ForecastTable table : _tables)
 		{
-			public void mouseReleased(MouseEvent e)
-			{
-				_forecastPanel.setSelectedTab(getPanelForTable(_metTable));
-			}
-		};
-		_metTable.addMouseListener(metMa);
-		_metTable.getScrollPane().addMouseListener(metMa);
-		_metTable.getTableHeader().addMouseListener(metMa);
+			table.addMouseListener(buildUpperTableMouseListener(table));
+			table.getScrollPane().getViewport().addMouseListener(buildUpperTableMouseListener(table));
+			table.getTableHeader().addMouseListener(buildUpperTableMouseListener(table));
+		}
+	}
 
-		MouseAdapter bcMa =new MouseAdapter()
+	private MouseListener buildUpperTableMouseListener(ForecastTable table)
+	{
+		return new MouseAdapter()
 		{
+			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				_forecastPanel.setSelectedTab(getPanelForTable(_bcTable));
+				_forecastPanel.setSelectedTab(getPanelForTable(table));
 			}
 		};
-		_bcTable.addMouseListener(bcMa);
-		_bcTable.getScrollPane().addMouseListener(bcMa);
-		_bcTable.getTableHeader().addMouseListener(bcMa);
-
-		MouseAdapter ttMa = new MouseAdapter()
-		{
-			public void mouseReleased(MouseEvent e)
-			{
-				_forecastPanel.setSelectedTab(getPanelForTable(_tempTargetTable));
-			}
-		};
-		_tempTargetTable.addMouseListener(ttMa);
-		_tempTargetTable.getScrollPane().addMouseListener(ttMa);
-		_tempTargetTable.getTableHeader().addMouseListener(ttMa);
-
-	}	
+	}
 	/**
 	 * @param e 
 	 * @param table
@@ -332,7 +303,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	 * @param forecastTable
 	 * @return
 	 */
-	private AbstractForecastPanel getPanelForTable(ForecastTable forecastTable)
+	AbstractForecastPanel getPanelForTable(ForecastTable forecastTable)
 	{
 		for(int i = 0; i < _panels.size(); i++ )
 		{
