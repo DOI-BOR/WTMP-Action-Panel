@@ -333,7 +333,10 @@ public class TempTargetPanel extends AbstractForecastPanel
 			pathname.setDPart("");
 			tsc.fullName = pathname.getPathname();
 			retVal.add(pathname);
-			saveTimeSeries(tsc);
+			String weeklyFileName = fileName.replace(".dss", "-Weekly.dss");
+			String hourlyFileName = fileName.replace(".dss", "-Hourly.dss");
+			saveTimeSeries(tsc, weeklyFileName, hourlyFileName);
+			tempTargetSet.setDssOutputPath(Paths.get(hourlyFileName));
 		}
 		return retVal;
 	}
@@ -392,9 +395,11 @@ public class TempTargetPanel extends AbstractForecastPanel
 			tsc.times = times;
 			tsc.values = getUserDefinedValues(col);
 			tsc.numberValues = tsc.values.length;
-			saveTimeSeries(tsc);
-			fileName = fileName.replace(".dss", "-Weekly.dss");
-			tempTargetSet.setFilePath(Paths.get(Project.getCurrentProject().getRelativePath(fileName)));
+			String weeklyFileName = fileName.replace(".dss", "-Weekly.dss");
+			String hourlyFileName = fileName.replace(".dss", "-Hourly.dss");
+			saveTimeSeries(tsc, weeklyFileName, hourlyFileName);
+			tempTargetSet.setDssOutputPath(Paths.get(hourlyFileName));
+			tempTargetSet.setFilePath(Paths.get(Project.getCurrentProject().getRelativePath(weeklyFileName)));
 			retVal.add(pathname);
 		}
 		return retVal;
@@ -426,12 +431,12 @@ public class TempTargetPanel extends AbstractForecastPanel
 		return leadingString;
 	}
 
-	private void saveTimeSeries(TimeSeriesContainer weeklyTsc)
+	private void saveTimeSeries(TimeSeriesContainer weeklyTsc, String weeklyFileName, String hourlyFileName)
 	{
 		TimeSeriesContainer hourlyTsc = null;
 		try
 		{
-			weeklyTsc.fileName = weeklyTsc.fileName.replace(".dss", "-Weekly.dss");
+			weeklyTsc.fileName = Project.getCurrentProject().getAbsolutePath(weeklyFileName);
 			DssFileManagerImpl.getDssFileManager().write(weeklyTsc);
 			if(!weeklyTsc.allMissing())
 			{
@@ -447,7 +452,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 			{
 				hourlyTsc = new TimeSeriesContainer();
 			}
-			hourlyTsc.fileName = weeklyTsc.fileName.replace("-Weekly.dss", "-Hourly.dss");
+			hourlyTsc.fileName = Project.getCurrentProject().getAbsolutePath(hourlyFileName);
 			DSSPathname pathname = new DSSPathname(weeklyTsc.fullName);
 			pathname.setDPart("");
 			pathname.setEPart("1HOUR");

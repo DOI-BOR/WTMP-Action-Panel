@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import com.rma.util.XMLUtilities;
 import hec.lang.NamedType;
-import org.jdom.Attribute;
 import org.jdom.Element;
 
 public class BcData extends NamedType

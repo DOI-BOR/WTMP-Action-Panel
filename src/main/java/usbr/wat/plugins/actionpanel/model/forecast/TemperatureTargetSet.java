@@ -31,7 +31,7 @@ import java.util.stream.IntStream;
 
 public final class TemperatureTargetSet extends NamedType
 {
-    private static final Logger LOGGER = Logger.getLogger(TemperatureTargetSet.class.getName());
+    private static final String OUTPUT_DSS_FILE_ELEM_ID = "Output-DSS-File";
     private static final String USER_DEFINED_ATTRIBUTE_NAME = "user-defined";
     private static final String FILE_PATH_ELEM_NAME = "file-path";
     private static final String PATH_NAMES_ELEM_NAME = "dss-pathnames";
@@ -41,6 +41,7 @@ public final class TemperatureTargetSet extends NamedType
     private boolean _isUserDefined;
     private Path _filePath;
     private int _numberOfUserDefinedTempTargets;
+    private Path _dssOutputPath;
 
     public TemperatureTargetSet()
     {
@@ -55,6 +56,12 @@ public final class TemperatureTargetSet extends NamedType
         Element filePathElem = new Element(FILE_PATH_ELEM_NAME);
         filePathElem.setText(_filePath.toString());
         myElem.addContent(filePathElem);
+        Element dssOutputPathElem = new Element(OUTPUT_DSS_FILE_ELEM_ID);
+        if(_dssOutputPath != null)
+        {
+            dssOutputPathElem.setText(_dssOutputPath.toString());
+        }
+        myElem.addContent(dssOutputPathElem);
         Element dssPathnamesElem = new Element(PATH_NAMES_ELEM_NAME);
         for(DSSPathname pathname : _dssPathNames)
         {
@@ -76,6 +83,15 @@ public final class TemperatureTargetSet extends NamedType
         if(filePathElem != null && filePathElem.getText() != null)
         {
             _filePath = Paths.get(filePathElem.getText());
+        }
+        Element outputDssFileElem = myElem.getChild(OUTPUT_DSS_FILE_ELEM_ID);
+        if(outputDssFileElem != null)
+        {
+            String filePath = outputDssFileElem.getText();
+            if(filePath != null)
+            {
+                _dssOutputPath = Paths.get(filePath);
+            }
         }
         Element dssPathNamesElem = myElem.getChild(PATH_NAMES_ELEM_NAME);
         if(dssPathNamesElem != null)
@@ -239,4 +255,14 @@ public final class TemperatureTargetSet extends NamedType
     {
         _numberOfUserDefinedTempTargets = value;
     }
+
+    public void setDssOutputPath(Path fileName)
+    {
+        _dssOutputPath = fileName;
+    }
+    public Path getDssOutputPath()
+    {
+        return _dssOutputPath;
+    }
+
 }
