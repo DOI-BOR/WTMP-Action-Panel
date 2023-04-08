@@ -249,6 +249,7 @@ public class ForecastActionComputable
 					}
 					return false;
 				}
+				_ensembleSet.addComputedMember(currentMember);
 				//copy the output from the simulation dss file to the iteration dss file
 				if ( _canceled )
 				{
@@ -1314,7 +1315,7 @@ public class ForecastActionComputable
 		boolean success = rv == srcPaths.size();
 		if ( !success )
 		{
-			_sim.addErrorMessage("Failed to update iteration DSS file with "
+			_sim.addErrorMessage("Failed to update forecast DSS file with "
 					+modelAlt.getProgram()+" model "+modelAlt+"'s results");
 		}
 		return success;

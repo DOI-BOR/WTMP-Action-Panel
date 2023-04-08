@@ -9,9 +9,11 @@
 
 package usbr.wat.plugins.actionpanel.model.forecast;
 
+import java.util.List;
 import com.rma.util.XMLUtilities;
 import hec.lang.NamedType;
 import org.jdom.Element;
+import rma.util.IntVector;
 
 public class EnsembleSet extends NamedType
 {
@@ -19,7 +21,7 @@ public class EnsembleSet extends NamedType
 	private TemperatureTargetSet _tempTargetSet;
 	private String _bcDataName;
 	private String _tempTargetSetName;
-	private int[] _computedMembers;
+	private IntVector _computedMembers = new IntVector();
 	private String _membersToCompute;
 
 	public EnsembleSet()
@@ -69,7 +71,8 @@ public class EnsembleSet extends NamedType
 		if ( _computedMembers != null )
 		{
 			Element computedMembersElem = new Element("ComputedMembers");
-			XMLUtilities.createArrayElements(computedMembersElem, _computedMembers);
+			int[] members = _computedMembers.toArray();
+			XMLUtilities.createArrayElements(computedMembersElem, members);
 		}
 	}
 
@@ -79,11 +82,18 @@ public class EnsembleSet extends NamedType
 		{
 			return false;
 		}
+		_computedMembers.clear();
 		XMLUtilities.loadNamedType(myElem, this);
 
 		_bcDataName = XMLUtilities.getChildElementAsString(myElem, "BcData",  "");
 
 		_tempTargetSetName = XMLUtilities.getChildElementAsString(myElem,"TemperatureTargetSet", "");
+		Element computedMembersElem = myElem.getChild("ComputedMembers");
+		if ( computedMembersElem != null )
+		{
+			int[] computedMembers = XMLUtilities.getIntArrayElements(computedMembersElem);
+			_computedMembers.addAll(computedMembers);
+		}
 
 		return true;
 	}
@@ -98,7 +108,7 @@ public class EnsembleSet extends NamedType
 		return _tempTargetSet;
 	}
 
-	public int[] getComputedMembers()
+	public IntVector getComputedMembers()
 	{
 		return _computedMembers;
 	}
@@ -120,5 +130,10 @@ public class EnsembleSet extends NamedType
 	public  String getMemberSetToCompute()
 	{
 		return _membersToCompute;
+	}
+
+	public void addComputedMember(int member)
+	{
+		_computedMembers.add(member);
 	}
 }
