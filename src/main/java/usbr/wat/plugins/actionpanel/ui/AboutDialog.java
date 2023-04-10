@@ -524,11 +524,20 @@ public class AboutDialog extends RmaJDialog
 		{
 			parentElem = root.getChild(PARENT_ELEMENT, nameSpace);
 		}
-			
-		if ( parentElem != null )
-		{
-			Element versionElem  = null;
 
+		Element versionElem = null;
+		if ( parentElem == null ) {
+			if( nameSpace ==null )
+			{
+				versionElem = root.getChild(VERSION_ELEMENT);
+			}
+			else
+			{
+				versionElem = root.getChild(VERSION_ELEMENT, nameSpace);
+			}
+		}
+		else
+		{
 			if( nameSpace ==null )
 			{
 				versionElem = parentElem.getChild(VERSION_ELEMENT);
@@ -537,20 +546,16 @@ public class AboutDialog extends RmaJDialog
 			{
 				versionElem = parentElem.getChild(VERSION_ELEMENT, nameSpace);
 			}
-			if ( versionElem != null )
-			{
-				return versionElem.getTextTrim();
-			}
-			else
-			{
-				LOGGER.log(Level.WARNING, "loadDocument: Failed to find version element");	
-				logChildren(parentElem);
-			}
+
+		}
+		if ( versionElem != null )
+		{
+			return versionElem.getTextTrim();
 		}
 		else
 		{
-			LOGGER.log(Level.WARNING, "loadDocument: Failed to find parent element");	
-			logChildren(root);
+			LOGGER.log(Level.WARNING, "loadDocument: Failed to find version element");
+			logChildren(parentElem);
 		}
 		return "unknown";
 				
