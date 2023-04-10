@@ -172,7 +172,7 @@ public class ForecastActionComputable
 		configPath = RMAIO.concatPath(prjDir, TEMP_TARGET_CONFIG_FILE);
 		_tempTargetDssPathMap = new DssPathMap(_sim, configPath);
 		_tempTargetDssPathMap.setSourceDssFile(_ensembleSet.getTemperatureTargetSet().getDssOutputPath().toString());
-		//_tempTargetDssPathMap.setSourceFPart(_ensembleSet.getTemperatureTargetSet().getFPart());
+		_tempTargetDssPathMap.setSourceFPart(_ensembleSet.getTemperatureTargetSet().getFPartWithoutCollection());
 
 		if ( !_tempTargetDssPathMap.readDssPathsFile())
 		{
@@ -252,7 +252,10 @@ public class ForecastActionComputable
 					}
 					return false;
 				}
-				_ensembleSet.addComputedMember(currentMember);
+				else
+				{
+					_ensembleSet.addComputedMember(currentMember);
+				}
 				//copy the output from the simulation dss file to the iteration dss file
 				if ( _canceled )
 				{
