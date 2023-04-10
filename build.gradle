@@ -41,7 +41,7 @@ jar {
 
 publishing {
     publications {
-        maven(MavenPublication) {
+        mavenJava(MavenPublication) {
             artifactId = "usbr-actionpanel-plugin"
             from components.java
         }
