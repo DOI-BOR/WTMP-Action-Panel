@@ -75,6 +75,8 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	private Class< ? extends AbstractSimulationGroup> _simGroupClass;
 	private Class< ? extends AbstractNewSimulationGroupCmd> _simGroupCmdClass;
 
+	private boolean _runExtract;
+
 	/**
 	 * @param parent
 	 * @param modal
@@ -480,7 +482,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 			simToAdd = findSimulationInTable(newSimName);
 			if ( simToAdd != null )
 			{
-				newSim = AbstractNewSimulationGroupCmd.createSimulation(simToAdd, _simGroup, proj, ap);
+				newSim = AbstractNewSimulationGroupCmd.createSimulation(simToAdd, _simGroup, proj, ap, _runExtract);
 				if ( newSim != null )
 				{
 					_simGroup.addSimulation(newSim);
@@ -683,6 +685,12 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	{
 		_simGroupCmdClass = cmdClass;
 	}
+
+	public void setRunExtract(boolean runExtract)
+	{
+		_runExtract = runExtract;
+	}
+
 
 
 

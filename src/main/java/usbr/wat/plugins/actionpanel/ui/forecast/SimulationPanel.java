@@ -40,6 +40,8 @@ import rma.swing.table.RmaCellEditor;
 import rma.swing.table.RmaTableModel;
 import rma.swing.table.RmaTableModelInterface;
 import rma.util.IntArray;
+import rma.util.IntVector;
+import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.SimulationActionsPanel;
@@ -555,8 +557,12 @@ public class SimulationPanel extends AbstractSimulationPanel
 			row.add(Boolean.FALSE);
 			row.add(eset.getBcData());
 			row.add(eset.getTemperatureTargetSet());
-			row.add("");
-			row.add(eset.getComputedMembers());
+			row.add(eset.getMemberSetToCompute());
+			IntVector computedMeebers = eset.getComputedMembers();
+			String cmStr = computedMeebers.toString();
+			cmStr = RMAIO.removeChar(cmStr, '[');
+			cmStr = 	RMAIO.removeChar(cmStr, ']');
+			row.add(cmStr);
 
 			_simEnsembleTable.appendRow(row);
 		}

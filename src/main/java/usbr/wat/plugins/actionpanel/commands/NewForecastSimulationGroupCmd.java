@@ -33,7 +33,7 @@ public class NewForecastSimulationGroupCmd extends AbstractNewSimulationGroupCmd
 	public NewForecastSimulationGroupCmd(Project project, String name, String descr,
 			RmaFile dir, WatAnalysisPeriod ap, List<WatSimulation>sims)
 	{
-		super(project, name, descr, dir, ap, sims);
+		super(project, name, descr, dir, ap, sims, false);
 		
 	}
 

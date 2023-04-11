@@ -36,6 +36,7 @@ public class NewSimulationGroupAction extends BaseActionsPanelAction
 				"New Simulation Group");
 		dlg.setSimulationGroupClass(SimulationGroup.class);
 		dlg.setSimulationGroupFactory(NewSimulationGroupCmd.class);
+		dlg.setRunExtract(true);
 		dlg.fillForm();
 		dlg.setVisible(true);
 		if ( dlg.isCanceled())

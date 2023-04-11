@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -685,95 +686,66 @@ public class ForecastActionComputable
 	 */
 	private List<DSSIdentifier> saveDssPaths(DssPathMap bcDssPathMap, DssPathMap tempTargetDssPathMap)
 	{
-		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
-		ModelAlternative modelAlt;
-		ModelAltIterationSettings maSettings;
-		List<DataLocation> dataLocs;
-		DataLocation dataLoc;
-		DSSIdentifier dssId;
-		List<DSSIdentifier>pathsRenamed = new ArrayList<>();
-		String variantName = _sim.getVariantName();
 		_sim.addComputeMessage("Saving DSS records ...");
-		WatPlugin plugin;
-		for (int i = 0;i < modelAlts.size();i ++ )
-		{
-			modelAlt = modelAlts.get(i);
-			if ( modelAlt == null )
-			{
-				continue;
-			}
-			plugin = (WatPlugin) WatPluginManager.getPlugin(modelAlt.getProgram());
-			if ( plugin == null )
-			{
-				continue;
-			}
-			modelAlt.setVariantName(variantName);
-			dataLocs = plugin.getDataLocations(modelAlt, DataLocation.INPUT_LOCATIONS);
-			if ( dataLocs == null )
-			{
-				continue;
-			}
-			for(int d = 0;d < dataLocs.size(); d++ )
-			{
-				dataLoc = dataLocs.get(d);
-				dssId = bcDssPathMap.getDSSIdentifierFor(dataLoc);
-				if ( dssId == null || dssId.getDSSPath() == null || dssId.getDSSPath().isEmpty() )
-				{
-					continue;
-				}
-				dssId = saveDssPath(dataLoc);
-				if ( dssId != null )
-				{
-					pathsRenamed.add(dssId);
-				}
-			}
-			for(int d = 0;d < dataLocs.size(); d++ )
-			{
-				dataLoc = dataLocs.get(d);
-				dssId = tempTargetDssPathMap.getDSSIdentifierFor(dataLoc);
-				if ( dssId == null || dssId.getDSSPath() == null || dssId.getDSSPath().isEmpty() )
-				{
-					continue;
-				}
-				dssId = saveDssPath(dataLoc);
-				if ( dssId != null )
-				{
-					pathsRenamed.add(dssId);
-				}
-			}
-		}
+		List<DSSIdentifier>pathsRenamed = new ArrayList<>();
+		saveDssPaths(pathsRenamed, bcDssPathMap);
+		saveDssPaths(pathsRenamed, tempTargetDssPathMap);
+
+
+
 		_sim.addComputeMessage("Saved "+pathsRenamed.size()+" DSS records ...");
 		return pathsRenamed;
 	}
+
+	private void saveDssPaths(List<DSSIdentifier> pathsRenamed, DssPathMap dssPathMap)
+	{
+		// dest to source
+		Map<DSSIdentifier, DSSIdentifier> copyMap = dssPathMap.getAllDssMap();
+		Set<DSSIdentifier> destSet = copyMap.keySet();
+		Iterator<DSSIdentifier> destIter = destSet.iterator();
+		Set<DSSIdentifier>copyIds = new HashSet();
+		DSSIdentifier destDssId;
+		while (destIter.hasNext())  // find unique dest DSSIdentifiers
+		{
+			destDssId = destIter.next();
+			copyIds.add(destDssId);
+		}
+		destIter = copyIds.iterator();
+		while ( destIter.hasNext() )
+		{
+			destDssId = destIter.next();
+			destDssId = saveDssPath(destDssId);
+			if ( destDssId != null )
+			{
+				pathsRenamed.add(destDssId);
+			}
+		}
+	}
+
 	/**
-	 * @param dataLoc
+	 * @param srcDssId
 	 */
-	private DSSIdentifier saveDssPath(DataLocation dataLoc)
+	private DSSIdentifier saveDssPath(DSSIdentifier srcDssId)
 	{
 		Vector<String> srcList= new Vector<>();
 		Vector<String> destList= new Vector<>();
-		
-		DataLocation linkedToDl = dataLoc.getLinkedToLocation();
-		if ( linkedToDl instanceof DssDataLocation && DSSFILE.equals(dataLoc.getModelToLinkTo()) )
-		{
-			DssDataLocation dssDl = (DssDataLocation) linkedToDl;
-			String dssPath = dssDl.getDssPath();
-			String dssFile = dssDl.get_dssFile();
-			String dssFileAbs = Project.getCurrentProject().getAbsolutePath(dssFile);
-			fillInSrcAndDestList(dssFileAbs, dssPath, srcList, destList, true);
-			_sim.addComputeMessage("Found "+srcList+" records for "+dssPath);
 
-			int rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFileAbs, srcList, destList);
-			
-			if  (rv == srcList.size())  // renamed all the records
-			{
-				DSSIdentifier dssId = new DSSIdentifier(dssFileAbs, dssPath);
-				return dssId;
-			}
-			else
-			{
-				_sim.addWarningMessage("Failed to save off all DSS records for "+dssPath+".  Expected to save " + srcList.size()+" saved "+rv);
-			}
+		String dssPath = srcDssId.getDSSPath();
+		String dssFile = srcDssId.getFileName();
+		String dssFileAbs = Project.getCurrentProject().getAbsolutePath(dssFile);
+		fillInSrcAndDestList(dssFileAbs, dssPath, srcList, destList, true);
+		_sim.addComputeMessage("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs);
+
+		int rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFileAbs, srcList, destList);
+
+		if  (rv == srcList.size())  // renamed all the records
+		{
+			DSSIdentifier dssId = new DSSIdentifier(dssFileAbs, dssPath);
+			return dssId;
+		}
+		else
+		{
+			_sim.addWarningMessage("Failed to save off all DSS records for "+dssPath+".  Expected to save " + srcList.size()+" saved "+rv);
 		}
 		return null;
 	}
@@ -1193,9 +1165,6 @@ public class ForecastActionComputable
 			currentMember--;
 		}
 		DSSPathname pathname = pathnames.get(currentMember);
-//tmp workaround...
-pathname = new DSSPathname(pathname.getPathname());
-pathname.setEPart("1HOUR");
 
 		Path filePath = ttSet.getDssOutputPath();
 

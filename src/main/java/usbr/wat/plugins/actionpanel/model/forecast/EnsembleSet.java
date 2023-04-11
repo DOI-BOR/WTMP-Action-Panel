@@ -22,7 +22,7 @@ public class EnsembleSet extends NamedType
 	private String _bcDataName;
 	private String _tempTargetSetName;
 	private IntVector _computedMembers = new IntVector();
-	private String _membersToCompute;
+	private String _membersToCompute = "";
 
 	public EnsembleSet()
 	{
@@ -74,6 +74,10 @@ public class EnsembleSet extends NamedType
 			int[] members = _computedMembers.toArray();
 			XMLUtilities.createArrayElements(computedMembersElem, members);
 		}
+		if ( _membersToCompute != null )
+		{
+			XMLUtilities.addChildContent(myElem, "MembersToCompute", _membersToCompute);
+		}
 	}
 
 	public boolean loadData(Element myElem)
@@ -94,6 +98,7 @@ public class EnsembleSet extends NamedType
 			int[] computedMembers = XMLUtilities.getIntArrayElements(computedMembersElem);
 			_computedMembers.addAll(computedMembers);
 		}
+		_membersToCompute = XMLUtilities.getChildElementAsString(myElem, "MembersToCompute","");
 
 		return true;
 	}
@@ -135,5 +140,6 @@ public class EnsembleSet extends NamedType
 	public void addComputedMember(int member)
 	{
 		_computedMembers.add(member);
+		setModified(true);
 	}
 }

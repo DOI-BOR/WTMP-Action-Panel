@@ -27,6 +27,7 @@ import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 public class SaveSimulationToGroupCmd extends AbstractNewManagerCommand
 {
 
+	private final boolean _runExtract;
 	private WatSimulation _srcSim;
 	private AbstractSimulationGroup _simGroup;
 	private WatAnalysisPeriod _ap;
@@ -35,14 +36,14 @@ public class SaveSimulationToGroupCmd extends AbstractNewManagerCommand
 	private String _newName;
 
 	/**
-	 * @param newDesc2 
-	 * @param sim
-	 * @param simgroup
+	 * @param newDesc
+	 * @param srcSim
+	 * @param simGroup
 	 * @param project
 	 * @param ap
 	 */
 	public SaveSimulationToGroupCmd(WatSimulation srcSim, String newName, String newDesc, AbstractSimulationGroup simGroup,
-			Project project, WatAnalysisPeriod ap)
+			Project project, WatAnalysisPeriod ap, boolean runExtract)
 	{
 		super(project,"", "", null); // not using what the super does
 		_srcSim = srcSim;
@@ -51,6 +52,7 @@ public class SaveSimulationToGroupCmd extends AbstractNewManagerCommand
 		_simGroup = simGroup;
 		_project = project;
 		_ap = ap;
+		_runExtract = runExtract;
 	}
 
 	@Override
@@ -95,8 +97,10 @@ public class SaveSimulationToGroupCmd extends AbstractNewManagerCommand
 		_newSim.setSimulationContainer(container);
 		container.addSimulation(_newSim);
 		_project.addManager(_newSim);
-		
-		new UpdateDataAction(ActionPanelPlugin.getInstance().getActionsWindow()).updateData(_simGroup);
+		if ( _runExtract)
+		{
+			new UpdateDataAction(ActionPanelPlugin.getInstance().getActionsWindow()).updateData(_simGroup);
+		}
 		
 		return false;
 		

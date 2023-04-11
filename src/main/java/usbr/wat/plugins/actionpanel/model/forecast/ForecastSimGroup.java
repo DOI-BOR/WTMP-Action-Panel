@@ -486,4 +486,31 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		return _ensembleSets;
 	}
 
+	public boolean hasEnsembleSetFor(BcData bc, TemperatureTargetSet tts)
+	{
+		if ( bc == null || tts == null )
+		{
+			return false;
+		}
+		EnsembleSet eset = getEnsembleSetFor(bc, tts);
+		return eset != null ;
+	}
+
+	public EnsembleSet getEnsembleSetFor(BcData bc, TemperatureTargetSet tts)
+	{
+		if ( bc == null || tts == null )
+		{
+			return null;
+		}
+		EnsembleSet eset;
+		for (int e = 0; e < _ensembleSets.size(); e++ )
+		{
+			eset = _ensembleSets.get(e);
+			if ( eset.getBcData() == bc && eset.getTemperatureTargetSet() == tts )
+			{
+				return eset;
+			}
+		}
+		return null;
+	}
 }

@@ -15,6 +15,7 @@ import java.util.List;
 import javax.swing.JTabbedPane;
 
 import hec2.wat.model.WatSimulation;
+import org.jdesktop.swingx.JXLabel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJPanel;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
@@ -118,14 +119,14 @@ public class ForecastPanel extends RmaJPanel
 		add(_tabbedPane, gbc);
 		
 		
-		
+
 		_tabbedPane.addTab("Initial Conditions", _initialConditionsPanel);
 		_tabbedPane.addTab("Operations", _operationsPanel);
 		_tabbedPane.addTab("Meteorology", _metPanel);
 		_tabbedPane.addTab("Boundary Conditions", _bcPanel);
 		_tabbedPane.addTab("Temperature Targets", _tempTargetsPanel);
 		_tabbedPane.addTab("Simulation", _simulationPanel);
-		
+
 		_currentPanel = (AbstractForecastPanel) _tabbedPane.getSelectedComponent();
 		
 		

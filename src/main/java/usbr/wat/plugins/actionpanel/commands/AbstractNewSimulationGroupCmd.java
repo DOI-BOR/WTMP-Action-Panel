@@ -25,15 +25,17 @@ import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 public abstract class AbstractNewSimulationGroupCmd extends AbstractNewManagerCommand
 {
 
+	private final boolean _runExtract;
 	private List<WatSimulation> _sims;
 	private WatAnalysisPeriod _ap;
 	
 	public AbstractNewSimulationGroupCmd(Project project, String name, String descr,
-			RmaFile dir, WatAnalysisPeriod ap, List<WatSimulation>sims)
+			RmaFile dir, WatAnalysisPeriod ap, List<WatSimulation>sims, boolean runExtract)
 	{
 		super(project, name, descr, dir);
 		_ap = ap;
 		_sims = sims;
+		_runExtract = runExtract;
 		
 	}
 	
@@ -59,7 +61,7 @@ public abstract class AbstractNewSimulationGroupCmd extends AbstractNewManagerCo
 		for (int i = 0;i < _sims.size(); i++ )
 		{
 			sim = _sims.get(i);
-			newSim = createSimulation(sim, simgroup, _project, _ap);
+			newSim = createSimulation(sim, simgroup, _project, _ap, _runExtract);
 			
 			
 			
@@ -73,17 +75,17 @@ public abstract class AbstractNewSimulationGroupCmd extends AbstractNewManagerCo
 	 * @param sim
 	 * @param simgroup 
 	 */
-	public static WatSimulation createSimulation(WatSimulation sim, AbstractSimulationGroup simgroup, Project project, WatAnalysisPeriod ap)
+	public static WatSimulation createSimulation(WatSimulation sim, AbstractSimulationGroup simgroup, Project project, WatAnalysisPeriod ap, boolean runExtract)
 	{
-		SaveSimulationToGroupCmd cmd = new SaveSimulationToGroupCmd(sim, null,null, simgroup, project, ap);
+		SaveSimulationToGroupCmd cmd = new SaveSimulationToGroupCmd(sim, null,null, simgroup, project, ap, runExtract);
 		cmd.doCommand();
 		WatSimulation newSim = cmd.getSimulation();
 		return newSim;
 	}
 
 	/**
-	 * @param name
-	 * @param string 
+	 * @param simName
+	 * @param simGroupName
 	 * @return
 	 */
 	public static String getGroupSimName(String simName, String simGroupName)

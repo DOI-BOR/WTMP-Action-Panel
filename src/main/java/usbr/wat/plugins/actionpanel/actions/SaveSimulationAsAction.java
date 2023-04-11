@@ -58,7 +58,7 @@ public class SaveSimulationAsAction extends AbstractAction
 		String newName = dlg.getSaveAsName();
 		String newDesc = dlg.getDescription();
 		
-		SaveSimulationToGroupCmd cmd = new SaveSimulationToGroupCmd(srcSim, newName, newDesc, simGroup, Project.getCurrentProject(), simGroup.getAnalysisPeriod());
+		SaveSimulationToGroupCmd cmd = new SaveSimulationToGroupCmd(srcSim, newName, newDesc, simGroup, Project.getCurrentProject(), simGroup.getAnalysisPeriod(), false);
 		cmd.doCommand();
 		WatSimulation newSim = cmd.getSimulation();
 		if ( newSim != null )

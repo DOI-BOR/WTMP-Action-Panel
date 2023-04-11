@@ -36,6 +36,7 @@ public class EditEnsembleSetWindow extends RmaJDialog
 	private RmaJTable _bcTable;
 	private RmaJTable _tempTargetSetTable;
 	private boolean _canceled;
+	private ForecastSimGroup _simGroup;
 
 	public EditEnsembleSetWindow(Window parent)
 	{
@@ -198,16 +199,17 @@ public class EditEnsembleSetWindow extends RmaJDialog
 	}
 	public void fillForm(ForecastSimGroup simulationGroup)
 	{
-		List<BcData> bcData = simulationGroup.getBcData();
+		_simGroup = simulationGroup;
+		List<BcData> bcDatas = simulationGroup.getBcData();
 		List<TemperatureTargetSet> tempTargetSets = simulationGroup.getTemperatureTargetSets();
 
 		_bcTable.deleteCells();
 		Vector<Object> row;
-		for (int i = 0;i < bcData.size(); i++ )
+		for (int i = 0;i < bcDatas.size(); i++ )
 		{
 			row = new Vector<>();
 			row.add(Boolean.FALSE);
-			row.add(bcData.get(i));
+			row.add(bcDatas.get(i));
 			_bcTable.appendRow(row);
 		}
 
@@ -219,7 +221,32 @@ public class EditEnsembleSetWindow extends RmaJDialog
 			row.add(tempTargetSets.get(i));
 			_tempTargetSetTable.appendRow(row);
 		}
+		List<EnsembleSet> esets = simulationGroup.getEnsembleSets();
+		EnsembleSet eset;
+		TemperatureTargetSet ttset;
+		BcData bcData;
+		for (int e = 0;e < esets.size(); e++ )
+		{
+			eset = esets.get(e);
+			ttset = eset.getTemperatureTargetSet();
+			bcData = eset.getBcData();
+			selectTableRow(_bcTable, bcData);
+			selectTableRow(_tempTargetSetTable, ttset);
+		}
 
+	}
+
+	private void selectTableRow(RmaJTable table, Object objToSelect)
+	{
+		int rowCnt = table.getRowCount();
+		for (int r = 0;r < rowCnt; r++ )
+		{
+			if ( table.getValueAt(r, 1) == 	objToSelect )
+			{
+				table.setValueAt(Boolean.TRUE, r, 0);
+				return;
+			}
+		}
 	}
 
 	public boolean isCanceled()
@@ -233,20 +260,66 @@ public class EditEnsembleSetWindow extends RmaJDialog
 		List<TemperatureTargetSet>ttsData = getSelectedTempTargetSets();
 		BcData bc;
 		TemperatureTargetSet tts;
+		EnsembleSet ensembleSet, existingEset;
+
 		for(int o = 0;o < bcData.size(); o++ )
 		{
 			bc = bcData.get(o);
 			for(int m = 0;m < ttsData.size(); m++ )
 			{
 				tts = ttsData.get(m);
-				EnsembleSet ensembleSet = new EnsembleSet();
-				ensembleSet.setName(bc.getName()+"-"+tts.getName());
-				ensembleSet.setSelectedBcData(bc);
-				ensembleSet.setSelectedTemperatureTargetSets(tts);
-				selectedEnsembleSets.add(ensembleSet);
+				existingEset = _simGroup.getEnsembleSetFor(bc, tts);
+				if ( existingEset == null )
+				{
+					ensembleSet = new EnsembleSet();
+					ensembleSet.setName(bc.getName() + "-" + tts.getName());
+					ensembleSet.setSelectedBcData(bc);
+					ensembleSet.setSelectedTemperatureTargetSets(tts);
+					selectedEnsembleSets.add(ensembleSet);
+				}
+				else
+				{
+					selectedEnsembleSets.add(existingEset);
+				}
 			}
 		}
+		List<EnsembleSet> esets = _simGroup.getEnsembleSets();
+		List<EnsembleSet>esetsToRemove = new ArrayList<>();
+		for (int i = 0;i < esets.size(); i++ )
+		{
+			ensembleSet = esets.get(i);
+			bc = ensembleSet.getBcData();
+			tts = ensembleSet.getTemperatureTargetSet();
+			if ( !isSelected(bc, tts))
+			{
+				esetsToRemove.add(ensembleSet);
+			}
+		}
+		selectedEnsembleSets.removeAll(esetsToRemove);
 		return selectedEnsembleSets;
+	}
+
+	private boolean isSelected(BcData bc, TemperatureTargetSet tts)
+	{
+		return  isSelected(_bcTable, bc) && isSelected(_tempTargetSetTable, tts);
+	}
+
+	private boolean isSelected(RmaJTable table,  Object obj)
+	{
+		int rowCnt = table.getRowCount();
+		Object selected;
+		for(int r = 0; r < rowCnt;r++ )
+		{
+			if ( table.getValueAt(r,1)== obj)
+			{
+				selected = table.getValueAt(r, 0);
+				if ( selected == Boolean.TRUE || "true".equals(selected.toString()))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private List<TemperatureTargetSet> getSelectedTempTargetSets()

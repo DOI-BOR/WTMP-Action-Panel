@@ -38,6 +38,7 @@ public class NewForecastSimGroupAction extends AbstractAction
 			"New Forecast Simulation Group");
 		dlg.setSimulationGroupClass(ForecastSimGroup.class);
 		dlg.setSimulationGroupFactory(NewForecastSimulationGroupCmd.class);
+		dlg.setRunExtract(false);
 		dlg.fillForm();
 		dlg.setVisible(true);
 		if ( dlg.isCanceled())

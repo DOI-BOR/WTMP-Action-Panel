@@ -61,7 +61,7 @@ public class DssPathMapItem extends NamedType
 		int numDests = RMAIO.parseInt(parts[4].trim());
 		for(int i =5; i< 5+numDests; i+=2)
 		{
-			DssItem dssItem = new DssItem(parts[i],parts[i+1]);
+			DssItem dssItem = new DssItem(parts[i].trim(),parts[i+1].trim());
 			_destDssItems.add(dssItem);
 		}
 		return true;
