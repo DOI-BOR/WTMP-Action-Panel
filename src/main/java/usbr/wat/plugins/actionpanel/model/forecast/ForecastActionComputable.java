@@ -22,6 +22,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import com.google.common.flogger.FluentLogger;
 import com.rma.client.Browser;
 import com.rma.io.DssFileManagerImpl;
 import com.rma.io.FileManagerImpl;
@@ -72,7 +73,7 @@ import usbr.wat.plugins.actionpanel.model.UsbrComputable;
 public class ForecastActionComputable
 		implements UsbrComputable
 {
-
+	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String BC_CONFIG_FILE = System.getProperty("WTMP.bcPathsMapFile", "shared/config/bcPathsMap.config");
 	private static final String TEMP_TARGET_CONFIG_FILE = System.getProperty("WTMP.tempTargetPathsMapFile", "shared/config/target_temp.config");
 	private static final String SAVE_SUFFEX = "-save";
@@ -692,9 +693,10 @@ public class ForecastActionComputable
 	 */
 	private List<DSSIdentifier> saveDssPaths(DssPathMap bcDssPathMap, DssPathMap tempTargetDssPathMap)
 	{
-		_sim.addComputeMessage("Saving DSS records ...");
+		_sim.addComputeMessage("Saving BC DSS records ...");
 		List<DSSIdentifier>pathsRenamed = new ArrayList<>();
 		saveDssPaths(pathsRenamed, bcDssPathMap);
+		_sim.addComputeMessage("Saving Temp Target DSS records ...");
 		saveDssPaths(pathsRenamed, tempTargetDssPathMap);
 
 
@@ -739,7 +741,15 @@ public class ForecastActionComputable
 		String dssPath = srcDssId.getDSSPath();
 		String dssFile = srcDssId.getFileName();
 		String dssFileAbs = Project.getCurrentProject().getAbsolutePath(dssFile);
+		srcDssId.setFileName(dssFileAbs);
 		fillInSrcAndDestList(dssFileAbs, dssPath, srcList, destList, true);
+		HecTime[] timeWindow = DssFileManagerImpl.getDssFileManager().getTSTimeRange(srcDssId, 0);
+		if ( timeWindow != null && timeWindow.length == 2)
+		{
+			_sim.addComputeMessage("Renaming "+srcDssId+" for time window "+timeWindow[0] +" to "+timeWindow[1]);
+		}
+
+LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+" copying to "+destList);
 		_sim.addComputeMessage("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs);
 
 		int rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFileAbs, srcList, destList);
@@ -751,6 +761,7 @@ public class ForecastActionComputable
 		}
 		else
 		{
+			LOGGER.atWarning().log("Failed to save off all DSS records for "+dssPath+".  Expected to save " + srcList.size()+" saved "+rv);
 			_sim.addWarningMessage("Failed to save off all DSS records for "+dssPath+".  Expected to save " + srcList.size()+" saved "+rv);
 		}
 		return null;
@@ -1050,16 +1061,9 @@ public class ForecastActionComputable
 	 */
 	private boolean copyBcDssData()
 	{
-		List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList();
-		ModelAlternative modelAlt;
-		List<DataLocation> dataLocs;
-		DataLocation dataLoc, linkedDl;
-		DSSIdentifier dssId, srcDssId;
+		DSSIdentifier  srcDssId;
 
-		String dssPath, fileName;
-		DssDataLocation dssDl;
 		boolean copySuccessful = true;
-		HecTime startTime = null, endTime = null;
 		HecTime[] times =  getCopyTimeWindow();
 
 		
@@ -1096,14 +1100,15 @@ public class ForecastActionComputable
 		TimeSeriesContainer srcTsc = DssFileManagerImpl.getDssFileManager().readTS(srcDssId, true);
 		if ( srcTsc != null && srcTsc.numberValues > 0 )
 		{
+			_sim.addMessage("Copying "+srcDssId+" to "+destDssId);
 			srcTsc.fileName = destDssId.getFileName();
 			srcTsc.fullName = destDssId.getDSSPath();
 			int rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
 			if ( rv != 0 )
 			{
 				copySuccessful= false;
-				Logger.getLogger(ForecastActionComputable.class.getName()).warning("Failed to write DSS record for "+destDssId+" to "+srcDssId.getFileName()+" : "+srcDssId.getDSSPath()+" rv="+rv);
-				_sim.addErrorMessage("Falied to write DSS record for "+destDssId+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
+				LOGGER.atWarning().log("Failed to write DSS record for "+destDssId+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
+				_sim.addErrorMessage("Failed to write DSS record for "+destDssId+" to "+srcTsc.fileName+" : "+srcTsc.fullName+" rv="+rv);
 			}
 			else
 			{
@@ -1122,10 +1127,12 @@ public class ForecastActionComputable
 		{
 			if (srcDssId.getTimeWindow() == null )
 			{
+				LOGGER.atWarning().log("No data found to copy for "+srcDssId);
 				_sim.addErrorMessage("No Data Found for " + srcDssId );
 			}
 			else
 			{
+				LOGGER.atWarning().log("No Data Found for " + srcDssId + " for Time Window " + srcDssId.getStartTime() + " to " + srcDssId.getEndTime());
 				_sim.addErrorMessage("No Data Found for " + srcDssId + " for Time Window " + srcDssId.getStartTime() + " to " + srcDssId.getEndTime());
 			}
 		}
@@ -1254,6 +1261,7 @@ public class ForecastActionComputable
 				int rv = DssFileManagerImpl.getDssFileManager().delete(dssFile, singleDestList);
 				if ( rv != 0 )
 				{
+					LOGGER.atWarning().log("Failed to delete DSS records for "+dssFile+":"+singleDestList.get(0)+" Rv="+rv);
 					_sim.addWarningMessage("Failed to delete DSS records for "+dssFile+":"+singleDestList.get(0));
 				}
 
@@ -1261,6 +1269,9 @@ public class ForecastActionComputable
 				rv = DssFileManagerImpl.getDssFileManager().renameRecords(dssFile, singleSrcList, singleDestList);
 				if ( rv != singleSrcList.size() )
 				{
+					LOGGER.atWarning().log("Failed to restore DSS records for "+dssFile+":"+singleDestList.get(0));
+					LOGGER.atWarning().log("Expected " + singleSrcList.size()+" records to be restored. Restored "+rv+" Records.");
+
 					_sim.addWarningMessage("Failed to restore DSS records for "+dssFile+":"+singleDestList.get(0));
 					_sim.addWarningMessage("Expected " + singleSrcList.size()+" records to be restored. Restored "+rv+" Records.");
 				}

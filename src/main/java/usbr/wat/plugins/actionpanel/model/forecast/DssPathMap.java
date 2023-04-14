@@ -67,7 +67,7 @@ public class DssPathMap
 			reader.readLine();
 			while ((line = reader.readLine()) != null)
 			{
-				if ( line.trim().isEmpty())
+				if ( line.trim().isEmpty()|| line.startsWith("#")) // empty or comment
 				{
 					continue;
 				}
@@ -140,13 +140,20 @@ public class DssPathMap
 		DssPathMapItem dssItem;
 		Map<DSSIdentifier, DSSIdentifier>dssCopyMap = new HashMap<>();
 		Map<DSSIdentifier, DSSIdentifier>dssIdMap;
+		int numDests;
+		String dssFile, dssPath;
+		DSSIdentifier srcDssId, destDssId;
 		for (int i = 0;i < _dssPathMapList.size(); i++ )
 		{
 			dssItem = _dssPathMapList.get(i);
-			dssIdMap = dssItem.getDssIdMap();
-			if ( dssIdMap != null && !dssIdMap.isEmpty())
+			srcDssId = new DSSIdentifier( dssItem.getSrcDssFile(), dssItem.getSrcDssPath());
+			numDests = dssItem.getNumberOfDests();
+			for (int d = 0; d < numDests; d++ )
 			{
-				dssCopyMap.putAll(dssIdMap);
+				dssFile = dssItem.getDestDssFile(d);
+				dssPath = dssItem.getDestDssPath(d);
+				destDssId = new DSSIdentifier(dssFile, dssPath);
+				dssCopyMap.put(destDssId, srcDssId);
 			}
 		}
 		return dssCopyMap;

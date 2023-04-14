@@ -337,7 +337,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.weighty   = 1.0;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.BOTH;
-		gbc.insets    = RmaInsets.INSETS5505;
+		gbc.insets    = RmaInsets.INSETS5555;
 		add(_simEnsembleTable.getScrollPane(), gbc);
 
 		JPanel panel = new JPanel(new GridBagLayout());
@@ -558,14 +558,21 @@ public class SimulationPanel extends AbstractSimulationPanel
 			row.add(eset.getBcData());
 			row.add(eset.getTemperatureTargetSet());
 			row.add(eset.getMemberSetToCompute());
-			IntVector computedMeebers = eset.getComputedMembers();
-			String cmStr = computedMeebers.toString();
-			cmStr = RMAIO.removeChar(cmStr, '[');
-			cmStr = 	RMAIO.removeChar(cmStr, ']');
+			String cmStr = getComputedEnsembleString(eset);
+
 			row.add(cmStr);
 
 			_simEnsembleTable.appendRow(row);
 		}
+	}
+
+	private String getComputedEnsembleString(EnsembleSet eset)
+	{
+		IntVector computedMembers = eset.getComputedMembers();
+		String cmStr = computedMembers.toString();
+		cmStr = RMAIO.removeChar(cmStr, '[');
+		cmStr = 	RMAIO.removeChar(cmStr, ']');
+		return cmStr;
 	}
 
 	public List<EnsembleSet>getSelectedEnsembleSets()
@@ -594,6 +601,43 @@ public class SimulationPanel extends AbstractSimulationPanel
 		}
 		return selectedEsets;
 	}
+	private List<Integer> getSelectedEnsembleRows()
+	{
+		_simEnsembleTable.commitEdit(true);
+		List<Integer>selectedRows = new ArrayList<>();
+		if ( _esetsInTable == null )
+		{
+			return selectedRows;
+		}
+		int rowCnt = _simEnsembleTable.getRowCount();
+		Object obj;
+		for(int r = 0;r < rowCnt; r++ )
+		{
+			obj = _simEnsembleTable.getValueAt(r, 0);
+			if ( obj == Boolean.TRUE || "true".equals(obj.toString()) )
+			{
+				selectedRows.add(r);
+			}
+		}
+		return selectedRows;
+	}
+
+	public void updateComputeStates()
+	{
+		super.updateComputeStates();
+		List<Integer> selectedRows = getSelectedEnsembleRows();
+		int row;
+		EnsembleSet eset;
+		String cmStr;
+		for(int r = 0; r < selectedRows.size(); r++ )
+		{
+			row = selectedRows.get(r);
+			eset = _esetsInTable.get(r);
+			cmStr = getComputedEnsembleString(eset);
+			_simEnsembleTable.setValueAt(cmStr, row, 4);
+		}
+	}
+
 
 
 
