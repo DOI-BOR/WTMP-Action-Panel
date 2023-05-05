@@ -25,10 +25,12 @@ import javax.swing.JLabel;
 
 import com.rma.io.DssFileManagerImpl;
 import com.rma.model.Project;
+import hec.geometry.Axis;
 import hec.gfx2d.G2dObject;
 import hec.gfx2d.G2dPanel;
 
 import hec.gfx2d.TimeSeriesDataSet;
+import hec.gfx2d.Viewport;
 import hec.heclib.dss.DSSPathname;
 import hec.io.DSSIdentifier;
 import hec.io.TimeSeriesContainer;
@@ -51,6 +53,7 @@ public class BoundaryConditionPlotPanel extends EnabledJPanel
 	private G2dPanel _plotPanel;
 	private BcData _bcData;
 	private ForecastSimGroup _fsg;
+	private BoundaryConditionLocationPair _selectedLocationPair;
 
 	public BoundaryConditionPlotPanel()
 	{
@@ -141,10 +144,9 @@ public class BoundaryConditionPlotPanel extends EnabledJPanel
 						DSSIdentifier dssIdentifier = new DSSIdentifier(dssFileAbsolutePath.toString(), dssPath.toString());
 						TimeSeriesContainer tsc = DssFileManagerImpl.getDssFileManager().readTS(dssIdentifier, true);
 						TimeSeriesDataSet tsds = new TimeSeriesDataSet(tsc);
-						List<G2dObject> v = new ArrayList<>();
-						v.add(tsds);
-						_plotPanel.buildComponents(v);
+						updatePlot(tsds, bcLocationPair);
 					}
+					_selectedLocationPair = bcLocationPair;
 				}
 				finally
 				{
@@ -152,6 +154,93 @@ public class BoundaryConditionPlotPanel extends EnabledJPanel
 				}
 			}
 		}
+	}
+
+	private void updatePlot(TimeSeriesDataSet tsds, BoundaryConditionLocationPair bcLocationPair)
+	{
+		Viewport[] viewports = _plotPanel.getViewports();
+		if(viewports != null && viewports.length > 0)
+		{
+			if(bcLocationPair.equals(_selectedLocationPair))
+			{
+				updatePlotWithBothAxisZoomPreserved(tsds);
+			}
+			else
+			{
+				updatePlotWithXAxisZoomPreserved(tsds);
+			}
+		}
+		else
+		{
+			_plotPanel.setVisible(false);
+			List<G2dObject> v = new ArrayList<>();
+			v.add(tsds);
+			_plotPanel.buildComponents(v);
+			_plotPanel.setVisible(true);
+		}
+	}
+
+	private void updatePlotWithXAxisZoomPreserved(TimeSeriesDataSet tsds)
+	{
+		Viewport[] viewports = _plotPanel.getViewports();
+		Axis xaxis = viewports[0].getAxis("x1");
+		double actMin = xaxis.getActMin();
+		double actMax = xaxis.getActMax();
+
+		_plotPanel.setVisible(false);
+		List<G2dObject> v = new ArrayList<>();
+		v.add(tsds);
+		_plotPanel.buildComponents(v);
+
+		viewports = _plotPanel.getViewports();
+		xaxis = viewports[0].getAxis("x1");
+		double min = xaxis.getMin();
+		double max = xaxis.getMax();
+		if(actMin < min)
+			actMin = min;
+		if(actMax > max)
+			actMax = max;
+		xaxis.zoomIn(actMin, actMax);
+
+		_plotPanel.setVisible(true);
+		_plotPanel.repaint();
+	}
+
+	private void updatePlotWithBothAxisZoomPreserved(TimeSeriesDataSet tsds)
+	{
+		Viewport[] viewports = _plotPanel.getViewports();
+		Axis xaxis = viewports[0].getAxis("x1");
+		Axis yaxis = viewports[0].getAxis("y1");
+		double actMin = xaxis.getActMin();
+		double actMax = xaxis.getActMax();
+		double actYMin = yaxis.getActMin();
+		double actYMax = yaxis.getActMax();
+
+		_plotPanel.setVisible(false);
+		List<G2dObject> v = new ArrayList<>();
+		v.add(tsds);
+		_plotPanel.buildComponents(v);
+
+		viewports = _plotPanel.getViewports();
+		xaxis = viewports[0].getAxis("x1");
+		yaxis = viewports[0].getAxis("y1");
+		double min = xaxis.getMin();
+		double max = xaxis.getMax();
+		if(actMin < min)
+			actMin = min;
+		if(actMax > max)
+			actMax = max;
+		xaxis.zoomIn(actMin, actMax);
+		min = yaxis.getMin();
+		max = yaxis.getMax();
+		if(actYMin < min)
+			actYMin = min;
+		if(actYMax > max)
+			actYMax = max;
+		yaxis.zoomIn(actYMin, actYMax);
+
+		_plotPanel.setVisible(true);
+		_plotPanel.repaint();
 	}
 
 	public void fillPanel(ForecastSimGroup fsg, BcData bcData)
@@ -186,6 +275,10 @@ public class BoundaryConditionPlotPanel extends EnabledJPanel
 			comboModel.addElement(pathname);
 		}
 		_dssPathCombo.setModel(comboModel);
+		if(_selectedLocationPair != null)
+		{
+			_dssPathCombo.setSelectedItem(_selectedLocationPair);
+		}
 	}
 
 	private List<BoundaryConditionLocationPair> readBoundaryConditionLocationPathPairs(String filePath) throws IOException
