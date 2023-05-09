@@ -119,17 +119,9 @@ public final class TemperatureTargetSet extends NamedType
 
     public List<TimeSeriesContainer> getTimeSeriesData(RunTimeWindow timeWindow)
     {
-        if(_isUserDefined || _timeSeriesData.isEmpty())
+        if((_isUserDefined && _modified) || _timeSeriesData.isEmpty())
         {
             loadTimeSeriesData(timeWindow);
-        }
-        if(!_isUserDefined && !_timeSeriesData.isEmpty() && _timeSeriesData.get(0).getStartTime().getTimeInMillis() != timeWindow.getStartTime().getTimeInMillis())
-        {
-            shiftTimeSeriesDataToAnalysisYear(timeWindow);
-        }
-        if(timeWindow.getStartTime().year() == 2000)
-        {
-            trimForYear2000();
         }
         return new ArrayList<>(_timeSeriesData);
     }
@@ -247,6 +239,14 @@ public final class TemperatureTargetSet extends NamedType
                 }
                 i++;
             }
+        }
+        if(!_isUserDefined && !_timeSeriesData.isEmpty() && _timeSeriesData.get(0).getStartTime().getTimeInMillis() != timeWindow.getStartTime().getTimeInMillis())
+        {
+            shiftTimeSeriesDataToAnalysisYear(timeWindow);
+        }
+        if(timeWindow.getStartTime().year() == 2000)
+        {
+            trimForYear2000();
         }
     }
 

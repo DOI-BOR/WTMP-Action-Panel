@@ -238,12 +238,14 @@ public class TempTargetPanel extends AbstractForecastPanel
 			{
 				sets.add(_selectedTempTargetSet);
 			}
-			if(_selectedTempTargetSet.isUserDefined())
+			if(_selectedTempTargetSet.isUserDefined() && _ttTable.isModified())
 			{
 				List<DSSPathname> pathNames = null;
 				try
 				{
+					_selectedTempTargetSet.setModified(true);
 					pathNames = saveUserDefinedTable(_selectedTempTargetSet, simGrp);
+					_ttTable.setModified(false);
 				}
 				catch (TempTargetSaveFailedException e)
 				{
@@ -576,6 +578,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 					TemperatureTargetSet set = setOptional.get();
 					fillTempTargetInfoTable(set);
 					fillTempTargetTable(set);
+					set.setModified(false);
 				}
 			}
 
