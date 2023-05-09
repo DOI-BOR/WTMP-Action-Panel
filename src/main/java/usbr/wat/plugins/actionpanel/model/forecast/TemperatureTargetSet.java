@@ -270,6 +270,7 @@ public final class TemperatureTargetSet extends NamedType
             tsc.startHecTime = fixedTsc.startHecTime;
             tsc.endHecTime = fixedTsc.endHecTime;
             tsc.values = fixedTsc.values;
+            tsc.numberValues = tsc.values.length;
             for(int i=0; i < tsc.times.length; i++)
             {
                 Double value = timeValueMap.get(tsc.times[i]);

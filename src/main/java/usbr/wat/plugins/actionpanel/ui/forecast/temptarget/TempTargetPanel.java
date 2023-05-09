@@ -397,19 +397,6 @@ public class TempTargetPanel extends AbstractForecastPanel
 	{
 		TimeSeriesContainer hourlyTsc = null;
 		weeklyTsc.fileName = Project.getCurrentProject().getAbsolutePath(fileName);
-		int[] newTimes = new int[weeklyTsc.times.length];
-		if(weeklyTsc.startHecTime.getLocalDateTime().getMinute() == 1) //if offset of 1 minute happened during shift, undo
-		{
-			for(int i=0; i < newTimes.length; i++)
-			{
-				newTimes[i] = weeklyTsc.times[i] -1;
-			}
-			weeklyTsc.times = newTimes;
-			weeklyTsc.startTime = newTimes[0];
-			weeklyTsc.endTime = newTimes[newTimes.length-1];
-			weeklyTsc.startHecTime = weeklyTsc.getHecTime(0);
-			weeklyTsc.endHecTime = weeklyTsc.getHecTime(newTimes.length-1);
-		}
 		try
 		{
 			if(!weeklyTsc.allMissing())
