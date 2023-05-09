@@ -31,7 +31,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,18 +138,11 @@ public final class TemperatureTargetSet extends NamedType
     {
         for(TimeSeriesContainer tsc : _timeSeriesData)
         {
-            if(tsc.startHecTime.year() < 2000 || (tsc.startHecTime.month() ==1 && tsc.startHecTime.day() < 2))
-            {
-                double[] newValArray = Arrays.copyOfRange(tsc.values, 1,tsc.values.length);
-                int[] newTimeArray = Arrays.copyOfRange(tsc.times, 1,tsc.times.length);
-                tsc.values = newValArray;
-                tsc.times = newTimeArray;
-                tsc.numberValues--;
-                tsc.startTime = tsc.times[0];
-                tsc.startHecTime = tsc.getHecTime(0);
-                tsc.endTime = tsc.times[tsc.times.length-1];
-                tsc.endHecTime = tsc.getHecTime(tsc.numberValues - 1);
-            }
+            tsc.trimToTime(new HecTime("02Jan2000", "0100"),new HecTime("07Jan2001", "0000"));
+            tsc.startTime = tsc.times[0];
+            tsc.startHecTime = tsc.getHecTime(0);
+            tsc.endTime = tsc.times[tsc.times.length-1];
+            tsc.endHecTime = tsc.getHecTime(tsc.numberValues - 1);
         }
     }
 
@@ -180,7 +172,7 @@ public final class TemperatureTargetSet extends NamedType
                     {
                         trimEndYear = computeTime.year();
                     }
-                    tsc.trimToTime(new HecTime("01Jan"+trimStartYear, "0000"),new HecTime("31Dec"+trimEndYear, "2400"));
+                    tsc.trimToTime(new HecTime("25Dec"+(trimStartYear-1), "0000"),new HecTime("07Jan"+(trimEndYear+1), "0000"));
                 }
                 tsc.startTime = tsc.times[0];
                 tsc.endTime = tsc.times[tsc.times.length-1];
