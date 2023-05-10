@@ -239,6 +239,10 @@ public class OperationsPanel extends AbstractForecastPanel
 	{
 		String opsFilePath = Project.getCurrentProject().getAbsolutePath(opsData.getOperationsFile());
 		Sheet sheet = null;
+		if(opsFilePath == null || opsFilePath.isEmpty())
+		{
+			return;
+		}
 		if(opsFilePath.endsWith(".csv"))
 		{
 			sheet = readCsv(opsFilePath);
