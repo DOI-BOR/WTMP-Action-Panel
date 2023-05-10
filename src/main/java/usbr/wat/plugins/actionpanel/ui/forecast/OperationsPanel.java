@@ -10,41 +10,30 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 
 import com.rma.model.Project;
 import com.rma.swing.excel.ExcelTable;
 
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellValue;
-import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import rma.swing.EnabledJPanel;
@@ -61,6 +50,15 @@ import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 public class OperationsPanel extends AbstractForecastPanel
 {
 	private static Logger LOGGER = Logger.getLogger(OperationsPanel.class.getName());
+	private static final LocalDateTime EXCEL_BASE_DATE = LocalDateTime.of(1899, 12, 31, 0, 0);
+	private static final Pattern EXCEL_PATTERN_MMM = Pattern.compile("mmm");
+	private static final Pattern EXCEL_PATTERN_H = Pattern.compile("h");
+	private static final Pattern EXCEL_PATTERN_AM_PM = Pattern.compile("AM/PM");
+	private static final Pattern EXCEL_PATTERN_DDD = Pattern.compile("ddd");
+	private static final Pattern EXCEL_PATTERN_DDDD = Pattern.compile("dddd");
+	private static final Pattern EXCEL_PATTERN_SINGLE_M = Pattern.compile("(?<!m)m(?!m)");
+	private static final Pattern EXCEL_PATTERN_FRACTIONAL_SECONDS = Pattern.compile("0+");
+	private static final Pattern EXCEL_PATTERN_TIME_ZONE = Pattern.compile("Z|ZZZ");
 	private RmaJTable _opInfoTable;
 	private JButton _importButton;
 	private ExcelTable _reservoirTable;
@@ -370,7 +368,22 @@ public class OperationsPanel extends AbstractForecastPanel
 		{
 			if(DateUtil.isCellDateFormatted(xssfCell))
 			{
-				DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MMM");
+				short dataFormatIndex = xssfCell.getCellStyle().getDataFormat();
+				String excelPattern = xssfCell.getSheet().getWorkbook().createDataFormat().getFormat(dataFormatIndex);
+				String javaPattern = EXCEL_PATTERN_MMM.matcher(excelPattern).replaceAll("MMM");
+				String hourReplace = "hh";
+				if(!excelPattern.contains(EXCEL_PATTERN_AM_PM.pattern()))
+				{
+					hourReplace = "HH";
+				}
+				javaPattern = EXCEL_PATTERN_H.matcher(javaPattern).replaceAll(hourReplace);
+				javaPattern = EXCEL_PATTERN_AM_PM.matcher(javaPattern).replaceAll("a");
+				javaPattern = EXCEL_PATTERN_DDD.matcher(javaPattern).replaceAll("EEE");
+				javaPattern = EXCEL_PATTERN_DDDD.matcher(javaPattern).replaceAll("EEEE");
+				javaPattern = EXCEL_PATTERN_SINGLE_M.matcher(javaPattern).replaceAll("M");
+				javaPattern = EXCEL_PATTERN_FRACTIONAL_SECONDS.matcher(javaPattern).replaceAll("S");
+				javaPattern = EXCEL_PATTERN_TIME_ZONE.matcher(javaPattern).replaceAll("XXX");
+				DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern(javaPattern);
 				LocalDateTime date = convertNumericToDate(xssfCell.getNumericCellValue());
 				cellValue = dateFormat.format(date);
 			}
@@ -391,9 +404,7 @@ public class OperationsPanel extends AbstractForecastPanel
 
 	private static LocalDateTime convertNumericToDate(double numericDateValue)
 	{
-		LocalDateTime baseDateTime = LocalDateTime.of(1899, 12, 31, 0, 0); // Base date "December 31, 1899"
-		LocalDateTime dateTime = baseDateTime.plusDays((long) numericDateValue);
-		return dateTime;
+		return EXCEL_BASE_DATE.plusDays((long) numericDateValue - 1);
 	}
 
 }
