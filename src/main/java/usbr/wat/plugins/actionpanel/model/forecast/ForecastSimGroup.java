@@ -8,8 +8,16 @@
 package usbr.wat.plugins.actionpanel.model.forecast;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import com.rma.util.XMLUtilities;
+import hec2.wat.model.WatSimulation;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.jdom.Element;
 
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
@@ -25,7 +33,10 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	private List<MeteorlogicData> _metData = new ArrayList<>();
 	private List<OperationsData> _opsData = new ArrayList<>();
 	private List<BcData> _bcData = new ArrayList<>();
-	private List<EnsembleSet> _ensembleSets = new ArrayList();
+	private Map<String, List<EnsembleSet>> _ensembleSets = new HashMap<>();
+	/** simulation/ensemble set to what its F-Part collection range is */
+	private Map<String, Map<String, int[]>> _ensembleSetIndexing = new HashMap<>();
+
 
 	public ForecastSimGroup()
 	{
@@ -59,28 +70,74 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		{
 			return;
 		}
-		List kids = esetsElem.getChildren();
+		List simKids = esetsElem.getChildren();
 		EnsembleSet eset;
-		for (int i = 0;i < kids.size(); i++ )
+		String simName;
+		for (int i = 0;i < simKids.size(); i++ )
 		{
-			Element child = (Element) kids.get(i);
-			eset = new EnsembleSet();
-			if ( eset.loadData(child))
+			Element simChild = (Element) simKids.get(i);
+			if ( !"Simulation".equals(simChild.getName()))
 			{
-				_ensembleSets.add(eset);
+				continue;
+			}
+			simName = simChild.getTextTrim();
+			List<EnsembleSet>ensembleSets = new ArrayList<>();
+			List kids = simChild.getChildren();
+			for (int k = 0; k < kids.size(); k++ )
+			{
+				Element child = (Element) kids.get(k);
+				eset = new EnsembleSet();
+				if (eset.loadData(child))
+				{
+					ensembleSets.add(eset);
+				}
+			}
+			_ensembleSets.put(simName, ensembleSets);
+			BcData bcData;
+			for (int e = 0;e < ensembleSets.size();e++ )
+			{
+				eset = ensembleSets.get(e);
+				String bcDataName = eset.getBcDataName();
+				bcData = getBcData(bcDataName);
+				eset.setSelectedBcData(bcData);
+
+				String ttsName = eset.getTemperatureTargetSetName();
+				TemperatureTargetSet ttset = getTemperatureTargetSet(ttsName);
+				eset.setSelectedTemperatureTargetSets(ttset);
 			}
 		}
-		BcData bcData;
-		for (int i = 0;i < _ensembleSets.size();i++ )
+		loadEnsembleSetsIndexing(root);
+	}
+	private void loadEnsembleSetsIndexing(Element root)
+	{
+		_ensembleSetIndexing.clear();
+		Element esiElem = root.getChild("EnsembleSetIndexing");
+		if ( esiElem == null )
 		{
-			eset = _ensembleSets.get(i);
-			String bcDataName = eset.getBcDataName();
-			bcData = getBcData(bcDataName);
-			eset.setSelectedBcData(bcData);
-
-			String ttsName = eset.getTemperatureTargetSetName();
-			TemperatureTargetSet ttset = getTemperatureTargetSet(ttsName);
-			eset.setSelectedTemperatureTargetSets(ttset);
+			return;
+		}
+		List esiKids = esiElem.getChildren("Simulation");
+		for (int i = 0; i < esiKids.size(); i++ )
+		{
+			Element simElem = (Element) esiKids.get(i);
+			String simname = simElem.getAttributeValue("Name");
+			Map<String, int[]>esetMap = new HashMap<>();
+			_ensembleSetIndexing.put(simname, esetMap);
+			List simKids = simElem.getChildren("EnsembleSet");
+			for (int s = 0; s < simKids.size(); s++ )
+			{
+				Element esetElem = (Element) simKids.get(s);
+				String esetName = esetElem.getAttributeValue("Name");
+				int[] indexes = new int[2];
+				int start = XMLUtilities.getChildElementAsInt(esetElem, "CollectionStart", -1);
+				int end = XMLUtilities.getChildElementAsInt(esetElem, "CollectionEnd", -1);
+				indexes[0] = start;
+				indexes[1] = end;
+				if ( start > -1 && end > -1 )
+				{
+					esetMap.put(esetName, indexes);
+				}
+			}
 		}
 	}
 
@@ -321,10 +378,57 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		Element ecElem = new Element("EnsembleSets");
 		root.addContent(ecElem);
 		EnsembleSet eSet;
-		for (int i = 0;i < _ensembleSets.size(); i++ )
+		Set<Map.Entry<String, List<EnsembleSet>>> entrySet = _ensembleSets.entrySet();
+		Iterator<Map.Entry<String, List<EnsembleSet>>> iter = entrySet.iterator();
+		while (iter.hasNext())
 		{
-			eSet = _ensembleSets.get(i);
-			eSet.saveData(ecElem);
+			Map.Entry<String, List<EnsembleSet>> next = iter.next();
+			String simName = next.getKey();
+			Element simElem = new Element("Simulation");
+			simElem.setText(simName);
+			ecElem.addContent(simElem);
+			List<EnsembleSet> ensembleSets = next.getValue();
+			for (int i = 0; i < _ensembleSets.size(); i++)
+			{
+				eSet = ensembleSets.get(i);
+				eSet.saveData(simElem);
+			}
+		}
+		saveEnsembleSetsIndexing(root);
+	}
+	private void saveEnsembleSetsIndexing(Element root)
+	{
+		Element esiElem = new Element("EnsembleSetIndexing");
+		root.addContent(esiElem);
+
+		Set<Map.Entry<String, Map<String, int[]>>> entrySet2 = _ensembleSetIndexing.entrySet();
+		Iterator<Map.Entry<String, Map<String, int[]>>> iter2 = entrySet2.iterator();
+		while (iter2.hasNext())
+		{
+			Map.Entry<String, Map<String, int[]>> simEsetMap = iter2.next();
+			String simName = simEsetMap.getKey();
+			Element simElem = new Element("Simulation");
+			simElem.setAttribute("Name", simName);
+			esiElem.addContent(simElem);
+			Map<String, int[]> esetMap = simEsetMap.getValue();
+			Set<Map.Entry<String, int[]>> esetSet = esetMap.entrySet();
+			Iterator<Map.Entry<String, int[]>> esetIter = esetSet.iterator();
+			while (esetIter.hasNext())
+			{
+				Map.Entry<String, int[]> esetEntry = esetIter.next();
+				String esetName = esetEntry.getKey();
+				int[] esetIndexes = esetEntry.getValue();
+				Element esetElem  = new Element("EnsembleSet");
+				esetElem.setAttribute("Name", esetName);
+				simElem.addContent(esetElem);
+				Element startElem = new Element("CollectionStart");
+				startElem.setText(String.valueOf(esetIndexes[0]));
+				esetElem.addContent(startElem);
+				Element endElem = new Element("CollectionEnd");
+				endElem.setText(String.valueOf(esetIndexes[1]));
+				esetElem.addContent(endElem);
+			}
+
 		}
 	}
 
@@ -472,45 +576,170 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		return _bcData;
 	}
 
-	public void setEnsembleSets(List<EnsembleSet> ensembleSets)
+	public void setEnsembleSets(WatSimulation sim, List<EnsembleSet> ensembleSets)
 	{
-		_ensembleSets.clear();
-		if ( ensembleSets != null )
+		List<EnsembleSet> currentEnsembleSets = _ensembleSets.get(sim.getName());
+		if ( currentEnsembleSets == null )
 		{
-			_ensembleSets.addAll(ensembleSets);
+			List<EnsembleSet>sets = new ArrayList<>();
+			sets.addAll(ensembleSets);
+			_ensembleSets.put(sim.getName(), sets);
+		}
+		else
+		{
+			currentEnsembleSets.clear();
+			currentEnsembleSets.addAll(ensembleSets);
 		}
 		setModified(true);
 	}
-	public List<EnsembleSet>getEnsembleSets()
+	public List<EnsembleSet>getEnsembleSets(WatSimulation sim)
 	{
-		return _ensembleSets;
+		if ( sim == null )
+		{
+			return new ArrayList<>();
+		}
+		List<EnsembleSet> ensembleSets = _ensembleSets.get(sim.getName());
+		if ( ensembleSets == null )
+		{
+			return new ArrayList<>();
+		}
+		return ensembleSets;
 	}
 
-	public boolean hasEnsembleSetFor(BcData bc, TemperatureTargetSet tts)
+	public boolean hasEnsembleSetFor(WatSimulation sim , BcData bc, TemperatureTargetSet tts)
 	{
 		if ( bc == null || tts == null )
 		{
 			return false;
 		}
-		EnsembleSet eset = getEnsembleSetFor(bc, tts);
+		EnsembleSet eset = getEnsembleSetFor(sim, bc, tts);
 		return eset != null ;
 	}
 
-	public EnsembleSet getEnsembleSetFor(BcData bc, TemperatureTargetSet tts)
+	public EnsembleSet getEnsembleSetFor(WatSimulation sim, BcData bc, TemperatureTargetSet tts)
 	{
-		if ( bc == null || tts == null )
+		if ( sim == null || bc == null || tts == null )
 		{
 			return null;
 		}
 		EnsembleSet eset;
-		for (int e = 0; e < _ensembleSets.size(); e++ )
+		List<EnsembleSet>ensembleSets = _ensembleSets.get(sim.getName());
+		if (ensembleSets == null )
 		{
-			eset = _ensembleSets.get(e);
+			return null;
+		}
+		for (int e = 0; e < ensembleSets.size(); e++ )
+		{
+			eset = ensembleSets.get(e);
 			if ( eset.getBcData() == bc && eset.getTemperatureTargetSet() == tts )
 			{
 				return eset;
 			}
 		}
 		return null;
+	}
+
+	public boolean deleteEnsembleSet(WatSimulation sim, EnsembleSet eset)
+	{
+		if ( eset == null )
+		{
+			return false;
+		}
+		List<EnsembleSet>ensembleSets = _ensembleSets.get(sim.getName());
+		if (ensembleSets == null )
+		{
+			return false;
+		}
+		boolean rv = ensembleSets.remove(eset);
+		if ( rv )
+		{
+			setModified(true);
+		}
+		return rv;
+	}
+
+	public boolean addEnsembleSet(WatSimulation sim, EnsembleSet ensembleSet)
+	{
+		if (ensembleSet == null)
+		{
+			return false;
+		}
+		EnsembleSet existingESet = getEnsembleSetFor(sim, ensembleSet.getBcData(), ensembleSet.getTemperatureTargetSet());
+		if (existingESet != null)
+		{
+			return false;
+		}
+		List<EnsembleSet> ensembleSets = _ensembleSets.get(sim.getName());
+		if (ensembleSets == null)
+		{
+			ensembleSets = new ArrayList<>();
+			_ensembleSets.put(sim.getName(), ensembleSets);
+		}
+		ensembleSets.add(ensembleSet);
+		Map<String, int[]> ensembleIndexingMap = _ensembleSetIndexing.get(sim.getName());
+		int[] indexing = getEnsembleSetCollectionIndexing(sim, ensembleSet);
+
+		setModified(true);
+		return true;
+	}
+	public int[] getEnsembleSetCollectionIndexing(WatSimulation sim, EnsembleSet ensembleSet)
+	{
+		Map<String, int[]> ensembleIndexingMap = _ensembleSetIndexing.get(sim.getName());
+		int[] indexing;
+		if (ensembleIndexingMap == null)
+		{
+			indexing = getNextCollectionIndexing(sim);
+			ensembleIndexingMap = new HashMap<>();
+			ensembleIndexingMap.put(ensembleSet.getName(), indexing);
+			_ensembleSetIndexing.put(sim.getName(), ensembleIndexingMap);
+			setModified(true);
+		}
+		else
+		{
+			indexing = ensembleIndexingMap.get(ensembleSet.getName());
+			if ( indexing == null )
+			{
+				indexing = getNextCollectionIndexing(sim);
+				ensembleIndexingMap.put(ensembleSet.getName(), indexing);
+				setModified(true);
+			}
+		}
+		return indexing;
+	}
+
+	private int[] getNextCollectionIndexing(WatSimulation simulation)
+	{
+		Map<String, int[]> ensembleIndexMap = _ensembleSetIndexing.get(simulation.getName());
+		if ( ensembleIndexMap == null )
+		{
+			Integer max = Integer.getInteger("Forecast.EnsembleSetRange", 500);
+			return new int []{0,max.intValue()-1};
+		}
+		Collection<int[]> values = ensembleIndexMap.values();
+		Iterator<int[]> iter = values.iterator();
+		int max = -1;
+		while (iter.hasNext())
+		{
+			int[] indexes = iter.next();
+			max = Math.max(indexes[1], max);
+		}
+		int[] indexs = new int[2];
+		indexs[0] = max+1;
+		indexs[1] = indexs[0]+ Integer.getInteger("Forecast.EnsembleSetRange", 500);
+		indexs[1]--;
+		return indexs;
+	}
+
+	public Map<String, int[]>getSimulationEnsembleSetIndexing(WatSimulation simulation)
+	{
+		Map<String, int[]> ensembleIndexMap = _ensembleSetIndexing.get(simulation.getName());
+		return ensembleIndexMap;
+	}
+
+
+
+	public List<EnsembleSet> getEnsembleSetsFor(WatSimulation simulation)
+	{
+		return _ensembleSets.get(simulation.getName());
 	}
 }

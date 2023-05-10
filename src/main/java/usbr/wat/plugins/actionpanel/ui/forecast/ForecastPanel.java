@@ -216,4 +216,12 @@ public class ForecastPanel extends RmaJPanel
 		return _simulationPanel;
 	}
 
+	/**
+	 * the highlighted simulation in the table
+	 * @return
+	 */
+	public WatSimulation getSelectedSimulation()
+	{
+		return _simulationPanel.getSelectedSimulation();
+	}
 }
