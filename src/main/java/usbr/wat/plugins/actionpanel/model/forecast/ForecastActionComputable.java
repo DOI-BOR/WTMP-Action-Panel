@@ -31,6 +31,7 @@ import com.rma.model.Computable;
 import com.rma.model.ComputeProgressListener;
 import com.rma.model.ComputeProgressListener2;
 import com.rma.model.Project;
+import com.rma.model.RealizationComputable;
 import com.rma.ui.ComputeProgressPanel;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecDSSFileDataManager;
@@ -71,7 +72,7 @@ import usbr.wat.plugins.actionpanel.model.UsbrComputable;
  *
  */
 public class ForecastActionComputable
-		implements UsbrComputable
+		implements UsbrComputable, RealizationComputable
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String BC_CONFIG_FILE = System.getProperty("WTMP.bcPathsMapFile", "shared/config/bcPathsMap.config");
@@ -1382,7 +1383,23 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 	{
 		return _sim.getModelCount();
 	}
+	@Override
+	public int getNumberRealizations()
+	{
+		return _members.length;
+	}
 
+	@Override
+	public int getNumberLifeCycles()
+	{
+		return _members.length;
+	}
+
+	@Override
+	public int getInitialLifeCycle()
+	{
+		return _members[0];
+	}
 	@Override
 	public boolean cancelCompute()
 	{
@@ -1420,4 +1437,6 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 	{
 		_computeDialog = computeDlg;
 	}
+
+
 }
