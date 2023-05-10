@@ -17,16 +17,20 @@ import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import hec2.wat.model.WatAnalysisPeriod;
 
+import hec2.wat.model.WatSimulation;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJCheckBox;
@@ -74,7 +78,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 	private JButton _editEnsembleButton;
 	private ColumnGroup _columnGroup;
 	private RmaJCheckBox _recomputeAllChk;
-	private List<EnsembleSet> _esetsInTable;
+	private List<EnsembleSet> _esetsInTable = new ArrayList<>();
 	private RmaJIntegerSetField _ensembleMembersFld;
 	private boolean _enabledCheckBox;
 
@@ -217,6 +221,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		_simulationTable.setColumnWidths(350,150,110,110);
 		
 		_simulationTable.setRowHeight(_simulationTable.getRowHeight()+5);
+		_simulationTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 
 		JButton button = _simulationTable.setButtonCellEditor(2);
@@ -251,16 +256,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		
 		}
 		
-		_simActionsPanel = new SimulationActionsPanel(_parentWindow, this);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		topPanel.add(_simActionsPanel, gbc);	
+
 	
 		headers = new String[] {"Selected\nto Run", "Boundary Conditions", "Temperature Target Set", "Target Members\nTo Run", "Target Members\nPreviously Run"};
 		_simEnsembleTable = new RmaJTable(this, headers)
@@ -314,6 +310,9 @@ public class SimulationPanel extends AbstractSimulationPanel
 				}
 			}
 		};
+		JMenuItem ensembleIndexingMenu = new JMenuItem("Ensemble F-Part Mapping...");
+		ensembleIndexingMenu.addActionListener(e->displayEnsembleFPartIndexing());
+		_simEnsembleTable.addPopupItem(ensembleIndexingMenu, 0);
 		_simEnsembleTable.setRowHeight(_simEnsembleTable.getRowHeight()+5);
 		MleHeadRenderer renderer = _simEnsembleTable.setMlHeaderRenderer();
 		_ensembleMembersFld = setIntegerSetCellEditor(_simEnsembleTable, 3);
@@ -339,6 +338,8 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5555;
 		add(_simEnsembleTable.getScrollPane(), gbc);
+
+
 
 		JPanel panel = new JPanel(new GridBagLayout());
 		gbc.gridx = GridBagConstraints.RELATIVE;
@@ -373,7 +374,25 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.insets(20,5,0,5);
 		panel.add(_recomputeAllChk, gbc);
+
+		_simActionsPanel = new SimulationActionsPanel(_parentWindow, this);
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 0.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
+		gbc.insets    = RmaInsets.INSETS5505;
+		add(_simActionsPanel, gbc);
 	
+	}
+
+	private void displayEnsembleFPartIndexing()
+	{
+		EnsembleFPartMapDlg dlg = new EnsembleFPartMapDlg(_parentWindow);
+		dlg.fillForm(_parentPanel.getSimulationGroup(), _parentPanel.getSelectedSimulation());
+		dlg.setVisible(true);
 	}
 
 	private RmaJIntegerSetField setIntegerSetCellEditor(RmaJTable table, int col)
@@ -460,10 +479,64 @@ public class SimulationPanel extends AbstractSimulationPanel
 				}
 			}
 		});
+		_simulationTable.getSelectionModel().addListSelectionListener(e->tableSelectionChanged(e));
 
 	}
-	
-	
+
+	private void tableSelectionChanged(ListSelectionEvent e)
+	{
+		if (e.getValueIsAdjusting())
+		{
+			return;
+		}
+		tableSelectionChanged();
+	}
+	private void tableSelectionChanged()
+	{
+		// save ensemble table settings
+		_simEnsembleTable.commitEdit(true);
+		int rowCnt = _esetsInTable.size();
+		if (  rowCnt > 0 )
+		{
+			for (int r = 0; r < rowCnt; r++ )
+			{
+				String members = (String) _simEnsembleTable.getValueAt(r, 3);
+				_esetsInTable.get(r).setMemberSetToCompute(members);
+			}
+			_parentPanel.getSimulationGroup().setModified(true);
+		}
+		int row = _simulationTable.getSelectedRow();
+		_simEnsembleTable.deleteCells();
+		_esetsInTable.clear();
+		if ( row == -1 )
+		{
+			_columnGroup.setHeaderValue("No Simulation Selected");
+			_editEnsembleButton.setEnabled(false);
+			_recomputeAllChk.setEnabled(false);
+
+		}
+		else
+		{
+			WatSimulation simulation = (WatSimulation) _simulationTable.getValueAt(row, 0);
+			_columnGroup.setHeaderValue(simulation.getName());
+			ForecastSimGroup simGroup = _parentPanel.getSimulationGroup();
+			List<EnsembleSet> esets = simGroup.getEnsembleSetsFor(simulation);
+			_editEnsembleButton.setEnabled(true);
+			_recomputeAllChk.setEnabled(true);
+
+			if (esets != null)
+			{
+				setEnsembleSets(esets);
+			}
+		}
+
+		_simEnsembleTable.revalidate();
+		_simEnsembleTable.getTableHeader().revalidate();
+		_simEnsembleTable.getTableHeader().repaint();
+		revalidate();
+	}
+
+
 	public boolean shouldRecomputeAll()
 	{
 		return _recomputeAllChk.isSelected();
@@ -479,8 +552,9 @@ public class SimulationPanel extends AbstractSimulationPanel
 		{
 			ForecastSimGroup fsg = (ForecastSimGroup) asg;
 			_parentPanel.setSimulationGroup(fsg);
+			WatSimulation simulation = getSelectedSimulation();
 			fillSimulationTable();
-			setEnsembleSets(fsg.getEnsembleSets());
+			setEnsembleSets(fsg.getEnsembleSets(simulation));
 			fillAnalysisWindow();
 			setEnabled(true);
 		}
@@ -492,6 +566,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 			fillAnalysisWindow();
 			setEnabled(true);
 		}
+		tableSelectionChanged();
 	}
 
 	/**
@@ -543,11 +618,12 @@ public class SimulationPanel extends AbstractSimulationPanel
 	public void setEnsembleSets(List<EnsembleSet> ensembleSets)
 	{
 		_simEnsembleTable.deleteCells();
+		_esetsInTable.clear();
 		if ( ensembleSets == null )
 		{
 			return;
 		}
-		_esetsInTable = ensembleSets;
+		_esetsInTable.addAll(ensembleSets);
 		Vector<Object> row;
 		EnsembleSet eset;
 		for(int i = 0; i < ensembleSets.size(); i++ )
@@ -638,7 +714,17 @@ public class SimulationPanel extends AbstractSimulationPanel
 		}
 	}
 
-
-
-
+	/**
+	 * the highlighted simulation in the table
+	 * @return
+	 */
+	public WatSimulation getSelectedSimulation()
+	{
+		int row = _simulationTable.getSelectedRow();
+		if ( row == -1 )
+		{
+			return null;
+		}
+		return (WatSimulation) _simulationTable.getValueAt(row, 0);
+	}
 }

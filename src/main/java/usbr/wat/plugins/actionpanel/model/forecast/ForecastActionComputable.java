@@ -217,6 +217,7 @@ public class ForecastActionComputable
 			{
 				currentMember = _members[m];
 				_sim.addComputeMessage("Computing Ensemble Member "+currentMember);
+				_sim.addComputeMessage("Output will be saved  to F-Part C:"+ String.format("%06d", _outputCollectionStart+currentMember));
 				System.out.println("Computing Ensemble Member "+currentMember+" for "+_sim );
 				if ( _debug )
 				{
@@ -304,8 +305,8 @@ public class ForecastActionComputable
 		}
 		catch(Exception e )
 		{
-			_sim.addErrorMessage("Exception during iterative compute " + e);
-			Logger.getLogger(ForecastActionComputable.class.getName()).warning("Exception during iterative compute "+e );
+			_sim.addErrorMessage("Exception during Ensemble compute " + e);
+			Logger.getLogger(ForecastActionComputable.class.getName()).warning("Exception during Ensemble compute "+e );
 			e.printStackTrace();
 			return false;
 		}
