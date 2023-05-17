@@ -13,15 +13,22 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.FocusManager;
 import javax.swing.JButton;
@@ -38,10 +45,14 @@ import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
+import hec.data.DataSetIllegalArgumentException;
+import hec.data.Parameter;
+import hec.geometry.Axis;
 import hec.gfx2d.G2dPanel;
 import hec.gfx2d.PairedDataSet;
 import hec.gfx2d.Viewport;
 import hec.heclib.dss.DSSPathname;
+import hec.heclib.util.Unit;
 import hec.io.PairedDataContainer;
 
 import rma.swing.EnabledJPanel;
@@ -66,11 +77,13 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String CONFIG_CSV_FILE = "/shared/config/icReservoirs.csv";
+	private static final Pattern UNIT_PATTERN = Pattern.compile("\\((.*?)\\)");
 	private EnabledJPanel _plotsPanel;
 	private EnabledJPanel _buttonPanel;
 	private UpdateDataAction _updateDataAction;
 	private ReviewDataAction _reviewDataAction;
 	private Map<String, ResComponents>_resComponents = new HashMap<>();
+	private boolean _ignoreTableModification = false;
 
 	/**
 	 * @param forecastPanel
@@ -156,7 +169,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			_plotsPanel.add(table.getScrollPane(), gbc);
 
 			fillTable(table, resInfo);
-			table.getModel().addTableModelListener(e->tableModelChanged(e));
+			table.getModel().addTableModelListener(this::tableModelChanged);
 			_resComponents.put(resInfo.getReservoirName(), new ResComponents(table, null));
 		}
 		for (int i = 0;i < reservoirInfos.size(); i++ )
@@ -186,7 +199,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	 */
 	private void tableModelChanged(TableModelEvent e)
 	{
-		if ( e.getType() != TableModelEvent.UPDATE )
+		if (_ignoreTableModification || e.getType() != TableModelEvent.UPDATE )
 		{
 			return;
 		}
@@ -194,6 +207,15 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		RmaTableModel tableModel = (RmaTableModel) e.getSource();
 		Component focusedComp = FocusManager.getCurrentManager().getFocusOwner();
 		RmaJTable table = (RmaJTable) SwingUtilities.getAncestorOfClass(RmaJTable.class, focusedComp);
+		int row = e.getFirstRow();
+		Object checkedObj = tableModel.getValueAt(row, 0);
+		if(checkedObj instanceof Boolean && ((Boolean)checkedObj))
+		{
+			_ignoreTableModification = true;
+			clearTableSelection(table);
+			tableModel.setValueAt(true, row, 0);
+			_ignoreTableModification = false;
+		}
 		buildTablePlot(table);
 	}
 	private void buildTablePlot(RmaJTable table)
@@ -228,9 +250,52 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 					viewports[0].getAxis("Y1").setReversed(false);
 				}
 			}
+			revalidate();
+			fixZoom(comps, pdcsToPlot);
 		}
-		revalidate();
-		
+	}
+
+	private void fixZoom(ResComponents comps, List<PairedDataSet> pdcsToPlot)
+	{
+		Viewport[] viewports = comps.plotPanel.getViewports();
+		if ( viewports != null && viewports.length > 0 )
+		{
+			viewports[0].getAxis("Y1").setReversed(false);
+			Axis xaxis = viewports[0].getAxis("x1");
+			String xUnit = extractContentWithinParentheses(pdcsToPlot.get(0).getXAxisName());
+			int min = 0;
+			int max = 30;
+			try
+			{
+				String englishTemp = Parameter.getParameter(Parameter.PARAMID_TEMP).getUnitsStringForSystem(Unit.ENGLISH_ID);
+				if(xUnit != null && xUnit.equalsIgnoreCase(englishTemp))
+				{
+					min = 32;
+					max = 86;
+				}
+			}
+			catch (DataSetIllegalArgumentException e)
+			{
+				LOGGER.atConfig().withCause(e).log("Failed to determine units from label " + pdcsToPlot.get(0).getXAxisName());
+			}
+			xaxis.setMinimumLimit(min);
+			xaxis.setMaximumLimit(max);
+			xaxis.setViewLimits(min, max);
+			xaxis.setMajorTicInterval(5);
+			comps.plotPanel.setVisible(true);
+			comps.plotPanel.repaint();
+		}
+	}
+
+	private String extractContentWithinParentheses(String input)
+	{
+		String retVal = null;
+		Matcher matcher = UNIT_PATTERN.matcher(input);
+		if (matcher.find())
+		{
+			retVal = matcher.group(1);
+		}
+		return retVal;
 	}
 
 
@@ -253,12 +318,12 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		{
 			fileName = profileFileNames.get(i);
 			fileName = prj.getAbsolutePath(fileName);
-			List<Profile> profiles = readProfileFile(fileName);
-			for (int p = 0;p < profiles.size();p++ )
+			Set<Profile> profiles = readProfileFile(fileName);
+			for (Profile profile : profiles)
 			{
 				row = new Vector();
 				row.add(Boolean.FALSE);
-				row.add(profiles.get(p));
+				row.add(profile);
 				table.appendRow(row);
 			}
 		}
@@ -271,9 +336,9 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	 * @param fileName
 	 * @return
 	 */
-	private List<Profile> readProfileFile(String fileName)
+	private Set<Profile> readProfileFile(String fileName)
 	{
-		List<Profile>profiles = new ArrayList<>();
+		Set<Profile>profiles = new TreeSet<>();
 		RmaFile file = FileManagerImpl.getFileManager().getFile(fileName);
 		if ( file == null )
 		{
@@ -368,8 +433,9 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	{
 		profile.pdc.setNumberCurves(1);
 		profile.pdc.setNumberOrdinates(tempsList.size());
-		profile.pdc.xunits = "temp";
-		profile.pdc.yunits = "depth";
+		//these are always C and ft. In future csv file should provide units.
+		profile.pdc.xunits = "temp (C)";
+		profile.pdc.yunits = "depth (ft)";
 		double[]temps = toDoubleArray(tempsList);
 		double[]depths = toDoubleArray(depthsList);
 		double[][] depths2 = new double[1][0];
@@ -682,7 +748,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		}
 	}
 
-	private class Profile
+	private class Profile implements Comparable<Profile>
 	{
 		PairedDataContainer pdc;
 		String name;
@@ -699,6 +765,34 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		public String toString()
 		{
 			return name;
+		}
+
+		@Override
+		public int compareTo(Profile other)
+		{
+			int retVal = 1;
+			if(other != null)
+			{
+				Date thisDate = parseDate(name);
+				Date otherDate = parseDate(other.name);
+				retVal = otherDate.compareTo(thisDate);
+			}
+			return retVal;
+		}
+
+		private Date parseDate(String dateString)
+		{
+			Date retVal = new Date(Long.MIN_VALUE);
+			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			try
+			{
+				retVal = dateFormat.parse(dateString);
+			}
+			catch (ParseException e)
+			{
+				LOGGER.atInfo().withCause(e).log("Failed to parse date " + name);
+			}
+			return retVal;
 		}
 	}
 
