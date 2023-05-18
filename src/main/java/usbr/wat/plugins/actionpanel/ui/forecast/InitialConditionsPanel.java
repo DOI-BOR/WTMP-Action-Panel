@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -47,6 +48,8 @@ import com.rma.model.Project;
 
 import hec.data.DataSetIllegalArgumentException;
 import hec.data.Parameter;
+import hec.data.Units;
+import hec.data.UnitsConversionException;
 import hec.geometry.Axis;
 import hec.gfx2d.G2dPanel;
 import hec.gfx2d.PairedDataSet;
@@ -78,6 +81,11 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String CONFIG_CSV_FILE = "/shared/config/icReservoirs.csv";
 	private static final Pattern UNIT_PATTERN = Pattern.compile("\\((.*?)\\)");
+	private static final String TEMP_PLOT_MIN_PROPERTY = "WTMP.Forecast.LowerTempPlotMLimit.Celsius";
+	private static final String TEMP_PLOT_MAX_PROPERTY = "WTMP.Forecast.UpperTempPlotLimit.Celsius";
+
+	private static final String DEFAULT_TEMP_AXIS_LABEL = "temp (C)";
+	private static final String DEFAULT_DEPTH_AXIS_LABEL = "depth (ft)";
 	private EnabledJPanel _plotsPanel;
 	private EnabledJPanel _buttonPanel;
 	private UpdateDataAction _updateDataAction;
@@ -232,12 +240,12 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 				if ( "true".equalsIgnoreCase(obj.toString())||obj == Boolean.TRUE)
 				{
 					profile = (Profile) table.getValueAt(r, 1);
-					pdcsToPlot.add(new PairedDataSet(profile.pdc));
+					pdcsToPlot.add(new PairedDataSet(profile._pdc));
 				}
 			}
 			String resName = table.getName();
 			ResComponents comps = _resComponents.get(resName);
-			if ( pdcsToPlot.size() == 0 )
+			if ( pdcsToPlot.isEmpty() )
 			{
 				comps.plotPanel.clearPanel();
 			}
@@ -263,27 +271,21 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			viewports[0].getAxis("Y1").setReversed(false);
 			Axis xaxis = viewports[0].getAxis("x1");
 			String xUnit = extractContentWithinParentheses(pdcsToPlot.get(0).getXAxisName());
-			int min = 0;
-			int max = 30;
 			try
 			{
-				String englishTemp = Parameter.getParameter(Parameter.PARAMID_TEMP).getUnitsStringForSystem(Unit.ENGLISH_ID);
-				if(xUnit != null && xUnit.equalsIgnoreCase(englishTemp))
-				{
-					min = 32;
-					max = 86;
-				}
+				int min = getLowerTempPlotLimit(xUnit);
+				int max = getUpperTempPlotLimit(xUnit);
+				xaxis.setMinimumLimit(min);
+				xaxis.setMaximumLimit(max);
+				xaxis.setViewLimits(min, max);
+				xaxis.setMajorTicInterval(5);
+				comps.plotPanel.setVisible(true);
+				comps.plotPanel.repaint();
 			}
-			catch (DataSetIllegalArgumentException e)
+			catch (DataSetIllegalArgumentException | UnitsConversionException e)
 			{
 				LOGGER.atConfig().withCause(e).log("Failed to determine units from label " + pdcsToPlot.get(0).getXAxisName());
 			}
-			xaxis.setMinimumLimit(min);
-			xaxis.setMaximumLimit(max);
-			xaxis.setViewLimits(min, max);
-			xaxis.setMajorTicInterval(5);
-			comps.plotPanel.setVisible(true);
-			comps.plotPanel.repaint();
 		}
 	}
 
@@ -392,7 +394,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 					}
 					profile = new Profile(date);
 					profiles.add(profile);
-					profile.pdc = pdc;
+					profile._pdc = pdc;
 				}
 				temps.add(parts[1]);
 				depths.add(parts[2]);
@@ -425,28 +427,55 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 
 	/**
 	 * @param profile
-	 * @param temps
-	 * @param elevs
+	 * @param tempsList
+	 * @param depthsList
 	 */
 	private void fillInProfilePdc(Profile profile, List<String> tempsList,
 			List<String> depthsList)
 	{
-		profile.pdc.setNumberCurves(1);
-		profile.pdc.setNumberOrdinates(tempsList.size());
+		profile._pdc.setNumberCurves(1);
+		profile._pdc.setNumberOrdinates(tempsList.size());
 		//these are always C and ft. In future csv file should provide units.
-		profile.pdc.xunits = "temp (C)";
-		profile.pdc.yunits = "depth (ft)";
+		profile._pdc.xunits = DEFAULT_TEMP_AXIS_LABEL;
+		profile._pdc.yunits = DEFAULT_DEPTH_AXIS_LABEL;
 		double[]temps = toDoubleArray(tempsList);
 		double[]depths = toDoubleArray(depthsList);
 		double[][] depths2 = new double[1][0];
 		depths2[0] = depths;
-		profile.pdc.setValues(temps, depths2);
+		profile._pdc.setValues(temps, depths2);
+	}
+
+
+	private int getLowerTempPlotLimit(String units) throws DataSetIllegalArgumentException, UnitsConversionException
+	{
+		String minString = System.getProperty(TEMP_PLOT_MIN_PROPERTY);
+		int min = 0;
+		if(minString != null)
+		{
+			min = Integer.parseInt(minString);
+		}
+		String siTempUnits = Parameter.getParameter(Parameter.PARAMID_TEMP).getUnitsStringForSystem(Unit.SI_ID);
+		min = (int) Units.convertUnits(min, siTempUnits, units);
+		return min;
+	}
+
+	private int getUpperTempPlotLimit(String units) throws DataSetIllegalArgumentException, UnitsConversionException
+	{
+		int max = 30;
+		String maxString = System.getProperty(TEMP_PLOT_MAX_PROPERTY);
+		if(maxString != null)
+		{
+			max = Integer.parseInt(maxString);
+		}
+		String siTempUnits = Parameter.getParameter(Parameter.PARAMID_TEMP).getUnitsStringForSystem(Unit.SI_ID);
+		max = (int) Units.convertUnits(max, siTempUnits, units);
+		return max;
 	}
 
 
 
 	/**
-	 * @param tempsList
+	 * @param valuesList
 	 * @return
 	 */
 	private double[] toDoubleArray(List<String> valuesList)
@@ -640,7 +669,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			if ( obj == Boolean.TRUE || "true".equalsIgnoreCase(obj.toString()))
 			{
 				profile = (Profile) table.getValueAt(r, 1);
-				selectedProfileNames.add(profile.name);
+				selectedProfileNames.add(profile._name);
 			}
 		}
 		
@@ -728,7 +757,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			for (int r = 0; r < rowCnt; r++ )
 			{
 				profile = (Profile) table.getValueAt(r, 1);;
-				if ( profileName.equals(profile.name))
+				if ( profileName.equals(profile._name))
 				{
 					table.setValueAt(Boolean.TRUE, r, 0);
 					break;
@@ -750,21 +779,23 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 
 	private class Profile implements Comparable<Profile>
 	{
-		PairedDataContainer pdc;
-		String name;
+		private final Date _date;
+		PairedDataContainer _pdc;
+		String _name;
 		
 		/**
 		 * @param date
 		 */
 		public Profile(String date)
 		{
-			name = date;
+			_name = date;
+			_date = parseDate(date);
 		}
 
 		@Override
 		public String toString()
 		{
-			return name;
+			return _name;
 		}
 
 		@Override
@@ -773,11 +804,30 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			int retVal = 1;
 			if(other != null)
 			{
-				Date thisDate = parseDate(name);
-				Date otherDate = parseDate(other.name);
-				retVal = otherDate.compareTo(thisDate);
+				retVal = other._date.compareTo(_date);
 			}
 			return retVal;
+		}
+
+		@Override
+		public boolean equals(Object o)
+		{
+			if (this == o)
+			{
+				return true;
+			}
+			if (o == null || getClass() != o.getClass())
+			{
+				return false;
+			}
+			Profile profile = (Profile) o;
+			return Objects.equals(_date, profile._date) && Objects.equals(_name, profile._name);
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return Objects.hash(_date, _name);
 		}
 
 		private Date parseDate(String dateString)
@@ -790,7 +840,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			}
 			catch (ParseException e)
 			{
-				LOGGER.atInfo().withCause(e).log("Failed to parse date " + name);
+				LOGGER.atInfo().withCause(e).log("Failed to parse date " + _name);
 			}
 			return retVal;
 		}
