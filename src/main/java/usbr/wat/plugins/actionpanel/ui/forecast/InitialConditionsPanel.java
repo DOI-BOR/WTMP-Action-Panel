@@ -13,15 +13,23 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.FocusManager;
 import javax.swing.JButton;
@@ -38,10 +46,16 @@ import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
+import hec.data.DataSetIllegalArgumentException;
+import hec.data.Parameter;
+import hec.data.Units;
+import hec.data.UnitsConversionException;
+import hec.geometry.Axis;
 import hec.gfx2d.G2dPanel;
 import hec.gfx2d.PairedDataSet;
 import hec.gfx2d.Viewport;
 import hec.heclib.dss.DSSPathname;
+import hec.heclib.util.Unit;
 import hec.io.PairedDataContainer;
 
 import rma.swing.EnabledJPanel;
@@ -66,11 +80,19 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String CONFIG_CSV_FILE = "/shared/config/icReservoirs.csv";
+	private static final Pattern UNIT_PATTERN = Pattern.compile("\\((.*?)\\)");
+	private static final String TEMP_PLOT_MIN_PROPERTY = "WTMP.Forecast.LowerTempPlotMLimit.Celsius";
+	private static final String TEMP_PLOT_MAX_PROPERTY = "WTMP.Forecast.UpperTempPlotLimit.Celsius";
+	private static final int DEFAULT_TEMP_PLOT_MIN_C = 0;
+	private static final int DEFAULT_TEMP_PLOT_MAX_C = 30;
+	private static final String DEFAULT_TEMP_AXIS_LABEL = "temp (C)";
+	private static final String DEFAULT_DEPTH_AXIS_LABEL = "depth (ft)";
 	private EnabledJPanel _plotsPanel;
 	private EnabledJPanel _buttonPanel;
 	private UpdateDataAction _updateDataAction;
 	private ReviewDataAction _reviewDataAction;
 	private Map<String, ResComponents>_resComponents = new HashMap<>();
+	private boolean _ignoreTableModification = false;
 
 	/**
 	 * @param forecastPanel
@@ -156,7 +178,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			_plotsPanel.add(table.getScrollPane(), gbc);
 
 			fillTable(table, resInfo);
-			table.getModel().addTableModelListener(e->tableModelChanged(e));
+			table.getModel().addTableModelListener(this::tableModelChanged);
 			_resComponents.put(resInfo.getReservoirName(), new ResComponents(table, null));
 		}
 		for (int i = 0;i < reservoirInfos.size(); i++ )
@@ -186,7 +208,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	 */
 	private void tableModelChanged(TableModelEvent e)
 	{
-		if ( e.getType() != TableModelEvent.UPDATE )
+		if (_ignoreTableModification || e.getType() != TableModelEvent.UPDATE )
 		{
 			return;
 		}
@@ -194,7 +216,19 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		RmaTableModel tableModel = (RmaTableModel) e.getSource();
 		Component focusedComp = FocusManager.getCurrentManager().getFocusOwner();
 		RmaJTable table = (RmaJTable) SwingUtilities.getAncestorOfClass(RmaJTable.class, focusedComp);
-		buildTablePlot(table);
+		if(table != null)
+		{
+			int row = e.getFirstRow();
+			Object checkedObj = tableModel.getValueAt(row, 0);
+			if(checkedObj instanceof Boolean && ((Boolean)checkedObj))
+			{
+				_ignoreTableModification = true;
+				clearTableSelection(table);
+				tableModel.setValueAt(true, row, 0);
+				_ignoreTableModification = false;
+			}
+			buildTablePlot(table);
+		}
 	}
 	private void buildTablePlot(RmaJTable table)
 	{
@@ -210,12 +244,12 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 				if ( "true".equalsIgnoreCase(obj.toString())||obj == Boolean.TRUE)
 				{
 					profile = (Profile) table.getValueAt(r, 1);
-					pdcsToPlot.add(new PairedDataSet(profile.pdc));
+					pdcsToPlot.add(new PairedDataSet(profile._pdc));
 				}
 			}
 			String resName = table.getName();
 			ResComponents comps = _resComponents.get(resName);
-			if ( pdcsToPlot.size() == 0 )
+			if ( pdcsToPlot.isEmpty() )
 			{
 				comps.plotPanel.clearPanel();
 			}
@@ -228,9 +262,46 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 					viewports[0].getAxis("Y1").setReversed(false);
 				}
 			}
+			revalidate();
+			fixZoom(comps, pdcsToPlot);
 		}
-		revalidate();
-		
+	}
+
+	private void fixZoom(ResComponents comps, List<PairedDataSet> pdcsToPlot)
+	{
+		Viewport[] viewports = comps.plotPanel.getViewports();
+		if ( viewports != null && viewports.length > 0 )
+		{
+			viewports[0].getAxis("Y1").setReversed(false);
+			Axis xaxis = viewports[0].getAxis("x1");
+			String xUnit = extractContentWithinParentheses(pdcsToPlot.get(0).getXAxisName());
+			try
+			{
+				int min = getLowerTempPlotLimit(xUnit);
+				int max = getUpperTempPlotLimit(xUnit);
+				xaxis.setMinimumLimit(min);
+				xaxis.setMaximumLimit(max);
+				xaxis.setViewLimits(min, max);
+				xaxis.setMajorTicInterval(5);
+				comps.plotPanel.setVisible(true);
+				comps.plotPanel.repaint();
+			}
+			catch (DataSetIllegalArgumentException | UnitsConversionException e)
+			{
+				LOGGER.atConfig().withCause(e).log("Failed to determine units from label " + pdcsToPlot.get(0).getXAxisName());
+			}
+		}
+	}
+
+	private String extractContentWithinParentheses(String input)
+	{
+		String retVal = null;
+		Matcher matcher = UNIT_PATTERN.matcher(input);
+		if (matcher.find())
+		{
+			retVal = matcher.group(1);
+		}
+		return retVal;
 	}
 
 
@@ -253,12 +324,12 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		{
 			fileName = profileFileNames.get(i);
 			fileName = prj.getAbsolutePath(fileName);
-			List<Profile> profiles = readProfileFile(fileName);
-			for (int p = 0;p < profiles.size();p++ )
+			Set<Profile> profiles = readProfileFile(fileName);
+			for (Profile profile : profiles)
 			{
 				row = new Vector();
 				row.add(Boolean.FALSE);
-				row.add(profiles.get(p));
+				row.add(profile);
 				table.appendRow(row);
 			}
 		}
@@ -271,9 +342,9 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	 * @param fileName
 	 * @return
 	 */
-	private List<Profile> readProfileFile(String fileName)
+	private Set<Profile> readProfileFile(String fileName)
 	{
-		List<Profile>profiles = new ArrayList<>();
+		Set<Profile>profiles = new TreeSet<>();
 		RmaFile file = FileManagerImpl.getFileManager().getFile(fileName);
 		if ( file == null )
 		{
@@ -327,7 +398,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 					}
 					profile = new Profile(date);
 					profiles.add(profile);
-					profile.pdc = pdc;
+					profile._pdc = pdc;
 				}
 				temps.add(parts[1]);
 				depths.add(parts[2]);
@@ -360,27 +431,45 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 
 	/**
 	 * @param profile
-	 * @param temps
-	 * @param elevs
+	 * @param tempsList
+	 * @param depthsList
 	 */
 	private void fillInProfilePdc(Profile profile, List<String> tempsList,
 			List<String> depthsList)
 	{
-		profile.pdc.setNumberCurves(1);
-		profile.pdc.setNumberOrdinates(tempsList.size());
-		profile.pdc.xunits = "temp";
-		profile.pdc.yunits = "depth";
+		profile._pdc.setNumberCurves(1);
+		profile._pdc.setNumberOrdinates(tempsList.size());
+		//these are always C and ft. In future csv file should provide units.
+		profile._pdc.xunits = DEFAULT_TEMP_AXIS_LABEL;
+		profile._pdc.yunits = DEFAULT_DEPTH_AXIS_LABEL;
 		double[]temps = toDoubleArray(tempsList);
 		double[]depths = toDoubleArray(depthsList);
 		double[][] depths2 = new double[1][0];
 		depths2[0] = depths;
-		profile.pdc.setValues(temps, depths2);
+		profile._pdc.setValues(temps, depths2);
+	}
+
+
+	private int getLowerTempPlotLimit(String units) throws DataSetIllegalArgumentException, UnitsConversionException
+	{
+		int min = Integer.getInteger(TEMP_PLOT_MIN_PROPERTY, DEFAULT_TEMP_PLOT_MIN_C);
+		String siTempUnits = Parameter.getParameter(Parameter.PARAMID_TEMP).getUnitsStringForSystem(Unit.SI_ID);
+		min = (int) Units.convertUnits(min, siTempUnits, units);
+		return min;
+	}
+
+	private int getUpperTempPlotLimit(String units) throws DataSetIllegalArgumentException, UnitsConversionException
+	{
+		int max = Integer.getInteger(TEMP_PLOT_MAX_PROPERTY, DEFAULT_TEMP_PLOT_MAX_C);
+		String siTempUnits = Parameter.getParameter(Parameter.PARAMID_TEMP).getUnitsStringForSystem(Unit.SI_ID);
+		max = (int) Units.convertUnits(max, siTempUnits, units);
+		return max;
 	}
 
 
 
 	/**
-	 * @param tempsList
+	 * @param valuesList
 	 * @return
 	 */
 	private double[] toDoubleArray(List<String> valuesList)
@@ -574,7 +663,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			if ( obj == Boolean.TRUE || "true".equalsIgnoreCase(obj.toString()))
 			{
 				profile = (Profile) table.getValueAt(r, 1);
-				selectedProfileNames.add(profile.name);
+				selectedProfileNames.add(profile._name);
 			}
 		}
 		
@@ -633,10 +722,13 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	 */
 	private void clearTableSelection(RmaJTable table)
 	{
-		int rowCnt = table.getRowCount();
-		for(int r = 0;r < rowCnt;r++ )
+		if(table != null)
 		{
-			table.setValueAt(Boolean.FALSE, r, 0);
+			int rowCnt = table.getRowCount();
+			for(int r = 0;r < rowCnt;r++ )
+			{
+				table.setValueAt(Boolean.FALSE, r, 0);
+			}
 		}
 	}
 
@@ -662,7 +754,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			for (int r = 0; r < rowCnt; r++ )
 			{
 				profile = (Profile) table.getValueAt(r, 1);;
-				if ( profileName.equals(profile.name))
+				if ( profileName.equals(profile._name))
 				{
 					table.setValueAt(Boolean.TRUE, r, 0);
 					break;
@@ -682,23 +774,72 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		}
 	}
 
-	private class Profile
+	private class Profile implements Comparable<Profile>
 	{
-		PairedDataContainer pdc;
-		String name;
+		private final Date _date;
+		PairedDataContainer _pdc;
+		String _name;
 		
 		/**
 		 * @param date
 		 */
 		public Profile(String date)
 		{
-			name = date;
+			_name = date;
+			_date = parseDate(date);
 		}
 
 		@Override
 		public String toString()
 		{
-			return name;
+			return _name;
+		}
+
+		@Override
+		public int compareTo(Profile other)
+		{
+			int retVal = 1;
+			if(other != null)
+			{
+				retVal = other._date.compareTo(_date);
+			}
+			return retVal;
+		}
+
+		@Override
+		public boolean equals(Object o)
+		{
+			if (this == o)
+			{
+				return true;
+			}
+			if (o == null || getClass() != o.getClass())
+			{
+				return false;
+			}
+			Profile profile = (Profile) o;
+			return Objects.equals(_date, profile._date) && Objects.equals(_name, profile._name);
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return Objects.hash(_date, _name);
+		}
+
+		private Date parseDate(String dateString)
+		{
+			Date retVal = new Date(Long.MIN_VALUE);
+			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			try
+			{
+				retVal = dateFormat.parse(dateString);
+			}
+			catch (ParseException e)
+			{
+				LOGGER.atInfo().withCause(e).log("Failed to parse date " + _name);
+			}
+			return retVal;
 		}
 	}
 

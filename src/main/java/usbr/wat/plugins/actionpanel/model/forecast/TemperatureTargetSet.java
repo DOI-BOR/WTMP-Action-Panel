@@ -115,6 +115,7 @@ public final class TemperatureTargetSet extends NamedType
                 }
             }
         }
+        _modified = true;
         return true;
     }
 
