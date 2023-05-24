@@ -44,7 +44,10 @@ public class NewSimulationGroupAction extends BaseActionsPanelAction
 			return;
 		}
 		SimulationGroup sg = (SimulationGroup) dlg.getSimulationGroup();
-		_parent.setSimulationGroup(sg);
+		if(_parent != null)
+		{
+			_parent.setSimulationGroup(sg);
+		}
 	}
 
 }

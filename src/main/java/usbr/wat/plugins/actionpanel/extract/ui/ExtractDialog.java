@@ -38,6 +38,10 @@ import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParametersBuilder;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParametersBuilder;
 import hec.io.Identifier;
 import hec.io.impl.StoreOptionImpl;
 import hec.model.RunTimeWindow;
@@ -45,8 +49,6 @@ import hec.model.RunTimeWindow;
 import gov.usbr.wq.merlindataexchange.MerlinConfigParseException;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeParser;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParametersBuilder;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.DateTimePanel;
@@ -585,7 +587,7 @@ public class ExtractDialog extends RmaJDialog
 			fpart = null;
 		}
 		
-		MerlinParameters params = new MerlinParametersBuilder()
+		MerlinTimeSeriesParameters tsParams = new MerlinTimeSeriesParametersBuilder()
 	                .withWatershedDirectory(prjPath)
 	                .withLogFileDirectory(logPath)
 	                .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -598,10 +600,14 @@ public class ExtractDialog extends RmaJDialog
 	                .withEnd(endInstant)
 	                .withFPartOverride(fpart)
 	                .build();
-		 
+
+		MerlinProfileParameters profileParams = new MerlinProfileParametersBuilder()
+				.fromExistingParameters(tsParams)
+				.build();
+
 
 		RunExtractAction action = new RunExtractAction(this);
-		action.extract(this, params, selectedPaths, 
+		action.extract(this, tsParams, profileParams, selectedPaths,
 				"Enter login information for "+GRAB_DATA_URL, GRAB_DATA_URL);
 		
 	}
