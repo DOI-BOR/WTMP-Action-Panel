@@ -74,42 +74,50 @@ public class RunExtractAction
 			return;
 		}
 
-		List<Path> timeSeriesFiles = getConfigsOfType(selectedFiles, TIMESERIES);
-		List<Path> profileFiles = getConfigsOfType(selectedFiles, PROFILE);
-
-		((ProgressListenerDialog)progress).setVisible(true);
-
-		Thread t = new Thread("Extract Wait Thread")
+		try
 		{
-			@Override
-			public void run()
+			List<Path> timeSeriesFiles = getConfigsOfType(selectedFiles, TIMESERIES);
+			List<Path> profileFiles = getConfigsOfType(selectedFiles, PROFILE);
+
+			((ProgressListenerDialog)progress).setVisible(true);
+
+			Thread t = new Thread("Extract Wait Thread")
 			{
-				boolean failed = false;
-				if(!timeSeriesFiles.isEmpty())
+				@Override
+				public void run()
 				{
-					DataExchangeEngine dataExchangeEngineTS = new MerlinDataExchangeEngineBuilder()
-							.withConfigurationFiles(timeSeriesFiles)
-							.withParameters(tsParams)
-							.withProgressListener(progress)
-							.build();
-					CompletableFuture<MerlinDataExchangeStatus> futureTS = dataExchangeEngineTS.runExtract();
-					_status = futureTS.join();
-					failed = handleTSExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
+					boolean failed = false;
+					if(!timeSeriesFiles.isEmpty())
+					{
+						DataExchangeEngine dataExchangeEngineTS = new MerlinDataExchangeEngineBuilder()
+								.withConfigurationFiles(timeSeriesFiles)
+								.withParameters(tsParams)
+								.withProgressListener(progress)
+								.build();
+						CompletableFuture<MerlinDataExchangeStatus> futureTS = dataExchangeEngineTS.runExtract();
+						_status = futureTS.join();
+						failed = handleTSExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
+					}
+					if(!failed && !profileFiles.isEmpty())
+					{
+						DataExchangeEngine dataExchangeEngineProfiles = new MerlinDataExchangeEngineBuilder()
+								.withConfigurationFiles(profileFiles)
+								.withParameters(profileParams)
+								.withProgressListener(progress)
+								.build();
+						CompletableFuture<MerlinDataExchangeStatus> futureProfiles = dataExchangeEngineProfiles.runExtract();
+						_status = futureProfiles.join();
+						handleProfileExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
+					}
 				}
-				if(!failed && !profileFiles.isEmpty())
-				{
-					DataExchangeEngine dataExchangeEngineProfiles = new MerlinDataExchangeEngineBuilder()
-							.withConfigurationFiles(profileFiles)
-							.withParameters(profileParams)
-							.withProgressListener(progress)
-							.build();
-					CompletableFuture<MerlinDataExchangeStatus> futureProfiles = dataExchangeEngineProfiles.runExtract();
-					_status = futureProfiles.join();
-					handleProfileExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
-				}
-			}
-		};
-		t.start();
+			};
+			t.start();
+		}
+		catch (MerlinConfigParseException e)
+		{
+			JOptionPane.showMessageDialog(parent, e.getMessage(), "Invalid Config", JOptionPane.ERROR_MESSAGE);
+			LOGGER.log(Level.CONFIG, e, () -> "Failed to parse config to determine parameter object to use");
+		}
 	}
 
 	private void handleProfileExtractStatus(Window parent, MerlinTimeSeriesParameters tsParams, MerlinProfileParameters profileParams, List<Path> selectedFiles, String infoString, String url)
@@ -153,26 +161,20 @@ public class RunExtractAction
 		return failed;
 	}
 
-	private List<Path> getConfigsOfType(List<Path> selectedFiles, String type)
+	private List<Path> getConfigsOfType(List<Path> selectedFiles, String type) throws MerlinConfigParseException
 	{
 		List<Path> retVal = new ArrayList<>();
 		for(Path file : selectedFiles)
 		{
-			try
+			DataExchangeConfiguration config = MerlinDataExchangeParser.parseXmlFile(file);
+			for(DataExchangeSet set : config.getDataExchangeSets())
 			{
-				DataExchangeConfiguration config = MerlinDataExchangeParser.parseXmlFile(file);
-				for(DataExchangeSet set : config.getDataExchangeSets())
+				String setType = set.getDataType();
+				if(setType.equalsIgnoreCase(type))
 				{
-					String setType = set.getDataType();
-					if(setType.equalsIgnoreCase(type))
-					{
-						retVal.add(file);
-						break;
-					}
+					retVal.add(file);
+					break;
 				}
-			} catch (MerlinConfigParseException e)
-			{
-				LOGGER.log(Level.CONFIG, e, () -> "Failed to parse config to determine parameter object to use");
 			}
 		}
 		return retVal;
