@@ -408,7 +408,7 @@ public class ProgressListenerDialog extends RmaJDialog
 	@Override
 	public void start(int totalWorkUnits)
 	{
-		
+		_cancelCloseBtn.setText(CANCEL_TEXT);
 		_progressBar.setIndeterminate(false);
 		_progressBar.setMaximum(totalWorkUnits);
 		_progressBar.setValue(0);

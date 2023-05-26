@@ -466,7 +466,7 @@ public final class TemperatureTargetSet extends NamedType
     {
         TimeSeriesContainer tsc = new TimeSeriesContainer();
         DSSPathname pathname = new DSSPathname();
-        pathname.setBPart(tempTargetSet.getName());
+        pathname.setBPart("");
         pathname.setCPart("TEMP-WATER-TARGET");
         pathname.setEPart(TemperatureTargetTimeStep.REGULAR_WEEKLY.toString());
         String leadingString = getLeadingString(col);

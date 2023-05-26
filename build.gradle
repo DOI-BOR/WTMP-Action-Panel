@@ -9,14 +9,43 @@ dependencies {
     api "mil.army.usace.hec.wat:hec-wat:${rootProject.wat_version}!!"
 
     // JasperReports
-    api 'net.sf.jasperreports:jasperreports:6.17.0'
-    api 'net.sf.jasperreports:jasperreports-chart-themes:6.17.0'
-    implementation 'net.sf.jasperreports:jasperreports-chart-customizers:6.17.0'
-    implementation 'net.sf.jasperreports:jasperreports-fonts:6.17.0'
-    implementation 'net.sf.jasperreports:jasperreports-custom-visualization:6.17.0'
-    implementation 'net.sf.jasperreports:jasperreports-functions:6.17.0'
-    implementation 'net.sf.jasperreports:jasperreports-annotation-processors:6.17.0'
-    implementation 'net.sf.jasperreports:jasperreports-metadata:6.17.0'
+    api ('net.sf.jasperreports:jasperreports:6.17.0') {
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+    }
+    api ('net.sf.jasperreports:jasperreports-chart-themes:6.17.0') {
+        exclude group: 'net.sf.jasperreports', module: 'jasperreports'
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+    }
+    implementation ('net.sf.jasperreports:jasperreports-chart-customizers:6.17.0') {
+        exclude group: 'net.sf.jasperreports', module: 'jasperreports'
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+
+    }
+    implementation ('net.sf.jasperreports:jasperreports-fonts:6.17.0') {
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+    }
+    implementation ('net.sf.jasperreports:jasperreports-custom-visualization:6.17.0') {
+        exclude group: 'net.sf.jasperreports', module: 'jasperreports'
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+    }
+    implementation ('net.sf.jasperreports:jasperreports-functions:6.17.0') {
+        exclude group: 'net.sf.jasperreports', module: 'jasperreports'
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+    }
+    implementation ('net.sf.jasperreports:jasperreports-annotation-processors:6.17.0') {
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+    }
+    implementation ('net.sf.jasperreports:jasperreports-metadata:6.17.0') {
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.datatype'
+    }
 	implementation 'org.apache.poi:poi:3.8'
 	implementation 'org.apache.poi:poi-ooxml:3.8'
 
@@ -26,13 +55,16 @@ dependencies {
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
     implementation 'org.gitlab4j:gitlab4j-api:4.19.0'
     implementation 'mil.army.usace.hec.swingx:swingx-core:1.6.6'
-    implementation 'gov.usbr.wq:merlin-data-exchange:1.6.1'
+    implementation 'gov.usbr.wq:merlin-data-exchange:3.0.0'
+    runtimeOnly('com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.11.0')
+    runtimeOnly('com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.11.0')
     runtimeOnly 'org.codehaus.groovy:groovy:3.0.7'
     runtimeOnly 'jaxen:jaxen:1.1.6'
     runtimeOnly 'org.springframework:spring-beans:5.3.12'
     runtimeOnly 'org.springframework:spring-core:5.3.12'
     runtimeOnly 'org.springframework:spring-jcl:5.3.12'
 }
+
 
 
 jar {
