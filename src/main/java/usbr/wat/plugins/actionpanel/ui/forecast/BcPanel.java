@@ -27,6 +27,7 @@ import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.model.forecast.BcData;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastConfigFiles;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
 import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
@@ -207,11 +208,11 @@ public class BcPanel extends AbstractForecastPanel
 				String opsFileName = opsData.getOperationsFile();
 				String dssMapFile = Project.getCurrentProject().getAbsolutePath("forecast/simGroups/" + _fsg.getName() + "/" + bcData.getName() + ".txt");
 				int positionAnalysisYear = metData.getYear();
-				String positionalAnalysisConfigFile = Project.getCurrentProject().getAbsolutePath("shared/config/historical_met.config");
+				String positionalAnalysisConfigFile = Project.getCurrentProject().getAbsolutePath(ForecastConfigFiles.getRelativeHistoricalMetFile());
 				String metFPart = bcFPart;
 				String metOutputDssFileName = bcOutputDssFile;
 				String opsImportFPart = bcFPart;
-				String flowPatternConfigFile = Project.getCurrentProject().getAbsolutePath("shared/config/flow_pattern.config");
+				String flowPatternConfigFile = Project.getCurrentProject().getAbsolutePath(ForecastConfigFiles.getRelativeFlowPatternFile());
 				Integer result = PythonScriptUtil.runScript(scriptFile, "build_BC_data_sets", Integer.class,
 						startTime, endTime, bcFPart, bcOutputDssFile, opsFileName, dssMapFile, positionAnalysisYear, positionalAnalysisConfigFile,
 						metFPart, metOutputDssFileName, flowPatternConfigFile, opsImportFPart);

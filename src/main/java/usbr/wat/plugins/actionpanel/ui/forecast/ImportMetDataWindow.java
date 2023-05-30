@@ -35,6 +35,7 @@ import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
 import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastConfigFiles;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.MetDataType;
 import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
@@ -45,7 +46,8 @@ import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
  */
 public class ImportMetDataWindow extends RmaJDialog
 {
-	private static final String AVE_TEMP_FILE = "shared/config/yearly_temperature_data.csv";
+	private static final String AVE_TEMP_FILE = ForecastConfigFiles.getRelativeYearlyTempDataFile();
+			;
 	private RmaJTextField _nameFld;
 	private RmaJDescriptionField _descFld;
 	private RmaJComboBox _importTypeCombo;

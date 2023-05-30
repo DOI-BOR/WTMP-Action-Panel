@@ -60,6 +60,7 @@ import org.python.core.PyStringMap;
 import org.python.core.PySystemState;
 import org.python.util.PythonInterpreter;
 import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.editors.iterationCompute.UsgsComputeSelectorDialog;
 import usbr.wat.plugins.actionpanel.model.BaseComputeSettings;
 import usbr.wat.plugins.actionpanel.model.ComputeSettings;
@@ -75,8 +76,8 @@ public class ForecastActionComputable
 		implements UsbrComputable, RealizationComputable
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-	private static final String BC_CONFIG_FILE = System.getProperty("WTMP.bcPathsMapFile", "shared/config/bcPathsMap.config");
-	private static final String TEMP_TARGET_CONFIG_FILE = System.getProperty("WTMP.tempTargetPathsMapFile", "shared/config/target_temp.config");
+	private static final String BC_CONFIG_FILE = ForecastConfigFiles.getRelativeBCConfigFile();
+	private static final String TEMP_TARGET_CONFIG_FILE = ForecastConfigFiles.getRelativeTempTargetConfigFile();
 	private static final String SAVE_SUFFEX = "-save";
 	public static final String ITERATION_DSS_FILE = "iterationResults.dss";
 	private static final String DSSFILE = "DSS File";
@@ -218,6 +219,11 @@ public class ForecastActionComputable
 			{
 				_sim.setRealizationPosition(m);
 				currentMember = _members[m];
+				if ( _ensembleSet.getComputedMembers().contains(currentMember)&& !_computeDialog.shouldRecomputeAll())
+				{
+					_sim.addComputeMessage("Ensemble Member "+currentMember+" already computed, skipping");
+					continue;
+				}
 				_sim.addComputeMessage("Computing Ensemble Member "+currentMember);
 				_sim.addComputeMessage("Output will be saved  to F-Part C:"+ String.format("%06d", _outputCollectionStart+currentMember));
 				System.out.println("Computing Ensemble Member "+currentMember+" for "+_sim );
@@ -261,11 +267,14 @@ public class ForecastActionComputable
 					{
 						continue;
 					}
+					_sim.addErrorMessage("Simulation "+_sim.getName()+" failed to compute");
 					return false;
 				}
 				else
 				{
 					_ensembleSet.addComputedMember(currentMember);
+					ActionPanelPlugin.getInstance().getActionsWindow().getForecastPanel().getSimulationPanel().addComputedMember(_sim, _ensembleSet, currentMember);
+
 				}
 				//copy the output from the simulation dss file to the iteration dss file
 				if ( _canceled )
@@ -322,6 +331,7 @@ public class ForecastActionComputable
 			restoreDssPaths(savedDssPaths);
 			_preCodeMap.clear();
 			_postCodeMap.clear();
+			_sim.setRealizationPosition(_members.length);
 			for (int l = 0; l < listeners.size(); l++ )
 			{
 				_sim.removeComputeProgressListener(progressListener);

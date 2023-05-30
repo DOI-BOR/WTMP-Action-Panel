@@ -29,6 +29,7 @@ import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastConfigFiles;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
 import usbr.wat.plugins.actionpanel.ui.MetPlotPanel;
@@ -40,7 +41,8 @@ import usbr.wat.plugins.actionpanel.ui.MetPlotPanel;
 public class MeteorologyPanel extends AbstractForecastPanel
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-	private static final String CONFIG_FILE = "shared/config/met_editor.config";
+	private static final String CONFIG_FILE = ForecastConfigFiles.getRelativeMetEditorFile();
+
 	private RmaJTable _metInfoTable;
 	private JButton _importButton;
 	private MetPlotPanel _plotPanel;

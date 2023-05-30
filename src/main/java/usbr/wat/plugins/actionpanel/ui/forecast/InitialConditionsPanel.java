@@ -68,6 +68,7 @@ import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.actions.ReviewDataAction;
 import usbr.wat.plugins.actionpanel.actions.UpdateDataAction;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastConfigFiles;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.IcReservoirInfo;
 import usbr.wat.plugins.actionpanel.model.forecast.InitialConditions;
@@ -79,7 +80,8 @@ import usbr.wat.plugins.actionpanel.model.forecast.InitialConditions;
 public class InitialConditionsPanel extends AbstractForecastPanel
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-	private static final String CONFIG_CSV_FILE = "/shared/config/icReservoirs.csv";
+	private static final String CONFIG_CSV_FILE = ForecastConfigFiles.getRelativeIcReservoirsFile();
+
 	private static final Pattern UNIT_PATTERN = Pattern.compile("\\((.*?)\\)");
 	private static final String TEMP_PLOT_MIN_PROPERTY = "WTMP.Forecast.LowerTempPlotMLimit.Celsius";
 	private static final String TEMP_PLOT_MAX_PROPERTY = "WTMP.Forecast.UpperTempPlotLimit.Celsius";
