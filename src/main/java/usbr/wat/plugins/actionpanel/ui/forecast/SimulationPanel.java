@@ -7,11 +7,17 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -28,6 +34,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import hec.util.NumericComparator;
 import hec2.wat.model.WatAnalysisPeriod;
 
 import hec2.wat.model.WatSimulation;
@@ -66,8 +73,9 @@ import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTableModel;
 public class SimulationPanel extends AbstractSimulationPanel
 	implements UsbrPanel
 {
-	
-	
+
+
+	private static final int COMPUTED_MEMBERS_COL = 4;
 	private EnabledJPanel _topPanel;
 	private JLabel _apLabel;
 	private JLabel _apStartLabel;
@@ -557,6 +565,10 @@ public class SimulationPanel extends AbstractSimulationPanel
 			setEnsembleSets(fsg.getEnsembleSets(simulation));
 			fillAnalysisWindow();
 			setEnabled(true);
+			if ( _simulationTable.getRowCount() > 0 )
+			{
+				_simulationTable.setRowSelectionInterval(0,0);
+			}
 		}
 		else
 		{
@@ -726,5 +738,62 @@ public class SimulationPanel extends AbstractSimulationPanel
 			return null;
 		}
 		return (WatSimulation) _simulationTable.getValueAt(row, 0);
+	}
+
+	public void addComputedMember(WatSimulation sim, EnsembleSet ensembleSet, int computedMember)
+	{
+		if ( sim == null || ensembleSet == null )
+		{
+			return;
+		}
+		if ( sim != getSelectedSimulation() )
+		{
+			return;
+		}
+		int rowCnt = _esetsInTable.size();
+		for (int r = 0;r < rowCnt; r++ )
+		{
+			if ( _esetsInTable.get(r) == ensembleSet )
+			{
+				String computedMembers = (String) _simEnsembleTable.getValueAt(r,COMPUTED_MEMBERS_COL );
+				computedMembers = setComputedMember(computedMembers, computedMember);
+				setComputedMembers(r, computedMembers);
+			}
+		}
+	}
+
+	private void setComputedMembers(int r, String computedMembers)
+	{
+		EventQueue.invokeLater(()->_simEnsembleTable.setValueAt(computedMembers, r, COMPUTED_MEMBERS_COL));
+	}
+
+	private String setComputedMember(String computedMembers, int computedMember)
+	{
+		if ( computedMembers == null || computedMembers.isEmpty() )
+		{
+			return String.valueOf(computedMember);
+		}
+		String[] members = computedMembers.split(",");
+		if ( members == null || members.length == 0  || computedMember < 0 )
+		{
+			return String.valueOf(computedMember);
+		}
+		List<String> membersList = Arrays.asList(members);
+		Set<String>membersSet = new HashSet<>(membersList);
+		membersSet.add(String.valueOf(computedMember));
+		membersList = new ArrayList<>();
+		membersList.addAll(membersSet);
+		Collections.sort(membersList, new NumericComparator());
+		StringBuilder builder = new StringBuilder();
+		Iterator<String> iter = membersList.iterator();
+		while(iter.hasNext())
+		{
+			builder.append(iter.next());
+			if ( iter.hasNext())
+			{
+				builder.append(",");
+			}
+		}
+		return builder.toString();
 	}
 }
