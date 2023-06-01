@@ -70,6 +70,7 @@ public class EnsembleSet extends NamedType
 		if ( _computedMembers != null )
 		{
 			Element computedMembersElem = new Element("ComputedMembers");
+			myElem.addContent(computedMembersElem);
 			int[] members = _computedMembers.toArray();
 			XMLUtilities.createArrayElements(computedMembersElem, members);
 		}
@@ -138,7 +139,10 @@ public class EnsembleSet extends NamedType
 
 	public void addComputedMember(int member)
 	{
-		_computedMembers.add(member);
-		setModified(true);
+		if (!_computedMembers.contains(member))
+		{
+			_computedMembers.add(member);
+			setModified(true);
+		}
 	}
 }

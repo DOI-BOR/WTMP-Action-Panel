@@ -391,7 +391,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
+		gbc.insets    = RmaInsets.INSETS5555;
 		add(_simActionsPanel, gbc);
 	
 	}

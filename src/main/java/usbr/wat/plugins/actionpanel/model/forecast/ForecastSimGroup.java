@@ -388,11 +388,12 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 			simElem.setText(simName);
 			ecElem.addContent(simElem);
 			List<EnsembleSet> ensembleSets = next.getValue();
-			for (int i = 0; i < _ensembleSets.size(); i++)
+			for (int i = 0; i < ensembleSets.size(); i++)
 			{
 				eSet = ensembleSets.get(i);
 				eSet.saveData(simElem);
 			}
+			System.out.println("simElem has "+ simElem.getChildren("EnsembleSet").size() + " ensembleSets");
 		}
 		saveEnsembleSetsIndexing(root);
 	}

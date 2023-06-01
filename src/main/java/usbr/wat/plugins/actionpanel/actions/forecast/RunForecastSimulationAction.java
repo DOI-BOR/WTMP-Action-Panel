@@ -20,6 +20,7 @@ import java.util.StringTokenizer;
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
 import com.rma.client.Browser;
+import com.rma.editors.ComputeProgressDialog;
 import hec2.wat.model.WatSimulation;
 import rma.util.IntArray;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
@@ -34,6 +35,7 @@ public class RunForecastSimulationAction extends AbstractAction
 {
 	private final ActionsWindow _parent;
 	private final SimulationPanel _parentPanel;
+	private ComputeProgressDialog _computeDialog;
 
 	public RunForecastSimulationAction(ActionsWindow parent, SimulationPanel parentPanel)
 	{
@@ -61,10 +63,10 @@ public class RunForecastSimulationAction extends AbstractAction
 			return;
 
 		}
-		List<WatSimulation> sims = _parent.getSelectedSimulations();
-		if ( sims.isEmpty())
+		WatSimulation sim = _parentPanel.getSelectedSimulation();
+		if ( sim == null )
 		{
-			JOptionPane.showMessageDialog(_parent,"Please select the simulations that you want to compute",
+			JOptionPane.showMessageDialog(_parent,"Please select the simulation that you want to compute",
 					"No Simulations Selected", JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
@@ -75,56 +77,18 @@ public class RunForecastSimulationAction extends AbstractAction
 					"No Ensemble Sets Selected", JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
-		EnsembleSet eset;
-		String memberSet;
-		int[] members;
-		Map<EnsembleSet, int[]> esetMap = new HashMap<>();
-		for(int i = 0;i < selectedESets.size(); i++ )
-		{
-			eset = selectedESets.get(i);
-			memberSet = eset.getMemberSetToCompute();
-			members = getIntegerSet(memberSet);
-			if ( members == null || members.length == 0 )
-			{
-				JOptionPane.showMessageDialog(_parent,"Please enter the target members to compute for Ensemble Set "+eset,
-						"No Ensemble Members to Compute", JOptionPane.INFORMATION_MESSAGE);
-				return;
-			}
-			esetMap.put(eset, members);
-		}
+		recomputeAll = recomputeAll || _parentPanel.shouldRecomputeAll();
 
-		int currentEnsembleNum = 0;
-		List<UsbrComputable>computables = new ArrayList<>();
-		Iterator<WatSimulation> simsIter = sims.iterator();
-		Set<Map.Entry<EnsembleSet, int[]>> esetSet = esetMap.entrySet();
-		Iterator<Map.Entry<EnsembleSet, int[]>> esetIter = esetSet.iterator();
-		ForecastActionComputable computable;
-		WatSimulation sim ;
-		UsgsComputeSelectorDialog computeDlg = new UsgsComputeSelectorDialog(Browser.getBrowserFrame(),WatSimulation.class);
-		Map.Entry<EnsembleSet, int[]> esetEntry;
-		while ( simsIter.hasNext())
-		{
-			sim = simsIter.next();
-			while (esetIter.hasNext())
-			{
-				esetEntry = esetIter.next();
-				members = esetEntry.getValue();
-				eset = esetEntry.getKey();
-				int[] ensembleNums = simGroup.getEnsembleSetCollectionIndexing(sim, eset);
-				computable = new ForecastActionComputable(sim, eset, members, ensembleNums[0]);
-				computable.setProgressDialog(computeDlg);
-				computables.add(computable);
-			}
-		}
-		computeDlg.setRecomputeAll(recomputeAll);
-		computeDlg.setSelectedComputables(computables);
-		computeDlg.setSelectOutOfDate(false);
-		computeDlg.setComputeOnOpen(true);
-		computeDlg.setVisible(true);
+
+		ForecastActionComputable computable = new ForecastActionComputable(simGroup, sim, selectedESets, recomputeAll);
+		_computeDialog = new ComputeProgressDialog(Browser.getBrowserFrame(), computable);
+		computable.setComputeDialog(_computeDialog);
+		_computeDialog.setVisible(true);
+
 		_parentPanel.updateComputeStates();
 	}
 
-	public int[] getIntegerSet(String txt)
+	public static int[] getIntegerSet(String txt)
 	{
 		IntArray values = new IntArray();
 		if (txt.isEmpty())
@@ -179,7 +143,7 @@ public class RunForecastSimulationAction extends AbstractAction
 		}
 	}
 
-	public boolean isParsableToInt(String i)
+	public static boolean isParsableToInt(String i)
 	{
 		try
 		{

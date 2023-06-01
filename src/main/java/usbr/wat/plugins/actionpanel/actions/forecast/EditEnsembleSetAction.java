@@ -45,6 +45,7 @@ public class EditEnsembleSetAction extends AbstractAction
 		{
 			return;
 		}
+		//fill the panel with the selected ensemble sets
 		List<EnsembleSet> ensembleSets = simGroup.getEnsembleSets(simulation);
 		_parentPanel.setEnsembleSets(ensembleSets);
 

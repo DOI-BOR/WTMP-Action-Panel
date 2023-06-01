@@ -263,6 +263,7 @@ public class SimulationGroupPanel extends EnabledJPanel
 		{
 			_simulationGroupCombo.setSelectedItem(proxy);
 		}
+
 		_descFld.setText(fsg.getDescription());
 	}
 
@@ -277,6 +278,10 @@ public class SimulationGroupPanel extends EnabledJPanel
 		if ( newModel.contains(curProxy))
 		{
 			_simulationGroupCombo.setSelectedItem(curProxy);
+		}
+		else if ( _simulationGroupCombo.getItemCount() == 1 )
+		{
+			_simulationGroupCombo.setSelectedIndex(0);
 		}
 	}
 }

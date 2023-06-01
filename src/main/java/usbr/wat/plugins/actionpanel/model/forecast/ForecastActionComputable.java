@@ -7,6 +7,8 @@
  */
 package usbr.wat.plugins.actionpanel.model.forecast;
 
+import java.awt.Component;
+import java.awt.EventQueue;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -22,8 +24,10 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.swing.JProgressBar;
 import com.google.common.flogger.FluentLogger;
 import com.rma.client.Browser;
+import com.rma.editors.ComputeProgressDialog;
 import com.rma.io.DssFileManagerImpl;
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
@@ -47,6 +51,7 @@ import hec2.model.DataLocation;
 import hec2.model.DssDataLocation;
 import hec2.plugin.model.ComputeOptions;
 import hec2.plugin.model.ModelAlternative;
+import hec2.wat.editors.WatComputeProgressDialog;
 import hec2.wat.model.WatSimulation;
 import hec2.wat.plugin.SimpleWatPlugin;
 import hec2.wat.plugin.WatPlugin;
@@ -61,6 +66,7 @@ import org.python.core.PySystemState;
 import org.python.util.PythonInterpreter;
 import rma.util.RMAIO;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
+import usbr.wat.plugins.actionpanel.actions.forecast.RunForecastSimulationAction;
 import usbr.wat.plugins.actionpanel.editors.iterationCompute.UsgsComputeSelectorDialog;
 import usbr.wat.plugins.actionpanel.model.BaseComputeSettings;
 import usbr.wat.plugins.actionpanel.model.ComputeSettings;
@@ -82,11 +88,13 @@ public class ForecastActionComputable
 	public static final String ITERATION_DSS_FILE = "iterationResults.dss";
 	private static final String DSSFILE = "DSS File";
 	public static final String METHOD_SIGNATURE = "runIteration(modelAlternative, currentIteration, maxIteration)";
-	private final EnsembleSet _ensembleSet;
-	private final int[] _members;
+	private final boolean _recomputeAll;
+	private int[] _members;
 	/** the starting collection number to copy the data to the collections output file */
-	private final int _outputCollectionStart;
+	private int _outputCollectionStart;
+	private final List<EnsembleSet> _selectedESets;
 
+	private ForecastSimGroup _simGroup;
 	private WatSimulation _sim;
 	private String _iterDssFile;
 	private PythonInterpreter _interp;
@@ -94,27 +102,45 @@ public class ForecastActionComputable
 	private transient Map<ModelAlternative, PyCode>_preCodeMap = new HashMap<>();
 	private transient Map<ModelAlternative, PyCode>_postCodeMap = new HashMap<>();
 	private String _currentScriptText;
-	private UsgsComputeSelectorDialog _computeDialog;
+	private ComputeProgressDialog _computeDialog;
 	private boolean _canceled;
 	private ComputeType _computeType;
 
 	private DssPathMap _bcDssPathMap;
 	private DssPathMap _tempTargetDssPathMap;
+	private ComputeProgressPanel _computeProgressPanel;
+	private int _memberCnt;
+	private JProgressBar _lifecyclePbar;
 
-	/**
-	 * @param sim
-	 * @param eset
-	 * @param members
-	 * @param outputCollectionStart
-	 */
-	public ForecastActionComputable(WatSimulation sim, EnsembleSet eset, int[] members, int outputCollectionStart)
+
+	public ForecastActionComputable(ForecastSimGroup simGroup, WatSimulation sim, List<EnsembleSet> selectedESets, boolean recomputeAll)
 	{
 		super();
+		_simGroup = simGroup;
 		_sim = sim;
-		_ensembleSet = eset;
-		_members = members;
-		_outputCollectionStart = outputCollectionStart;
+		_selectedESets = selectedESets;
+		_recomputeAll = recomputeAll;
+		calculateMemberCount();
 	}
+
+	private void calculateMemberCount()
+	{
+		EnsembleSet eset;
+		String memberSet;
+		int[] members;
+		for(int i = 0;i < _selectedESets.size(); i++ )
+		{
+			eset = _selectedESets.get(i);
+			memberSet = eset.getMemberSetToCompute();
+			members = RunForecastSimulationAction.getIntegerSet(memberSet);
+			if ( members != null && members.length > 0 )
+			{
+				_memberCnt += members.length;
+			}
+		}
+
+	}
+
 
 	@Override
 	public void run()
@@ -156,46 +182,102 @@ public class ForecastActionComputable
 	private boolean ensembleCompute()
 	{
 		_debug = Boolean.getBoolean("ActionComputable.debugCompute");
-		if ( _members == null || _members.length == 0 )
+		_computeProgressPanel = (ComputeProgressPanel) _computeDialog.getContentPane().getComponent(0);
+		Component[] comps = _computeProgressPanel.getComponents();
+		for (int i = comps.length-1; i >=0; i-- )
+		{  // hackish
+			if ( comps[i] instanceof JProgressBar )
+			{
+				JProgressBar pbar = (JProgressBar) comps[i];
+
+				if ( pbar.getString().equalsIgnoreCase("Lifecycle"))
+				{
+					_lifecyclePbar = pbar;
+					_lifecyclePbar.setString("Ensemble Count");
+					break;
+				}
+
+			}
+		}
+		Map<EnsembleSet, int[]> esetMap = new HashMap<>();
+		EnsembleSet eset;
+		int[] members;
+		String memberSet;
+		for(int i = 0;i < _selectedESets.size(); i++ )
+		{
+			eset = _selectedESets.get(i);
+			memberSet = eset.getMemberSetToCompute();
+			members = RunForecastSimulationAction.getIntegerSet(memberSet);
+			if ( members == null || members.length == 0 )
+			{
+				return false;
+			}
+			esetMap.put(eset, members);
+		}
+		Map.Entry<EnsembleSet, int[]> esetEntry;
+		Set<Map.Entry<EnsembleSet, int[]>> esetSet = esetMap.entrySet();
+		Iterator<Map.Entry<EnsembleSet, int[]>> esetIter = esetSet.iterator();
+		int esetIdx = 0;
+		while (esetIter.hasNext())
+		{
+			_computeProgressPanel.setRealizationPosition(esetIdx);
+			esetEntry = esetIter.next();
+			_members = esetEntry.getValue();
+			eset = esetEntry.getKey();
+			if( _lifecyclePbar != null )
+			{
+				final EnsembleSet fEset = eset;
+				EventQueue.invokeLater(() ->_lifecyclePbar.setString(fEset.getName()));
+			}
+			int[] ensembleNums = _simGroup.getEnsembleSetCollectionIndexing(_sim, eset);
+
+			if ( !ensembleCompute(eset, _members, ensembleNums[0]))
+			{
+				_computeProgressPanel.computeComplete(false);
+				return false;
+			}
+			esetIdx++;
+		}
+		_computeProgressPanel.computeComplete(true);
+		return true;
+	}
+
+	private boolean ensembleCompute(EnsembleSet eset, int[] members, int outputCollectionStart)
+	{
+
+		if ( members == null || members.length == 0 )
 		{
 			_sim.addErrorMessage("No Ensemble Members selected to compute");
 			_sim.computeComplete(false);
 			return false;
 		}
-		// save off the original DSS data
-		if ( _debug )
+		// check to see if any of the ensemble members need computed
+		boolean doCompute = false;
+		if ( !_recomputeAll )
 		{
-			JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Saving Original Data ");
+			for (int m = 0; m < members.length; m++)
+			{
+				if (!eset.getComputedMembers().contains(members[m]) )
+				{
+					doCompute = true;
+					break;
+				}
+			}
 		}
-		String prjDir = Project.getCurrentProject().getProjectDirectory();
-		String configPath = RMAIO.concatPath(prjDir, BC_CONFIG_FILE);
-
-		_bcDssPathMap = new DssPathMap(_sim, configPath);
-		BcData bcData = _ensembleSet.getBcData();
-		_bcDssPathMap.setSourceFPart(bcData.getFPart());
-		_bcDssPathMap.setSourceDssFile(Project.getCurrentProject().getAbsolutePath(bcData.getOutputDssFile().toString()));
-		if ( !_bcDssPathMap.readDssPathsFile())
+		else
 		{
-			return false;
+			doCompute = true;
 		}
-
-		configPath = RMAIO.concatPath(prjDir, TEMP_TARGET_CONFIG_FILE);
-		_tempTargetDssPathMap = new DssPathMap(_sim, configPath);
-		_tempTargetDssPathMap.setSourceDssFile(_ensembleSet.getTemperatureTargetSet().getDssOutputPath().toString());
-		_tempTargetDssPathMap.setSourceFPart(_ensembleSet.getTemperatureTargetSet().getFPartWithoutCollection());
-
-		if ( !_tempTargetDssPathMap.readDssPathsFile())
+		if ( !doCompute )
 		{
-			return false;
+			_computeProgressPanel.addMessage("No Ensemble Members for "+eset+" need computed.");
+			return true;
 		}
-
-		List<DSSIdentifier>savedDssPaths = saveDssPaths(_bcDssPathMap, _tempTargetDssPathMap);
-		if ( savedDssPaths == null )
+		List<DSSIdentifier>savedDssPaths = new ArrayList<>();
+		if ( !preCompute(eset, members, savedDssPaths))
 		{
 			return false;
 		}
-		_preCodeMap.clear();
-		_postCodeMap.clear();
 		ComputeProgressListener progressListener = _sim.getComputeProgressListener();
 		List<ComputeProgressListener> listeners = null;
 		if ( progressListener instanceof ComputeProgressListener2 )
@@ -217,15 +299,15 @@ public class ForecastActionComputable
 			int currentMember;
 			for(int m = 0; m < _members.length;m ++ )
 			{
-				_sim.setRealizationPosition(m);
+				_computeProgressPanel.setRealizationPosition(m);
 				currentMember = _members[m];
-				if ( _ensembleSet.getComputedMembers().contains(currentMember)&& !_computeDialog.shouldRecomputeAll())
+				if ( eset.getComputedMembers().contains(currentMember) && !_recomputeAll)
 				{
-					_sim.addComputeMessage("Ensemble Member "+currentMember+" already computed, skipping");
+					_computeProgressPanel.addMessage("Ensemble Member "+currentMember+" already computed, skipping");
 					continue;
 				}
-				_sim.addComputeMessage("Computing Ensemble Member "+currentMember);
-				_sim.addComputeMessage("Output will be saved  to F-Part C:"+ String.format("%06d", _outputCollectionStart+currentMember));
+				_computeProgressPanel.addMessage("Computing Ensemble Member "+currentMember);
+				_computeProgressPanel.addMessage("Output will be saved  to F-Part C:"+ String.format("%06d", _outputCollectionStart+currentMember));
 				System.out.println("Computing Ensemble Member "+currentMember+" for "+_sim );
 				if ( _debug )
 				{
@@ -243,7 +325,7 @@ public class ForecastActionComputable
 				{
 					JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Copying in temp target data for Ensemble member "+currentMember);
 				}
-				if ( !copyTempTargetMember(currentMember))
+				if ( !copyTempTargetMember(eset, currentMember))
 				{
 					return false;
 				}
@@ -267,13 +349,13 @@ public class ForecastActionComputable
 					{
 						continue;
 					}
-					_sim.addErrorMessage("Simulation "+_sim.getName()+" failed to compute");
+					_computeProgressPanel.addErrorMessage("Simulation "+_sim.getName()+" failed to compute");
 					return false;
 				}
 				else
 				{
-					_ensembleSet.addComputedMember(currentMember);
-					ActionPanelPlugin.getInstance().getActionsWindow().getForecastPanel().getSimulationPanel().addComputedMember(_sim, _ensembleSet, currentMember);
+					eset.addComputedMember(currentMember);
+					ActionPanelPlugin.getInstance().getActionsWindow().getForecastPanel().getSimulationPanel().addComputedMember(_sim, eset, currentMember);
 
 				}
 				//copy the output from the simulation dss file to the iteration dss file
@@ -316,7 +398,7 @@ public class ForecastActionComputable
 		}
 		catch(Exception e )
 		{
-			_sim.addErrorMessage("Exception during Ensemble compute " + e);
+			_computeProgressPanel.addErrorMessage("Exception during Ensemble compute " + e);
 			Logger.getLogger(ForecastActionComputable.class.getName()).warning("Exception during Ensemble compute "+e );
 			e.printStackTrace();
 			return false;
@@ -343,7 +425,48 @@ public class ForecastActionComputable
 		return true;
 	}
 
+	private boolean preCompute(EnsembleSet eset, int[] members, List<DSSIdentifier>savedPaths)
+	{
+		// save off the original DSS data
+		if ( _debug )
+		{
+			JOptionPane.showMessageDialog(Browser.getBrowserFrame(), "Saving Original Data ");
+		}
+		String prjDir = Project.getCurrentProject().getProjectDirectory();
+		String configPath = RMAIO.concatPath(prjDir, BC_CONFIG_FILE);
 
+		_computeProgressPanel.setStatusMessage("Reading Boundary Condition Data..");
+		_bcDssPathMap = new DssPathMap(_sim, configPath);
+		BcData bcData = eset.getBcData();
+		_bcDssPathMap.setSourceFPart(bcData.getFPart());
+		_bcDssPathMap.setSourceDssFile(Project.getCurrentProject().getAbsolutePath(bcData.getOutputDssFile().toString()));
+		if ( !_bcDssPathMap.readDssPathsFile())
+		{
+			return false;
+		}
+
+		configPath = RMAIO.concatPath(prjDir, TEMP_TARGET_CONFIG_FILE);
+		_computeProgressPanel.setStatusMessage("Reading Temperature Target Data..");
+		_tempTargetDssPathMap = new DssPathMap(_sim, configPath);
+		_tempTargetDssPathMap.setSourceDssFile(eset.getTemperatureTargetSet().getDssOutputPath().toString());
+		_tempTargetDssPathMap.setSourceFPart(eset.getTemperatureTargetSet().getFPartWithoutCollection());
+
+		if ( !_tempTargetDssPathMap.readDssPathsFile())
+		{
+			return false;
+		}
+
+		List<DSSIdentifier>savedDssPaths = saveDssPaths(_bcDssPathMap, _tempTargetDssPathMap);
+		if ( savedDssPaths == null )
+		{
+			return false;
+		}
+		savedPaths.addAll(savedDssPaths);
+		_preCodeMap.clear();
+		_postCodeMap.clear();
+
+		return true;
+	}
 
 
 	/**
@@ -1074,6 +1197,7 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 	 */
 	private boolean copyBcDssData()
 	{
+		_computeProgressPanel.setStatusMessage("Copying Boundary Condition Data ...");
 		DSSIdentifier  srcDssId;
 
 		boolean copySuccessful = true;
@@ -1177,9 +1301,10 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 		return null;
 	}
 
-	private boolean copyTempTargetMember(int currentMember)
+	private boolean copyTempTargetMember(EnsembleSet eset, int currentMember)
 	{
-		TemperatureTargetSet ttSet = _ensembleSet.getTemperatureTargetSet();
+		_computeProgressPanel.setStatusMessage("Copying Temperature Targets Data...");
+		TemperatureTargetSet ttSet = eset.getTemperatureTargetSet();
 		List<DSSPathname> pathnames = ttSet.getDssPathNames(TemperatureTargetTimeStep.REGULAR_HOURLY);
 		if ( pathnames.size() < currentMember )
 		{
@@ -1233,6 +1358,7 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 	 */
 	private void restoreDssPaths(List<DSSIdentifier> savedDssPaths)
 	{
+		_computeProgressPanel.setStatusMessage("Restoring original records ...");
 		_sim.addComputeMessage("Restoring original "+savedDssPaths.size()+" DSS records ...");
 		Vector<String> srcList= new Vector<>();
 		Vector<String> destList= new Vector<>();
@@ -1397,13 +1523,13 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 	@Override
 	public int getNumberRealizations()
 	{
-		return _members.length;
+		return _memberCnt;
 	}
 
 	@Override
 	public int getNumberLifeCycles()
 	{
-		return _members.length;
+		return _memberCnt;
 	}
 
 	@Override
@@ -1441,13 +1567,9 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 		return _sim.getName();
 	}
 
-	/**
-	 * @param computeDlg
-	 */
-	public void setProgressDialog(UsgsComputeSelectorDialog computeDlg)
+
+	public void setComputeDialog(ComputeProgressDialog computeDialog)
 	{
-		_computeDialog = computeDlg;
+		_computeDialog = computeDialog;
 	}
-
-
 }
