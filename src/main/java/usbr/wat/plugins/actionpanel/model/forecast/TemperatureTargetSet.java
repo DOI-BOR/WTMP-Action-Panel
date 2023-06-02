@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -356,7 +357,7 @@ public final class TemperatureTargetSet extends NamedType
 
     private TimeSeriesContainer buildFixedDataForUserDefined(int col, RunTimeWindow timeWindow)
     {
-        TimeSeriesContainer tsc = buildTemplateUserDefinedTSContainer(col, this);
+        TimeSeriesContainer tsc = buildTemplateUserDefinedTSContainer(col);
         int year = timeWindow.getStartTime().year();
         //this is a workaround to odd dss write behavior
         int dayOfMonthToTrimTo = 2;
@@ -462,7 +463,7 @@ public final class TemperatureTargetSet extends NamedType
         return retVal;
     }
 
-    public static TimeSeriesContainer buildTemplateUserDefinedTSContainer(int col, TemperatureTargetSet tempTargetSet)
+    public static TimeSeriesContainer buildTemplateUserDefinedTSContainer(int col)
     {
         TimeSeriesContainer tsc = new TimeSeriesContainer();
         DSSPathname pathname = new DSSPathname();
@@ -483,5 +484,26 @@ public final class TemperatureTargetSet extends NamedType
         tsc.version = pathname.fPart();
         tsc.setStoreAsDoubles(true);
         return tsc;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+        TemperatureTargetSet that = (TemperatureTargetSet) o;
+        return getName().equalsIgnoreCase(that.getName());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(getName());
     }
 }

@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Vector;
@@ -122,24 +123,15 @@ public class TempTargetPanel extends AbstractForecastPanel
 	{
 		if(_fsg != null && tempTargetSets != null && !tempTargetSets.isEmpty())
 		{
-			List<TemperatureTargetSet> sets = new ArrayList<>(_fsg.getTemperatureTargetSets());
+			LinkedHashSet<TemperatureTargetSet> sets = new LinkedHashSet<>(_fsg.getTemperatureTargetSets());
 			for (TemperatureTargetSet set : tempTargetSets)
 			{
 				List<DSSPathname> pathNames = saveImported(set, _fsg);
-				updatePathNamesInSimGroupList(pathNames);
 				set.setDssPathNames(pathNames);
-				if (!sets.contains(set))
-				{
-					sets.add(set);
-				}
-				else
-				{
-					int existingSetIndex = sets.indexOf(set);
-					sets.add(existingSetIndex, set);
-					sets.remove(existingSetIndex +1);
-				}
+				sets.add(set);
 			}
-			_fsg.setTemperatureTargetSets(sets);
+
+			_fsg.setTemperatureTargetSets(new ArrayList<>(sets));
 		}
 	}
 
@@ -255,7 +247,6 @@ public class TempTargetPanel extends AbstractForecastPanel
 							"DSS Write Failed", JOptionPane.ERROR_MESSAGE);
 					LOGGER.log(Level.CONFIG, e, () -> "Temp Target save failed: " + e.getMessage());
 				}
-				updatePathNamesInSimGroupList(pathNames);
 				_selectedTempTargetSet.setDssPathNames(pathNames);
 			}
 			updateSetName();
@@ -312,19 +303,6 @@ public class TempTargetPanel extends AbstractForecastPanel
 			if(set.equals(_selectedTempTargetSet))
 			{
 				set.setDescription(desc);
-			}
-		}
-	}
-
-	private void updatePathNamesInSimGroupList(List<DSSPathname> pathNames)
-	{
-		List<TemperatureTargetSet> sets = _fsg.getTemperatureTargetSets();
-		for(TemperatureTargetSet set : sets)
-		{
-			if(set.equals(_selectedTempTargetSet))
-			{
-				set.setDssPathNames(pathNames);
-				break;
 			}
 		}
 	}
@@ -388,7 +366,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 		for(int col=1; col < _ttTableModel.getColumnCount(); col++)
 		{
 			tempTargetSet.getTimeSeriesData(_fsg.getAnalysisPeriod().getRunTimeWindow());
-			TimeSeriesContainer tsc = TemperatureTargetSet.buildTemplateUserDefinedTSContainer(col, tempTargetSet);
+			TimeSeriesContainer tsc = TemperatureTargetSet.buildTemplateUserDefinedTSContainer(col);
 			tsc.startTime = times[0];
 			tsc.endTime = times[times.length-1];
 			tsc.fileName = Project.getCurrentProject().getAbsolutePath(fileName);
