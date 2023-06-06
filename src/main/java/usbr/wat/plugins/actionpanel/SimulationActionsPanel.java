@@ -9,6 +9,7 @@ package usbr.wat.plugins.actionpanel;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.JButton;
@@ -20,9 +21,11 @@ import usbr.wat.plugins.actionpanel.actions.DisplayReportSelectorAction;
 import usbr.wat.plugins.actionpanel.actions.RunSimulationAction;
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationResultsAction;
 import usbr.wat.plugins.actionpanel.actions.forecast.RunForecastSimulationAction;
+import usbr.wat.plugins.actionpanel.model.ForecastReportingPlugin;
+import usbr.wat.plugins.actionpanel.model.ReportPlugin;
+import usbr.wat.plugins.actionpanel.model.ReportsManager;
 import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;
 import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
-import usbr.wat.plugins.actionpanel.ui.forecast.ForecastPanel;
 import usbr.wat.plugins.actionpanel.ui.forecast.SimulationPanel;
 
 /**
@@ -43,7 +46,8 @@ public class SimulationActionsPanel extends EnabledJPanel
 	private DeleteSimulationResultsAction _deleteResultsAction;
 
 	private UsbrPanel _parentPanel;
-	
+	private Action _displayEnsembleSelectorAction;
+
 	public SimulationActionsPanel(ActionsWindow parent, UsbrPanel parentPanel)
 	{
 		super(new GridBagLayout());
@@ -77,9 +81,25 @@ public class SimulationActionsPanel extends EnabledJPanel
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5555;
 		add(button, gbc);
-	
-		_displayReportsSelectorAction = new DisplayReportSelectorAction(_parent, _parentPanel);
-		button = new JButton(_displayReportsSelectorAction);
+		List<ReportPlugin> plugins = ReportsManager.getPlugins();
+		if ( _parentPanel instanceof CalibrationPanel)
+		{
+			_displayReportsSelectorAction = new DisplayReportSelectorAction(_parent, _parentPanel);
+			button = new JButton(_displayReportsSelectorAction);
+		}
+		else
+		{
+			for (int i = 0;i < plugins.size(); i++ )
+			{
+				if (plugins.get(i) instanceof ForecastReportingPlugin)
+				{
+					ForecastReportingPlugin fplugin = (ForecastReportingPlugin) plugins.get(i);
+					_displayEnsembleSelectorAction = fplugin.getReportAction(_parent, _parentPanel);
+					button = new JButton(_displayEnsembleSelectorAction);
+					break;
+				}
+			}
+		}
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = 1;
@@ -88,7 +108,10 @@ public class SimulationActionsPanel extends EnabledJPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(button, gbc);
+		if ( button != null )
+		{
+			add(button, gbc);
+		}
 		
 		_saveResultsAction = new SaveSimulationResultsAction(_parent, _parentPanel);
 		button = new JButton(_saveResultsAction);
@@ -127,8 +150,10 @@ public class SimulationActionsPanel extends EnabledJPanel
 		
 		_runSimulationAction.setEnabled(simActionsEnabled);
 		_saveResultsAction.setEnabled(simActionsEnabled);
-		
-		_displayReportsSelectorAction.setEnabled(resultsActionsEnabled || simActionsEnabled);
+		if ( _displayReportsSelectorAction != null )
+		{
+			_displayReportsSelectorAction.setEnabled(resultsActionsEnabled || simActionsEnabled);
+		}
 		
 		_deleteResultsAction.setEnabled(resultsActionsEnabled );
 	}
