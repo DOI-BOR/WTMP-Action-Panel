@@ -222,12 +222,32 @@ public final class TemperatureTargetSet extends NamedType
                         trimEndYear = computeTime.year();
                     }
                     tsc.trimToTime(new HecTime("02Jan"+(trimStartYear), "0100"),new HecTime("07Jan"+(trimEndYear+1), "0100"));
+                    trimEnd(tsc, new HecTime("07Jan"+(trimEndYear+1), "0100"));
                 }
                 tsc.startTime = tsc.times[0];
                 tsc.endTime = tsc.times[tsc.times.length-1];
                 tsc.startHecTime = tsc.getHecTime(0);
                 tsc.endHecTime = tsc.getHecTime(tsc.times.length-1);
             }
+        }
+    }
+
+    private void trimEnd(TimeSeriesContainer tsc, HecTime trimTo)
+    {
+        HecTime end = tsc.getHecTime(tsc.times.length - 1);
+        if(end.getLocalDateTime().isAfter(trimTo.getLocalDateTime()))
+        {
+            double[] newVals = new double[tsc.numberValues - 1];
+            int[] newTimes = new int[tsc.numberValues -1];
+            System.arraycopy(tsc.values, 0, newVals, 0, newVals.length);
+            System.arraycopy(tsc.times, 0, newTimes, 0, newTimes.length);
+            tsc.values = newVals;
+            tsc.times = newTimes;
+            tsc.numberValues = newVals.length;
+            tsc.startTime = tsc.times[0];
+            tsc.endTime = tsc.times[tsc.times.length-1];
+            tsc.startHecTime = tsc.getHecTime(0);
+            tsc.endHecTime = tsc.getHecTime(tsc.times.length-1);
         }
     }
 
@@ -397,6 +417,7 @@ public final class TemperatureTargetSet extends NamedType
         tsc.endTime = times[times.length-1];
         tsc.startHecTime = tsc.getHecTime(0);
         tsc.endHecTime = tsc.getHecTime(tsc.numberValues-1);
+        trimEnd(tsc, new HecTime("07Jan" + endDate.getYear(), "0100"));
         return tsc;
     }
 
