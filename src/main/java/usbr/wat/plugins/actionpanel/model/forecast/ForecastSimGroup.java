@@ -13,11 +13,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.rma.util.XMLUtilities;
 import hec2.wat.model.WatSimulation;
-import org.apache.commons.collections4.map.MultiKeyMap;
 import org.jdom.Element;
 
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
@@ -640,6 +640,24 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 		return null;
 	}
 
+	private void deleteEnsembleSetsFor(TemperatureTargetSet temperatureTargetSet)
+	{
+		for (Map.Entry<String, List<EnsembleSet>> entry : _ensembleSets.entrySet())
+		{
+			List<EnsembleSet> esets = entry.getValue();
+			List<EnsembleSet> esetsToRemove = new ArrayList<>();
+			for(EnsembleSet eset : esets)
+			{
+				if(Objects.equals(eset.getTemperatureTargetSet(), temperatureTargetSet))
+				{
+					esetsToRemove.add(eset);
+				}
+			}
+			esets.removeIf(esetsToRemove::contains);
+		}
+	}
+
+
 	public boolean deleteEnsembleSet(WatSimulation sim, EnsembleSet eset)
 	{
 		if ( eset == null )
@@ -742,5 +760,11 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 	public List<EnsembleSet> getEnsembleSetsFor(WatSimulation simulation)
 	{
 		return _ensembleSets.get(simulation.getName());
+	}
+
+	public void removeTemperatureTargetSet(TemperatureTargetSet set)
+	{
+		_tempTargetSets.remove(set);
+		deleteEnsembleSetsFor(set);
 	}
 }

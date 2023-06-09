@@ -224,4 +224,9 @@ public class ForecastPanel extends RmaJPanel
 	{
 		return _simulationPanel.getSelectedSimulation();
 	}
+
+	public void refreshSimulationPanel()
+	{
+		_simulationPanel.fillSimulationTable();
+	}
 }

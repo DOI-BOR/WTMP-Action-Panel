@@ -8,7 +8,6 @@
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
 import java.awt.Component;
-import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.BufferedReader;
@@ -40,8 +39,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableColumnModel;
 
 import com.google.common.flogger.FluentLogger;
-import com.rma.event.ProjectAdapter;
-import com.rma.event.ProjectEvent;
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
@@ -491,7 +488,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	 */
 	protected void addListeners()
 	{
-		addUpperTableSelectionListeners();
+		addUpperTableListeners();
 	}
 
 	/**
@@ -840,7 +837,11 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		// no table for IC panel so nothing to do here
 	}
 
-	
+	@Override
+	public void tableRowDeleteClicked(int selectedRow)
+	{
+		//no table to delete from for IC panel
+	}
 
 	
 }

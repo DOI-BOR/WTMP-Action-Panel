@@ -235,6 +235,12 @@ public class OperationsPanel extends AbstractForecastPanel
 		}
 	}
 
+	@Override
+	public void tableRowDeleteClicked(int selectedRow)
+	{
+		//TODO
+	}
+
 	private void displayOpsData(OperationsData opsData)
 	{
 		String opsFilePath = Project.getCurrentProject().getAbsolutePath(opsData.getOperationsFile());

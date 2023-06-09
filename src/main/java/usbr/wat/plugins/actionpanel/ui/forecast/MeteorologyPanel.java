@@ -292,4 +292,10 @@ public class MeteorologyPanel extends AbstractForecastPanel
 		}
 	}
 
+	@Override
+	public void tableRowDeleteClicked(int selectedRow)
+	{
+		//TODO
+	}
+
 }

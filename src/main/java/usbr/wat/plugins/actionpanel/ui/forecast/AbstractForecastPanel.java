@@ -7,14 +7,22 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -252,16 +260,27 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		_metTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_metTable));
 		_bcTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_bcTable));
 		_tempTargetTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_tempTargetTable));
-		addUpperTableSelectionListeners();
+		addUpperTableListeners();
 	}
 
-	void addUpperTableSelectionListeners()
+	void addUpperTableListeners()
 	{
 		for(ForecastTable table : _tables)
 		{
 			table.addMouseListener(buildUpperTableMouseListener(table));
 			table.getScrollPane().getViewport().addMouseListener(buildUpperTableMouseListener(table));
 			table.getTableHeader().addMouseListener(buildUpperTableMouseListener(table));
+			table.getDeleteMenuItem().addActionListener(e -> deleteClicked(table));
+		}
+	}
+
+	private void deleteClicked(ForecastTable table)
+	{
+		int row = table.getPopupMenuRow();
+		AbstractForecastPanel panel = getPanelForTable(table);
+		if(row >= 0 && panel != null)
+		{
+			panel.tableRowDeleteClicked(row);
 		}
 	}
 
@@ -303,7 +322,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	 * @param forecastTable
 	 * @return
 	 */
-	AbstractForecastPanel getPanelForTable(ForecastTable forecastTable)
+	public AbstractForecastPanel getPanelForTable(ForecastTable forecastTable)
 	{
 		for(int i = 0; i < _panels.size(); i++ )
 		{
@@ -326,6 +345,11 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	 */
 	protected abstract void tableRowSelected(int selectedRow);
 
+	/**
+	 *
+	 * @param selectedRow - row to delete
+	 */
+	public abstract void tableRowDeleteClicked(int selectedRow);
 
 
 	/**
@@ -353,21 +377,67 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	protected class ForecastTable extends RmaJTable
 	{
 
+		private JMenuItem _deleteMenuItem;
+		private AbstractForecastPanel _parentForecastPanel;
 		private Border _defaultBorder;
+		private int _popupMenuRow = -1;
+
 		/**
 		 * @param parent
 		 * @param headers
 		 */
-		public ForecastTable(AbstractForecastPanel parent,
+		protected ForecastTable(AbstractForecastPanel parent,
 				String[] headers)
 		{
 			super(parent, headers);
+			_parentForecastPanel = parent;
 			setRowHeight(getRowHeight()+5);
 			_defaultBorder = getScrollPane().getBorder();
+			buildPopupMenu();
+			addForecastTableListeners();
 		}
-		public ForecastTable(AbstractForecastPanel parent, RmaTableModel tableModel)
+
+		protected ForecastTable(AbstractForecastPanel parent, RmaTableModel tableModel)
 		{
 			super(parent,tableModel);
+			_parentForecastPanel = parent;
+			buildPopupMenu();
+			addForecastTableListeners();
+		}
+
+		private void addForecastTableListeners()
+		{
+			addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mousePressed(MouseEvent e)
+				{
+					Point clickPoint = e.getPoint();
+					if (SwingUtilities.isRightMouseButton(e))
+					{
+						_popupMenuRow = rowAtPoint(clickPoint);
+					}
+				}
+			});
+		}
+
+		private void buildPopupMenu()
+		{
+			_deleteMenuItem = new JMenuItem("Delete...");
+			addPopupItem(_deleteMenuItem, 0);
+			removePopuMenuFillOptions();
+			removePopupMenuSumOptions();
+			removePopupMenuRowEditingOptions();
+		}
+
+		private JMenuItem getDeleteMenuItem()
+		{
+			return _deleteMenuItem;
+		}
+
+		private int getPopupMenuRow()
+		{
+			return _popupMenuRow;
 		}
 		
 		@Override

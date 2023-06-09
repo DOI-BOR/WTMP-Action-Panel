@@ -56,6 +56,7 @@ import usbr.wat.plugins.actionpanel.ui.forecast.ForecastPanel;
  */
 public class TempTargetPanel extends AbstractForecastPanel
 {
+	private static final int DATE_COL_MIN_WIDTH = 100;
 	private static final Logger LOGGER = Logger.getLogger(TempTargetPanel.class.getName());
 	private RmaJTable _ttInfoTable;
 	private JButton _createButton;
@@ -508,9 +509,10 @@ public class TempTargetPanel extends AbstractForecastPanel
 			_ttTable.setDoubleCellEditor(col);
 		}
 		TableColumn dateColumn = _ttTable.getColumnModel().getColumn(TempTargetTableModel.DATE_COL_INDEX);
-		dateColumn.setMaxWidth(50);
+		dateColumn.setMinWidth(DATE_COL_MIN_WIDTH);
 		_ttTableModel.setTempTargetSet(temperatureTargetSet, _fsg);
 		_ttTableModel.fireTableStructureChanged();
+		_ttTable.setColumnWidth(0, DATE_COL_MIN_WIDTH);
 	}
 
 	private String getColumnNameFromFPart(TimeSeriesContainer timeSeriesContainer)
@@ -571,6 +573,29 @@ public class TempTargetPanel extends AbstractForecastPanel
 		}
 		_topTableRowSelected = row;
 		setModified(false);
+	}
+
+	@Override
+	public void tableRowDeleteClicked(int rowToDelete)
+	{
+		Object value = _tempTargetTable.getValueAt(rowToDelete, 0);
+		if(_fsg != null && value != null)
+		{
+			Optional<TemperatureTargetSet> setToDelete = ((TempTargetForecastTableModel) _tempTargetTable.getModel()).getTemperatureTargetSetByName(value.toString());
+			setToDelete.ifPresent(set ->
+			{
+				int opt = JOptionPane.showConfirmDialog(this, "Deleting " + set.getName() + " will delete any associated ensemble sets. Continue?",
+						"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+				if(opt == JOptionPane.YES_OPTION)
+				{
+					_selectedTempTargetSet = null;
+					_fsg.removeTemperatureTargetSet(set);
+					_fsg.saveData();
+					_forecastPanel.refreshSimulationPanel();
+					_tempTargetTable.deleteRow(rowToDelete);
+				}
+			});
+		}
 	}
 
 	private void clearPanel()
