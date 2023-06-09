@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -642,19 +643,29 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 
 	private void deleteEnsembleSetsFor(TemperatureTargetSet temperatureTargetSet)
 	{
+		List<EnsembleSet> esetsToRemove = getEnsembleSetsUsingTempTargetSet(temperatureTargetSet);
 		for (Map.Entry<String, List<EnsembleSet>> entry : _ensembleSets.entrySet())
 		{
 			List<EnsembleSet> esets = entry.getValue();
-			List<EnsembleSet> esetsToRemove = new ArrayList<>();
+			esets.removeIf(esetsToRemove::contains);
+		}
+	}
+
+	public List<EnsembleSet> getEnsembleSetsUsingTempTargetSet(TemperatureTargetSet temperatureTargetSet)
+	{
+		LinkedHashSet<EnsembleSet> eSetsUsingTTSet = new LinkedHashSet<>();
+		for (Map.Entry<String, List<EnsembleSet>> entry : _ensembleSets.entrySet())
+		{
+			List<EnsembleSet> esets = entry.getValue();
 			for(EnsembleSet eset : esets)
 			{
 				if(Objects.equals(eset.getTemperatureTargetSet(), temperatureTargetSet))
 				{
-					esetsToRemove.add(eset);
+					eSetsUsingTTSet.add(eset);
 				}
 			}
-			esets.removeIf(esetsToRemove::contains);
 		}
+		return new ArrayList<>(eSetsUsingTTSet);
 	}
 
 

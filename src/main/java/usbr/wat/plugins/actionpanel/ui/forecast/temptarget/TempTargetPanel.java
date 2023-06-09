@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
@@ -37,6 +38,7 @@ import hec.hecmath.HecMathException;
 import hec.hecmath.TimeSeriesMath;
 import hec.io.TimeSeriesContainer;
 import hec.io.impl.StoreOptionImpl;
+import hec.lang.NamedType;
 import hec.model.RunTimeWindow;
 import hec2.wat.model.WatAnalysisPeriod;
 import rma.swing.EnabledJPanel;
@@ -44,6 +46,7 @@ import rma.swing.RmaInsets;
 import rma.swing.RmaJTable;
 import rma.swing.table.RmaTableModel;
 import rma.util.RMAConst;
+import usbr.wat.plugins.actionpanel.model.forecast.EnsembleSet;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetTimeStep;
@@ -584,7 +587,17 @@ public class TempTargetPanel extends AbstractForecastPanel
 			Optional<TemperatureTargetSet> setToDelete = ((TempTargetForecastTableModel) _tempTargetTable.getModel()).getTemperatureTargetSetByName(value.toString());
 			setToDelete.ifPresent(set ->
 			{
-				int opt = JOptionPane.showConfirmDialog(this, "Deleting " + set.getName() + " will delete any associated ensemble sets. Continue?",
+				List<EnsembleSet> eSetsUsingTTSet = _fsg.getEnsembleSetsUsingTempTargetSet(set);
+				String confirmMessage = "Do you want to delete temperature target set " + set.getName() + "?";
+				if(!eSetsUsingTTSet.isEmpty())
+				{
+					List<String> eSetNames = eSetsUsingTTSet.stream()
+							.map(NamedType::getName)
+							.collect(Collectors.toList());
+					confirmMessage = "Deleting " + set.getName() + " will also delete the following ensemble sets that use it:" +
+							"\n\n" + String.join(",\n", eSetNames) + "\n\nDo you want to continue?";
+				}
+				int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
 						"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				if(opt == JOptionPane.YES_OPTION)
 				{
