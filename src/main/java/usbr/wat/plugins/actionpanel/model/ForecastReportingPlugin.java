@@ -10,11 +10,16 @@
 
 package usbr.wat.plugins.actionpanel.model;
 
+import java.util.List;
 import javax.swing.Action;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.io.ReportOptions;
+import usbr.wat.plugins.actionpanel.model.forecast.EnsembleReportInfo;
 import usbr.wat.plugins.actionpanel.ui.UsbrPanel;
 
 public interface ForecastReportingPlugin extends ReportPlugin
 {
 	Action getReportAction(ActionsWindow parent, UsbrPanel parentPanel);
+
+	public boolean createReport(SimulationReportInfo sims, List<EnsembleReportInfo> ensembleReportInfos, ReportOptions options);
 }

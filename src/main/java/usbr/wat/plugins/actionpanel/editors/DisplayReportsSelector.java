@@ -89,22 +89,20 @@ public class DisplayReportsSelector extends RmaJDialog
 	private static final int REPORT_COL = 1;
 	private static final int REPORT_DESC_COL = 2;
 	
-	private static final String PREF_NODE = "usbrReports";
-	
+
 	private RmaJTable _reportTable;
 	private ButtonCmdPanel _cmdPanel;
 	private AnimatedWaitGlassPane _agp;
 	private Component _glassPane;
 	private ActionsWindow _parent;
 	private boolean _isCanceled;
-	private RmaJComboBox<OutputType> _outputTypeCombo;
-	private RmaJCheckBox _printHeaderFooterCheck;
 	private JPanel _reportPanel;
 	private JPanel _simPanel;
 	private RmaJTable _simTable;
 	private CheckboxTree _reportsTree;
 	private DefaultMutableTreeNode _rootNode;
 	private UsbrPanel _parentPanel;
+	private ReportOptionsPanel _optionsPanel;
 
 	public DisplayReportsSelector(ActionsWindow parent, UsbrPanel parentPanel)
 	{
@@ -145,7 +143,7 @@ public class DisplayReportsSelector extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(new JScrollPane(_reportsTree), gbc);
 		
-		JPanel optionsPanel = new JPanel(new GridBagLayout());
+		_optionsPanel = new ReportOptionsPanel();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -154,51 +152,9 @@ public class DisplayReportsSelector extends RmaJDialog
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		getContentPane().add(optionsPanel, gbc);
+		getContentPane().add(_optionsPanel, gbc);
 		
-		JPanel typePanel = new JPanel(new GridBagLayout());
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		optionsPanel.add(typePanel, gbc);
-		
-		JLabel label = new JLabel("File Type:");
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1; 
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.NONE;
-		gbc.insets    = RmaInsets.INSETS5505;
-		typePanel.add(label, gbc);
-		
-		_outputTypeCombo = new RmaJComboBox<>(OutputType.values());
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.001;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.NONE;
-		gbc.insets    = RmaInsets.INSETS5505;
-		typePanel.add(_outputTypeCombo, gbc);
-		
-		_printHeaderFooterCheck = new RmaJCheckBox("Print Headers and Footers");
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 1.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		optionsPanel.add(_printHeaderFooterCheck, gbc);
+
 		
 		_cmdPanel = new ButtonCmdPanel(ButtonCmdPanel.OK_BUTTON|ButtonCmdPanel.CLOSE_BUTTON);
 		JButton button = _cmdPanel.getButton(ButtonCmdPanel.OK_BUTTON);
@@ -260,7 +216,7 @@ public class DisplayReportsSelector extends RmaJDialog
 	}
 	
 	/**
-	 * @param sims2 
+	 * @param sims
 	 * 
 	 */
 	private void fillForm(List<SimulationReportInfo> sims)
@@ -301,18 +257,8 @@ public class DisplayReportsSelector extends RmaJDialog
 	 */
 	private boolean shouldBeSelected(ReportPlugin plugin)
 	{
-		Preferences node = WAT.getBrowserFrame().getPreferences().getProjectPreferenceNode().node(PREF_NODE);
-		
-		
-		String outputTypeName = node.get("ReportType", OutputType.PDF.name());
-		OutputType ot = OutputType.valueOf(outputTypeName);
-		_outputTypeCombo.setSelectedItem(ot);
-		
-		boolean printHeaderFooter = node.getBoolean("PrintHeaderFooter", true);
-		_printHeaderFooterCheck.setSelected(printHeaderFooter);
-		
-		
-		
+		Preferences node = WAT.getBrowserFrame().getPreferences().getProjectPreferenceNode().node(ReportOptionsPanel.PREF_NODE);
+
 		int idx = 0;
 		String selectedReportName;
 		String pluginName = plugin.getName();
@@ -493,7 +439,7 @@ public class DisplayReportsSelector extends RmaJDialog
 					}
 					if ( _successful )
 					{
-						int opt = JOptionPane.showOptionDialog(DisplayReportsSelector.this, "Reports Created Successfully",
+						int opt = JOptionPane.showOptionDialog(DisplayReportsSelector.this, "Report Created Successfully",
 								"Complete",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE,
 								null, new Object[] {"Close", "Display Reports"}, "Close");
 						if ( opt == 1 )
@@ -612,15 +558,9 @@ public class DisplayReportsSelector extends RmaJDialog
 	 */
 	private void saveSelectedReports()
 	{
-		Preferences node = WAT.getBrowserFrame().getPreferences().getProjectPreferenceNode().node(PREF_NODE);
-		try
-		{
-			node.clear();
-		}
-		catch (BackingStoreException e)
-		{
-			Logger.getLogger(DisplayReportsSelector.class.getName()).info("Failed to clear node "+node.absolutePath()+" Error:"+e);
-		}
+		_optionsPanel.saveSettings();
+		Preferences node = _optionsPanel.getPreferencesNode();
+
 		Map<ReportPlugin, List<SimulationReportInfo>> selectedReports = getSelectedReports();
 		Set<ReportPlugin> keys = selectedReports.keySet();
 		Iterator<ReportPlugin> iter = keys.iterator();
@@ -632,11 +572,7 @@ public class DisplayReportsSelector extends RmaJDialog
 			node.put("SelectedReport"+i, pluginName);
 			i++;
 		}
-		OutputType ot = (OutputType)_outputTypeCombo.getSelectedItem();
-		node.put("ReportType", ot.name());
-		
-		boolean printHeaderFooter = _printHeaderFooterCheck.isSelected();
-		node.putBoolean("PrintHeaderFooter", printHeaderFooter);
+
 	}
 
 	/**
@@ -666,10 +602,8 @@ public class DisplayReportsSelector extends RmaJDialog
 		public Object call() throws Exception
 		{
 			_agp.setMessage("Creating report for "+_reportPlugin.getName());
-			
-			ReportOptions options = new ReportOptions();
-			options.setOutputType((OutputType)_outputTypeCombo.getSelectedItem());
-			options.setPrintHeadersFooters(_printHeaderFooterCheck.isSelected());
+
+			ReportOptions options = _optionsPanel.getReportOptions();
 			try
 			{
 				_reportRv = _reportPlugin.createReport(_sris, options);

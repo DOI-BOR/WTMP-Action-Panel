@@ -193,6 +193,12 @@ public class ReportXmlFile
 		{
 			addModelAltInfo(modelAltsElem, modelAlts.get(i), info.getSimulation());
 		}
+		addAdditionalInfoForSim(simElem, info);
+	}
+
+	protected void addAdditionalInfoForSim(Element simElem, SimulationReportInfo info)
+	{
+		// method for other reports to add additional info
 	}
 
 	/**
