@@ -64,7 +64,10 @@ public final class TemperatureTargetSet extends NamedType
         XMLUtilities.saveNamedType(myElem, this);
         myElem.setAttribute(USER_DEFINED_ATTRIBUTE_NAME, String.valueOf(_isUserDefined));
         Element filePathElem = new Element(FILE_PATH_ELEM_NAME);
-        filePathElem.setText(_dssSourcePath.toString());
+        if(_dssSourcePath != null)
+        {
+            filePathElem.setText(_dssSourcePath.toString());
+        }
         myElem.addContent(filePathElem);
         Element dssOutputPathElem = new Element(OUTPUT_DSS_FILE_ELEM_ID);
         if(_dssOutputPath != null)

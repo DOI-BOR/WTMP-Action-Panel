@@ -117,9 +117,16 @@ public class TempTargetPanel extends AbstractForecastPanel
 		if(!tempTargetSets.isEmpty())
 		{
 			TemperatureTargetSet selectedSet = tempTargetSets.get(tempTargetSets.size() - 1);
+			int lastRowIndex = upperTableModel.getRowCount() - 1;
 			_selectedTempTargetSet = selectedSet;
 			fillTempTargetInfoTable(selectedSet);
 			fillTempTargetTable(selectedSet);
+			_tempTargetTable.setRowSelectionInterval(lastRowIndex, lastRowIndex, false);
+			_tempTargetTable.updateSelection(lastRowIndex, 0, false, false);
+		}
+		if(_tempTargetTable.getSelectedRow() < 0)
+		{
+			clearPanel();
 		}
 	}
 
@@ -136,6 +143,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 			}
 
 			_fsg.setTemperatureTargetSets(new ArrayList<>(sets));
+			_fsg.saveData();
 		}
 	}
 
@@ -327,6 +335,10 @@ public class TempTargetPanel extends AbstractForecastPanel
 				tsc.fullName = pathname.getPathname();
 				retVal.add(pathname);
 				saveTimeSeries(tsc, fileName);
+				if(tempTargetSet.isUserDefined())
+				{
+					tempTargetSet.setDssSourcePath(Paths.get(fileName));
+				}
 				tempTargetSet.setDssOutputPath(Paths.get(fileName));
 			}
 		}
@@ -547,6 +559,16 @@ public class TempTargetPanel extends AbstractForecastPanel
 	}
 
 	@Override
+	public void setVisible(boolean visible)
+	{
+		super.setVisible(visible);
+		if(visible)
+		{
+			tableRowSelected(_tempTargetTable.getSelectedRow());
+		}
+	}
+
+	@Override
 	protected void tableRowSelected(int row)
 	{
 		ForecastTable table = getTableForPanel();
@@ -569,6 +591,8 @@ public class TempTargetPanel extends AbstractForecastPanel
 					TemperatureTargetSet set = setOptional.get();
 					fillTempTargetInfoTable(set);
 					fillTempTargetTable(set);
+					_tempTargetTable.setRowSelectionInterval(row, row, false);
+					_tempTargetTable.updateSelection(row, 0, false, false);
 					set.setModified(false);
 				}
 			}
@@ -604,7 +628,10 @@ public class TempTargetPanel extends AbstractForecastPanel
 					_selectedTempTargetSet = null;
 					_fsg.removeTemperatureTargetSet(set);
 					_fsg.saveData();
-					_forecastPanel.refreshSimulationPanel();
+					if(!eSetsUsingTTSet.isEmpty())
+					{
+						_forecastPanel.refreshSimulationPanel();
+					}
 					_tempTargetTable.deleteRow(rowToDelete);
 				}
 			});

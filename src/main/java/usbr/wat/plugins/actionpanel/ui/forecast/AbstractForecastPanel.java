@@ -12,6 +12,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
+import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -280,7 +281,9 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		AbstractForecastPanel panel = getPanelForTable(table);
 		if(row >= 0 && panel != null)
 		{
+			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			panel.tableRowDeleteClicked(row);
+			setCursor(Cursor.getDefaultCursor());
 		}
 	}
 

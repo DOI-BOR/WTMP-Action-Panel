@@ -43,6 +43,10 @@ final class TempTargetTableModel extends RmaTableModel
     public Object getValueAt(int row, int col)
     {
         Object retVal;
+        if(row < 0 || col < 0)
+        {
+            return null;
+        }
         TempTargetRowData rowData = _rowDataList.get(row);
         if(col == DATE_COL_INDEX)
         {
