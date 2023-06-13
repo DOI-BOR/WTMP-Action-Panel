@@ -50,6 +50,11 @@ public class InitialConditions extends NamedType
 		return _icMap.get(resName);
 	}
 
+	public List<String> getReservoirs()
+	{
+		return new ArrayList<>(_icMap.keySet());
+	}
+
 	/**
 	 * @param icElem
 	 */

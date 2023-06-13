@@ -45,6 +45,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	protected static List<AbstractForecastPanel>_panels = new ArrayList<>();
 	
 	protected ForecastPanel _forecastPanel;
+	protected ForecastTable _initialConditionsTable;
 	protected ForecastTable _opsTable;
 	protected ForecastTable _metTable;
 	protected ForecastTable _bcTable;
@@ -53,10 +54,13 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	
 	private List<ForecastTable>_tables = new ArrayList<>();
 	private EnabledJPanel _tablePanel;
+	private static RmaTableModel _initialConditionsTableModel;
 	private static RmaTableModel _opsTableModel;
 	private static RmaTableModel _metTableModel;
 	private static RmaTableModel _bcTableModel;
 	private static RmaTableModel _tempTargetTableModel;
+
+	private static ListSelectionModel _initialConditionsSelectionModel;
 	private static ListSelectionModel _opsSelectionModel;
 	private static ListSelectionModel _metSelectionModel;
 	private static ListSelectionModel _bcSelectionModel;
@@ -92,8 +96,42 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
 		add(_tablePanel, gbc);
-		
-		
+
+		if ( _initialConditionsTableModel != null )
+		{
+			_initialConditionsTable = new ForecastTable(this, _initialConditionsTableModel);
+		}
+		else
+		{
+			_initialConditionsTable = new ForecastTable(this, new String[] {"Initial Conditions"});
+		}
+		if ( _initialConditionsSelectionModel != null )
+		{
+			_initialConditionsTable.setSelectionModel(_initialConditionsSelectionModel);
+		}
+		else
+		{
+			_initialConditionsSelectionModel = _initialConditionsTable.getSelectionModel();
+			_initialConditionsSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		}
+		if ( _initialConditionsTableModel == null )
+		{
+			_initialConditionsTableModel = (RmaTableModel) _initialConditionsTable.getModel();
+		}
+		_initialConditionsTable.setName("Initial Conditions");
+		_initialConditionsTable.getPopupMenu().remove(_initialConditionsTable.getDeleteMenuItem());
+		_initialConditionsTableModel.clearAll();
+		gbc.gridx     = GridBagConstraints.RELATIVE;
+		gbc.gridy     = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = 1;
+		gbc.weightx   = 1.0;
+		gbc.weighty   = 1.0;
+		gbc.anchor    = GridBagConstraints.NORTHWEST;
+		gbc.fill      = GridBagConstraints.BOTH;
+		gbc.insets    = RmaInsets.INSETS5505;
+		_tablePanel.add(_initialConditionsTable.getScrollPane(), gbc);
+		_tables.add(_initialConditionsTable);
+
 		if ( _opsTableModel != null )
 		{
 			_opsTable = new ForecastTable(this, _opsTableModel);
@@ -257,6 +295,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	 */
 	protected void addListeners()
 	{
+		_initialConditionsTable.getSelectionModel().addListSelectionListener(e -> tableSelected(e, _initialConditionsTable));
 		_opsTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_opsTable));
 		_metTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_metTable));
 		_bcTable.getSelectionModel().addListSelectionListener(e->tableSelected(e,_bcTable));
@@ -271,7 +310,11 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 			table.addMouseListener(buildUpperTableMouseListener(table));
 			table.getScrollPane().getViewport().addMouseListener(buildUpperTableMouseListener(table));
 			table.getTableHeader().addMouseListener(buildUpperTableMouseListener(table));
-			table.getDeleteMenuItem().addActionListener(e -> deleteClicked(table));
+			JMenuItem deleteMenuItem = table.getDeleteMenuItem();
+			if(deleteMenuItem != null)
+			{
+				deleteMenuItem.addActionListener(e -> deleteClicked(table));
+			}
 		}
 	}
 

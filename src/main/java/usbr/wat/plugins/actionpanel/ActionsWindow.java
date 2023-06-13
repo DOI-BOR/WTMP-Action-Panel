@@ -82,7 +82,7 @@ public class ActionsWindow extends RmaJDialog
 		addListeners();
 		loadPlugins();
 		pack();
-		setSize(950, 700);
+		setSize(1000, 700);
 		setLocationRelativeTo(Browser.getBrowserFrame());
 		
 		addTabToProjectPane();

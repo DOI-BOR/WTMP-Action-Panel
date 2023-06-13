@@ -10,6 +10,7 @@ package usbr.wat.plugins.actionpanel.ui.forecast;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Rectangle;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -17,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -92,6 +94,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	private ReviewDataAction _reviewDataAction;
 	private Map<String, ResComponents>_resComponents = new HashMap<>();
 	private boolean _ignoreTableModification = false;
+	private ForecastSimGroup _fsg;
 
 	/**
 	 * @param forecastPanel
@@ -134,6 +137,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	
 		buildButtonPanel(_buttonPanel);
 	}
+
 	/**
 	 * @param plotsPanel
 	 */
@@ -162,6 +166,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			columnGroup.add(cm.getColumn(0));
 			columnGroup.add(cm.getColumn(1));
 			table.setCheckBoxCellEditor(0);
+
 			GroupableTableHeader header = (GroupableTableHeader)table.getTableHeader();
 			header.addColumnGroup(columnGroup);
 			GridBagConstraints gbc = new GridBagConstraints();
@@ -226,6 +231,8 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 				tableModel.setValueAt(true, row, 0);
 				_ignoreTableModification = false;
 			}
+			savePanel();
+			fillUpperInitialConditionsTable();
 			buildTablePlot(table);
 		}
 	}
@@ -486,6 +493,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	/**
 	 * 
 	 */
+	@Override
 	protected void addListeners()
 	{
 		addUpperTableListeners();
@@ -602,7 +610,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 	@Override
 	public ForecastTable getTableForPanel()
 	{
-		return null;
+		return _initialConditionsTable;
 	}
 	
 	@Override
@@ -667,6 +675,8 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		clearTableSelections();
 		if ( fsg != null )
 		{
+			_fsg = fsg;
+			fillUpperInitialConditionsTable();
 			buildPlotsPanel(_plotsPanel);
 			InitialConditions ic = fsg.getInitialConditions();
 			Set<Entry<String, ResComponents>> entrySet = _resComponents.entrySet();
@@ -686,6 +696,23 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		setModified(false);
 	}
 
+	private void fillUpperInitialConditionsTable()
+	{
+		InitialConditions initialConditions = _fsg.getInitialConditions();
+		((RmaTableModel)_initialConditionsTable.getModel()).clearAll();
+		List<String> reservoirs = initialConditions.getReservoirs();
+		for(String reservoir : reservoirs)
+		{
+			List<String> profiles = initialConditions.getSelectedProfiles(reservoir);
+			if(!profiles.isEmpty())
+			{
+				String profile = profiles.get(0);
+				String displayValue = reservoir + " (" + profile + ")";
+				((RmaTableModel)_initialConditionsTable.getModel()).addRow(new Vector<>(Collections.singletonList(displayValue)));
+			}
+
+		}
+	}
 
 
 	/**
@@ -745,6 +772,8 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 				if ( profileName.equals(profile._name))
 				{
 					table.setValueAt(Boolean.TRUE, r, 0);
+					Rectangle cellRect = table.getCellRect(r, 0, true);
+					table.scrollRectToVisible(cellRect);
 					break;
 				}
 			}
@@ -760,6 +789,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 			table = t;
 			plotPanel = p;
 		}
+
 	}
 
 	private class Profile implements Comparable<Profile>
