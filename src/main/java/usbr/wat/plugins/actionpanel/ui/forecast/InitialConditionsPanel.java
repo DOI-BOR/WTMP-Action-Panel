@@ -360,7 +360,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 		if(_fsg != null && _fsg.getAnalysisPeriod() != null)
 		{
 			List<String> fileNames = new ArrayList<>();
-			int dotIndex = baseFileName.indexOf(".");
+			int dotIndex = baseFileName.lastIndexOf(".");
 			String baseFileNameNoExtension = baseFileName.substring(0, dotIndex);
 			int year = _fsg.getAnalysisPeriod().getRunTimeWindow().getStartTime().getLocalDateTime().getYear();
 			if (Paths.get(baseFileNameNoExtension + "-" + year + ".csv").toFile().exists())

@@ -785,34 +785,42 @@ public class ForecastSimGroup extends AbstractSimulationGroup
 
 	public void removeTemperatureTargetSet(TemperatureTargetSet set)
 	{
-		_tempTargetSets.remove(set);
-		deleteEnsembleSetsFor(set);
+		if(_tempTargetSets.remove(set))
+		{
+			deleteEnsembleSetsFor(set);
+		}
 	}
 
 	public void removeOperationsData(OperationsData operationsData)
 	{
-		_opsData.remove(operationsData);
-		List<BcData> bcDataUsingOpsData = getBcDataUsingOperationsData(operationsData);
-		for(BcData bcDataToRemove : bcDataUsingOpsData)
+		if(_opsData.remove(operationsData))
 		{
-			removeBcData(bcDataToRemove);
+			List<BcData> bcDataUsingOpsData = getBcDataUsingOperationsData(operationsData);
+			for(BcData bcDataToRemove : bcDataUsingOpsData)
+			{
+				removeBcData(bcDataToRemove);
+			}
 		}
 	}
 
 	public void removeMetData(MeteorlogicData meteorlogicData)
 	{
-		_metData.remove(meteorlogicData);
-		List<BcData> bcDataUsingOpsData = getBcDataUsingMetData(meteorlogicData);
-		for(BcData bcDataToRemove : bcDataUsingOpsData)
+		if(_metData.remove(meteorlogicData))
 		{
-			removeBcData(bcDataToRemove);
+			List<BcData> bcDataUsingOpsData = getBcDataUsingMetData(meteorlogicData);
+			for(BcData bcDataToRemove : bcDataUsingOpsData)
+			{
+				removeBcData(bcDataToRemove);
+			}
 		}
 	}
 
 	public void removeBcData(BcData bcData)
 	{
-		_bcData.remove(bcData);
-		deleteEnsembleSetsFor(bcData);
+		if(_bcData.remove(bcData))
+		{
+			deleteEnsembleSetsFor(bcData);
+		}
 	}
 
 	public List<BcData> getBcDataUsingOperationsData(OperationsData operationsData)

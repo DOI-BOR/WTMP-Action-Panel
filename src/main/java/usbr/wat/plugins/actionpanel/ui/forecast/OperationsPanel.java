@@ -58,6 +58,8 @@ import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 {
 	private static Logger LOGGER = Logger.getLogger(OperationsPanel.class.getName());
+	private static final String OPS_TABLE_FONT_CONVERSION_SCALE_PERCENT = "WTMP.OperationsPanel.Font.ConversionScale";
+	private static final int DEFAULT_OPS_TABLE_FONT_CONVERSION_SCALE_PERCENT = 60;
 	private static final LocalDateTime EXCEL_BASE_DATE = LocalDateTime.of(1899, 12, 31, 0, 0);
 	private static final Pattern EXCEL_PATTERN_MMM = Pattern.compile("mmm");
 	private static final Pattern EXCEL_PATTERN_H = Pattern.compile("h");
@@ -318,31 +320,34 @@ public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 		List<EnsembleSet> eSetsUsingBcData = bcDataUsingOpsData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
 				.flatMap(List::stream)
 				.collect(Collectors.toList());
-		String confirmMessage = "Do you want to delete operations data " + operationsData.getName() + "?";
+		String initialMessage = "Do you want to delete operations data " + operationsData.getName() + "?";
 		if(deletingDueToOverwrite)
 		{
-			confirmMessage = confirmMessage.replace("delete", "overwrite");
+			initialMessage = initialMessage.replace("delete", "overwrite");
 		}
+		StringBuilder confirmMessage = new StringBuilder(initialMessage);
 		if (!bcDataUsingOpsData.isEmpty())
 		{
 			List<String> bcDataNames = bcDataUsingOpsData.stream()
 					.map(NamedType::getName)
 					.collect(Collectors.toList());
-			confirmMessage = "Deleting " + operationsData.getName() + " will also delete the following boundary condition sets that use it:" +
-					"\n\n" + String.join(",\n", bcDataNames);
+			String action = "Deleting";
 			if(deletingDueToOverwrite)
 			{
-				confirmMessage = confirmMessage.replace("Deleting", "Overwriting");
+				action = "Overwriting";
 			}
+			confirmMessage = new StringBuilder(action + " " + operationsData.getName() + " will also delete the following boundary condition sets that use it:" +
+					"\n\n" + String.join(",\n", bcDataNames));
 			if (!eSetsUsingBcData.isEmpty())
 			{
 				List<String> eSetNames = eSetsUsingBcData.stream()
 						.map(NamedType::getName)
 						.collect(Collectors.toList());
-				confirmMessage += "\n\nIt will also delete the following ensemble sets which use those boundary condition sets:"
-						+ "\n\n" + String.join(",\n", eSetNames);
+				confirmMessage.append("\n\nIt will also delete the following ensemble sets which use those boundary condition sets:");
+				confirmMessage.append("\n\n");
+				confirmMessage.append(String.join(",\n", eSetNames));
 			}
-			confirmMessage += "\n\nDo you want to continue?";
+			confirmMessage.append("\n\nDo you want to continue?");
 		}
 		String title = "Confirm " + (deletingDueToOverwrite ? "Overwrite" : "Delete");
 		int opt = JOptionPane.showConfirmDialog(this, confirmMessage,

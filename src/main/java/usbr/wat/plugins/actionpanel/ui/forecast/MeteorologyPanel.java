@@ -118,7 +118,7 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 		
 
 	}
-
+	
 	/**
 	 * 
 	 */
@@ -321,31 +321,34 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 		List<EnsembleSet> eSetsUsingBcData = bcDataUsingMetData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
 				.flatMap(List::stream)
 				.collect(Collectors.toList());
-		String confirmMessage = "Do you want to delete meteorologic data " + metData.getName() + "?";
+		String initialMessage = "Do you want to delete meteorologic data " + metData.getName() + "?";
 		if(deletingDueToOverwrite)
 		{
-			confirmMessage = confirmMessage.replace("delete", "overwrite");
+			initialMessage = initialMessage.replace("delete", "overwrite");
 		}
+		StringBuilder confirmMessage = new StringBuilder(initialMessage);
 		if (!bcDataUsingMetData.isEmpty())
 		{
 			List<String> bcDataNames = bcDataUsingMetData.stream()
 					.map(NamedType::getName)
 					.collect(Collectors.toList());
-			confirmMessage = "Deleting " + metData.getName() + " will also delete the following boundary condition sets that use it:" +
-					"\n\n" + String.join(",\n", bcDataNames);
+			String action = "Deleting";
 			if(deletingDueToOverwrite)
 			{
-				confirmMessage = confirmMessage.replace("Deleting", "Overwriting");
+				action = "Overwriting";
 			}
+			confirmMessage = new StringBuilder(action + " " + metData.getName() + " will also delete the following boundary condition sets that use it:" +
+					"\n\n" + String.join(",\n", bcDataNames));
 			if (!eSetsUsingBcData.isEmpty())
 			{
 				List<String> eSetNames = eSetsUsingBcData.stream()
 						.map(NamedType::getName)
 						.collect(Collectors.toList());
-				confirmMessage += "\n\nIt will also delete the following ensemble sets which use those boundary condition sets:"
-						+ "\n\n" + String.join(",\n", eSetNames);
+				confirmMessage.append("\n\nIt will also delete the following ensemble sets which use those boundary condition sets:");
+				confirmMessage.append("\n\n");
+				confirmMessage.append(String.join(",\n", eSetNames));
 			}
-			confirmMessage += "\n\nDo you want to continue?";
+			confirmMessage.append("\n\nDo you want to continue?");
 		}
 		String title = "Confirm " + (deletingDueToOverwrite ? "Overwrite" : "Delete");
 		int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
@@ -368,4 +371,5 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 		}
 		return confirmDelete;
 	}
+
 }
