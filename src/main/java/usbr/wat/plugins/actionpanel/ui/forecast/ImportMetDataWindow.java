@@ -31,7 +31,6 @@ import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDescriptionField;
-import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
 import rma.util.RMAIO;
@@ -44,10 +43,9 @@ import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
  * @author mark
  *
  */
-public class ImportMetDataWindow extends RmaJDialog
+public class ImportMetDataWindow extends CancelableWindow<MeteorlogicData>
 {
 	private static final String AVE_TEMP_FILE = ForecastConfigFiles.getRelativeYearlyTempDataFile();
-			;
 	private RmaJTextField _nameFld;
 	private RmaJDescriptionField _descFld;
 	private RmaJComboBox _importTypeCombo;
@@ -447,8 +445,10 @@ public class ImportMetDataWindow extends RmaJDialog
 	/**
 	 * @return
 	 */
+	@Override
 	public boolean isCanceled()
 	{
 		return _canceled;
 	}
+
 }

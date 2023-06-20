@@ -7,7 +7,9 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
-import java.awt.*;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +44,7 @@ import usbr.wat.plugins.actionpanel.ui.BoundaryConditionPlotPanel;
  *
  */
 @SuppressWarnings("serial")
-public class BcPanel extends AbstractForecastPanel
+public class BcPanel extends AbstractForecastPanel<BcData>
 {
 	private static final Logger LOGGER = Logger.getLogger(BcPanel.class.getName());
 	private RmaJTable _bcInfoTable;
@@ -114,6 +116,37 @@ public class BcPanel extends AbstractForecastPanel
 	}
 
 	@Override
+	protected boolean delete(BcData bcData, boolean deleteDueToOverwrite)
+	{
+		boolean confirmDelete = false;
+		List<EnsembleSet> eSetsUsingBcData = _fsg.getEnsembleSetsUsingBcData(bcData);
+		String confirmMessage = "Do you want to delete boundary condition set " + bcData.getName() + "?";
+		if(!eSetsUsingBcData.isEmpty())
+		{
+			List<String> eSetNames = eSetsUsingBcData.stream()
+					.map(NamedType::getName)
+					.collect(Collectors.toList());
+			confirmMessage = "Deleting " + bcData.getName() + " will also delete the following ensemble sets that use it:" +
+					"\n\n" + String.join(",\n", eSetNames) + "\n\nDo you want to continue?";
+		}
+		int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
+				"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		if(opt == JOptionPane.YES_OPTION)
+		{
+			int rowToDelete = _bcTable.getRowWithName(bcData.getName());
+			confirmDelete = true;
+			_fsg.removeBcData(bcData);
+			_fsg.saveData();
+			if(!eSetsUsingBcData.isEmpty())
+			{
+				_forecastPanel.refreshSimulationPanel();
+			}
+			_bcTable.deleteRow(rowToDelete);
+		}
+		return confirmDelete;
+	}
+
+	@Override
 	protected void addListeners()
 	{
 		super.addListeners();
@@ -130,7 +163,6 @@ public class BcPanel extends AbstractForecastPanel
 			return;
 		}
 		List<BcData> bcDataList = dlg.getBcData();
-		ForecastTable bcTable = getTableForPanel();
 		try
 		{
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -142,7 +174,7 @@ public class BcPanel extends AbstractForecastPanel
 			}
 			else
 			{
-				applyScriptToBCDataWithAnalysisPeriod(bcDataList, bcTable);
+				applyScriptToBCDataWithAnalysisPeriod(dlg, bcDataList, _bcTable);
 			}
 		}
 		finally
@@ -153,7 +185,7 @@ public class BcPanel extends AbstractForecastPanel
 
 	}
 
-	private void applyScriptToBCDataWithAnalysisPeriod(List<BcData> bcDataList, ForecastTable bcTable)
+	private void applyScriptToBCDataWithAnalysisPeriod(CreateBcWindow dlg, List<BcData> bcDataList, ForecastTable bcTable)
 	{
 		Path scriptFile = Paths.get("forecast/scripts/BoundaryConditionScript.py");
 		Path cvpModuleFile = Paths.get("forecast/scripts/CVP_ops_tools.py");
@@ -169,19 +201,16 @@ public class BcPanel extends AbstractForecastPanel
 		}
 		else
 		{
-			runScriptOnBCDataList(bcDataList, bcTable, scriptFile);
+			runScriptOnBCDataList(dlg, bcDataList, bcTable, scriptFile);
 		}
 	}
 
-	private void runScriptOnBCDataList(List<BcData> bcDataList, ForecastTable bcTable, Path scriptFile)
+	private void runScriptOnBCDataList(CreateBcWindow dlg, List<BcData> bcDataList, ForecastTable bcTable, Path scriptFile)
 	{
 		for (BcData bcData : bcDataList)
 		{
 			runScript(bcData, scriptFile);
-			Vector<BcData> row = new Vector<>();
-			row.add(bcData);
-			bcTable.appendRow(row);
-			_fsg.getBcData().add(bcData);
+			importData(_fsg, dlg, _fsg.getBcData(), bcData);
 		}
 		tableRowSelected(bcTable.getRowCount() -1);
 	}
@@ -330,29 +359,7 @@ public class BcPanel extends AbstractForecastPanel
 		Object value = _bcTable.getValueAt(rowToDelete, 0);
 		if(_fsg != null && value instanceof BcData)
 		{
-			BcData bcData = (BcData) value;
-			List<EnsembleSet> eSetsUsingBcData = _fsg.getEnsembleSetsUsingBcData(bcData);
-			String confirmMessage = "Do you want to delete boundary condition set " + bcData.getName() + "?";
-			if(!eSetsUsingBcData.isEmpty())
-			{
-				List<String> eSetNames = eSetsUsingBcData.stream()
-						.map(NamedType::getName)
-						.collect(Collectors.toList());
-				confirmMessage = "Deleting " + bcData.getName() + " will also delete the following ensemble sets that use it:" +
-						"\n\n" + String.join(",\n", eSetNames) + "\n\nDo you want to continue?";
-			}
-			int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
-					"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-			if(opt == JOptionPane.YES_OPTION)
-			{
-				_fsg.removeBcData(bcData);
-				_fsg.saveData();
-				if(!eSetsUsingBcData.isEmpty())
-				{
-					_forecastPanel.refreshSimulationPanel();
-				}
-				_bcTable.deleteRow(rowToDelete);
-			}
+			delete((BcData) value, false);
 		}
 	}
 }

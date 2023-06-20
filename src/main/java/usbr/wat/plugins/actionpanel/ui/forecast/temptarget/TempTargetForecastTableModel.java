@@ -64,11 +64,7 @@ public final class TempTargetForecastTableModel extends RmaTableModel
         Object retVal = null;
         if(row >=0 && row < _sets.size() && col >=0 && col < getColumnCount())
         {
-            TemperatureTargetSet set = _sets.get(row);
-            if(col == 0)
-            {
-                retVal = set.toString();
-            }
+            retVal = _sets.get(row);
         }
         return retVal;
     }
@@ -80,14 +76,12 @@ public final class TempTargetForecastTableModel extends RmaTableModel
         {
             return;
         }
-        _sets.get(row).setName(aValue.toString());
+        if(aValue instanceof TemperatureTargetSet)
+        {
+            _sets.add(row, (TemperatureTargetSet) aValue);
+            _sets.remove(row + 1);
+        }
         fireTableDataChanged();
-    }
-
-    public Optional<TemperatureTargetSet> getTemperatureTargetSetByName(String name)
-    {
-        return _sets.stream().filter(s -> s.getName().equalsIgnoreCase(name))
-                .findFirst();
     }
 
     void updateName(String name, int row)

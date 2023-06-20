@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,7 +55,7 @@ import usbr.wat.plugins.actionpanel.ui.forecast.ForecastPanel;
  * @author mark
  *
  */
-public class TempTargetPanel extends AbstractForecastPanel
+public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 {
 	private static final int DATE_COL_MIN_WIDTH = 100;
 	private static final Logger LOGGER = Logger.getLogger(TempTargetPanel.class.getName());
@@ -223,6 +222,38 @@ public class TempTargetPanel extends AbstractForecastPanel
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5505;
 		lowerPanel.add(_ttTable.getScrollPane(), gbc);
+	}
+
+	@Override
+	protected boolean delete(TemperatureTargetSet set, boolean deleteDueToOverwrite)
+	{
+		boolean retVal = false;
+		List<EnsembleSet> eSetsUsingTTSet = _fsg.getEnsembleSetsUsingTempTargetSet(set);
+		String confirmMessage = "Do you want to delete temperature target set " + set.getName() + "?";
+		if(!eSetsUsingTTSet.isEmpty())
+		{
+			List<String> eSetNames = eSetsUsingTTSet.stream()
+					.map(NamedType::getName)
+					.collect(Collectors.toList());
+			confirmMessage = "Deleting " + set.getName() + " will also delete the following ensemble sets that use it:" +
+					"\n\n" + String.join(",\n", eSetNames) + "\n\nDo you want to continue?";
+		}
+		int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
+				"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		if(opt == JOptionPane.YES_OPTION)
+		{
+			retVal = true;
+			int rowToDelete = _tempTargetTable.getRowWithName(set.getName());
+			_selectedTempTargetSet = null;
+			_fsg.removeTemperatureTargetSet(set);
+			_fsg.saveData();
+			if(!eSetsUsingTTSet.isEmpty())
+			{
+				_forecastPanel.refreshSimulationPanel();
+			}
+			_tempTargetTable.deleteRow(rowToDelete);
+		}
+		return retVal;
 	}
 
 	@Override
@@ -570,30 +601,25 @@ public class TempTargetPanel extends AbstractForecastPanel
 	@Override
 	protected void tableRowSelected(int row)
 	{
-		ForecastTable table = getTableForPanel();
 		if ( row == -1 )
 		{
 			clearPanel();
 		}
 		else
 		{
-			Object value = table.getValueAt(row, 0);
+			Object value = _tempTargetTable.getValueAt(row, 0);
 			if(value == null)
 			{
 				clearPanel();
 			}
 			else
 			{
-				Optional<TemperatureTargetSet> setOptional = ((TempTargetForecastTableModel) table.getModel()).getTemperatureTargetSetByName(value.toString());
-				if(setOptional.isPresent())
-				{
-					TemperatureTargetSet set = setOptional.get();
-					fillTempTargetInfoTable(set);
-					fillTempTargetTable(set);
-					_tempTargetTable.setRowSelectionInterval(row, row, false);
-					_tempTargetTable.updateSelection(row, 0, false, false);
-					set.setModified(false);
-				}
+				TemperatureTargetSet set = (TemperatureTargetSet) value;
+				fillTempTargetInfoTable(set);
+				fillTempTargetTable(set);
+				_tempTargetTable.setRowSelectionInterval(row, row, false);
+				_tempTargetTable.updateSelection(row, 0, false, false);
+				set.setModified(false);
 			}
 
 		}
@@ -607,33 +633,7 @@ public class TempTargetPanel extends AbstractForecastPanel
 		Object value = _tempTargetTable.getValueAt(rowToDelete, 0);
 		if(_fsg != null && value != null)
 		{
-			Optional<TemperatureTargetSet> setToDelete = ((TempTargetForecastTableModel) _tempTargetTable.getModel()).getTemperatureTargetSetByName(value.toString());
-			setToDelete.ifPresent(set ->
-			{
-				List<EnsembleSet> eSetsUsingTTSet = _fsg.getEnsembleSetsUsingTempTargetSet(set);
-				String confirmMessage = "Do you want to delete temperature target set " + set.getName() + "?";
-				if(!eSetsUsingTTSet.isEmpty())
-				{
-					List<String> eSetNames = eSetsUsingTTSet.stream()
-							.map(NamedType::getName)
-							.collect(Collectors.toList());
-					confirmMessage = "Deleting " + set.getName() + " will also delete the following ensemble sets that use it:" +
-							"\n\n" + String.join(",\n", eSetNames) + "\n\nDo you want to continue?";
-				}
-				int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
-						"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-				if(opt == JOptionPane.YES_OPTION)
-				{
-					_selectedTempTargetSet = null;
-					_fsg.removeTemperatureTargetSet(set);
-					_fsg.saveData();
-					if(!eSetsUsingTTSet.isEmpty())
-					{
-						_forecastPanel.refreshSimulationPanel();
-					}
-					_tempTargetTable.deleteRow(rowToDelete);
-				}
-			});
+			delete((TemperatureTargetSet) value, false);
 		}
 	}
 

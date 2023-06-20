@@ -42,7 +42,7 @@ import usbr.wat.plugins.actionpanel.ui.MetPlotPanel;
  * @author mark
  *
  */
-public class MeteorologyPanel extends AbstractForecastPanel
+public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String CONFIG_FILE = ForecastConfigFiles.getRelativeMetEditorFile();
@@ -118,7 +118,7 @@ public class MeteorologyPanel extends AbstractForecastPanel
 		
 
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -150,13 +150,14 @@ public class MeteorologyPanel extends AbstractForecastPanel
 		List<MeteorlogicData> metData = dlg.getMetData();
 		for (int i = 0;i <metData.size(); i++ )
 		{
-			ForecastTable metTable = getTableForPanel();
-			Vector<MeteorlogicData> row = new Vector<>();
-			row.add(metData.get(i));
-			metTable.appendRow(row);
-			_fsg.getMeteorlogyData().add(metData.get(i));
-			_fsg.setModified(true);
-			tableRowSelected(metTable.getRowCount()-1);
+			importData(_fsg, dlg, _fsg.getMeteorlogyData(), metData.get(i));
+//			ForecastTable metTable = getTableForPanel();
+//			Vector<MeteorlogicData> row = new Vector<>();
+//			row.add(metData.get(i));
+//			metTable.appendRow(row);
+//			_fsg.getMeteorlogyData().add(metData.get(i));
+//			_fsg.setModified(true);
+//			tableRowSelected(metTable.getRowCount()-1);
 		}
 
 	}
@@ -175,12 +176,11 @@ public class MeteorologyPanel extends AbstractForecastPanel
 		if ( _fsg != null )
 		{
 			List<MeteorlogicData> metDataList = new ArrayList<>();
-			ForecastTable table = getTableForPanel();
-			int numRows = table.getNumRows();
+			int numRows = _metTable.getNumRows();
 			MeteorlogicData metData;
 			for (int r = 0; r < numRows; r++)
 			{
-				metData = (MeteorlogicData) table.getValueAt(r, 0);
+				metData = (MeteorlogicData) _metTable.getValueAt(r, 0);
 				metDataList.add(metData);
 			}
 			_fsg.setMeteorlogyData(metDataList);
@@ -281,11 +281,10 @@ public class MeteorologyPanel extends AbstractForecastPanel
 	{
 		if ( _fsg != null )
 		{
-			ForecastTable table = getTableForPanel();
 			_metInfoTable.deleteCells();
 			if (selRow > -1)
 			{
-				MeteorlogicData metData = (MeteorlogicData) table.getValueAt(selRow, 0);
+				MeteorlogicData metData = (MeteorlogicData) _metTable.getValueAt(selRow, 0);
 				Vector row = new Vector();
 				row.add(metData.getName());
 				row.add(metData.getMetDataType());
@@ -311,46 +310,62 @@ public class MeteorologyPanel extends AbstractForecastPanel
 		Object value = _metTable.getValueAt(rowToDelete, 0);
 		if (_fsg != null && value instanceof MeteorlogicData)
 		{
-			MeteorlogicData metData = (MeteorlogicData) value;
-			List<BcData> bcDataUsingMetData = _fsg.getBcDataUsingMetData(metData);
-			List<EnsembleSet> eSetsUsingBcData = bcDataUsingMetData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
-					.flatMap(List::stream)
-					.collect(Collectors.toList());
-			String confirmMessage = "Do you want to delete meteorologic data " + metData.getName() + "?";
-			if (!bcDataUsingMetData.isEmpty())
-			{
-				List<String> bcDataNames = bcDataUsingMetData.stream()
-						.map(NamedType::getName)
-						.collect(Collectors.toList());
-				confirmMessage = "Deleting " + metData.getName() + " will also delete the following boundary condition sets that use it:" +
-						"\n\n" + String.join(",\n", bcDataNames);
-				if (!eSetsUsingBcData.isEmpty())
-				{
-					List<String> eSetNames = eSetsUsingBcData.stream()
-							.map(NamedType::getName)
-							.collect(Collectors.toList());
-					confirmMessage += "\n\nIt will also delete the following ensemble sets which use those boundary condition sets:"
-							+ "\n\n" + String.join(",\n", eSetNames);
-				}
-				confirmMessage += "\n\nDo you want to continue?";
-			}
-			int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
-					"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-			if (opt == JOptionPane.YES_OPTION)
-			{
-				_fsg.removeMetData(metData);
-				_fsg.saveData();
-				if(!bcDataUsingMetData.isEmpty())
-				{
-					getPanelForTable(_bcTable).setSimulationGroup(_fsg);
-				}
-				if(!eSetsUsingBcData.isEmpty())
-				{
-					_forecastPanel.refreshSimulationPanel();
-				}
-				_metTable.deleteRow(rowToDelete);
-			}
+			delete((MeteorlogicData)value, false);
 		}
 	}
 
+	public boolean delete(MeteorlogicData metData, boolean deletingDueToOverwrite)
+	{
+		boolean confirmDelete = false;
+		List<BcData> bcDataUsingMetData = _fsg.getBcDataUsingMetData(metData);
+		List<EnsembleSet> eSetsUsingBcData = bcDataUsingMetData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
+				.flatMap(List::stream)
+				.collect(Collectors.toList());
+		String confirmMessage = "Do you want to delete meteorologic data " + metData.getName() + "?";
+		if(deletingDueToOverwrite)
+		{
+			confirmMessage = confirmMessage.replace("delete", "overwrite");
+		}
+		if (!bcDataUsingMetData.isEmpty())
+		{
+			List<String> bcDataNames = bcDataUsingMetData.stream()
+					.map(NamedType::getName)
+					.collect(Collectors.toList());
+			confirmMessage = "Deleting " + metData.getName() + " will also delete the following boundary condition sets that use it:" +
+					"\n\n" + String.join(",\n", bcDataNames);
+			if(deletingDueToOverwrite)
+			{
+				confirmMessage = confirmMessage.replace("Deleting", "Overwriting");
+			}
+			if (!eSetsUsingBcData.isEmpty())
+			{
+				List<String> eSetNames = eSetsUsingBcData.stream()
+						.map(NamedType::getName)
+						.collect(Collectors.toList());
+				confirmMessage += "\n\nIt will also delete the following ensemble sets which use those boundary condition sets:"
+						+ "\n\n" + String.join(",\n", eSetNames);
+			}
+			confirmMessage += "\n\nDo you want to continue?";
+		}
+		String title = "Confirm " + (deletingDueToOverwrite ? "Overwrite" : "Delete");
+		int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
+				title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		if (opt == JOptionPane.YES_OPTION)
+		{
+			int rowToDelete = _opsTable.getRowWithName(metData.getName());
+			confirmDelete = true;
+			_fsg.removeMetData(metData);
+			_fsg.saveData();
+			if(!bcDataUsingMetData.isEmpty())
+			{
+				getPanelForTable(_bcTable).setSimulationGroup(_fsg);
+			}
+			if(!eSetsUsingBcData.isEmpty())
+			{
+				_forecastPanel.refreshSimulationPanel();
+			}
+			_metTable.deleteRow(rowToDelete);
+		}
+		return confirmDelete;
+	}
 }

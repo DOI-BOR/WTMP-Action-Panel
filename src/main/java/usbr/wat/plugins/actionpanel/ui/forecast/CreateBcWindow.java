@@ -21,14 +21,13 @@ import javax.swing.JPanel;
 
 import rma.swing.ButtonCmdPanel;
 import rma.swing.RmaInsets;
-import rma.swing.RmaJDialog;
 import rma.swing.RmaJTable;
 import usbr.wat.plugins.actionpanel.model.forecast.BcData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
 import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 
-public class CreateBcWindow extends RmaJDialog
+public class CreateBcWindow extends CancelableWindow<BcData>
 {
 	private final ForecastSimGroup _fsg;
 	private ButtonCmdPanel _cmdPanel;
@@ -220,6 +219,7 @@ public class CreateBcWindow extends RmaJDialog
 		}
 	}
 
+	@Override
 	public boolean isCanceled()
 	{
 		return _canceled;

@@ -8,16 +8,18 @@
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
-import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
@@ -28,19 +30,25 @@ import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 
+import hec.lang.NamedType;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJPanel;
 import rma.swing.RmaJTable;
 import rma.swing.table.RmaTableModel;
+import usbr.wat.plugins.actionpanel.model.forecast.BcData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
+import usbr.wat.plugins.actionpanel.model.forecast.InitialConditions;
+import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
+import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
+import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 import usbr.wat.plugins.actionpanel.ui.forecast.temptarget.TempTargetForecastTableModel;
 
 /**
  * @author mark
  *
  */
-public abstract class AbstractForecastPanel extends RmaJPanel
+public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPanel
 {
 	protected static List<AbstractForecastPanel>_panels = new ArrayList<>();
 	
@@ -65,6 +73,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	private static ListSelectionModel _metSelectionModel;
 	private static ListSelectionModel _bcSelectionModel;
 	private static ListSelectionModel _tempTargetSelectionModel;
+	private boolean _ignoreTableSelection = false;
 
 	/**
 	 * @param forecastPanel
@@ -355,7 +364,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	 */
 	private void tableSelected(ListSelectionEvent e, ForecastTable table)
 	{
-		if ( e.getValueIsAdjusting())
+		if ( e.getValueIsAdjusting() || _ignoreTableSelection)
 		{
 			return;
 		}
@@ -386,7 +395,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	 * @param forecastTable
 	 * @return
 	 */
-	public AbstractForecastPanel getPanelForTable(ForecastTable forecastTable)
+	public AbstractForecastPanel<?> getPanelForTable(ForecastTable forecastTable)
 	{
 		for(int i = 0; i < _panels.size(); i++ )
 		{
@@ -400,6 +409,38 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 			}
 		}
 		return null;
+	}
+
+	protected void importData(ForecastSimGroup fsg, CancelableWindow<T> dlg, List<T> dataList, T newData)
+	{
+		ForecastTable table = getTableForPanel();
+		if(table.isNameUsed(newData.getName()))
+		{
+			int rowToReplace = table.getRowWithName(newData.getName());
+			Object value = table.getValueAt(rowToReplace, 0);
+			if(value != null)
+			{
+				T existingOpsData = (T) value;
+				if(!deleteForOverwrite(fsg, dataList, existingOpsData, newData, rowToReplace))
+				{
+					dlg.setVisible(true);
+					if ( dlg.isCanceled())
+					{
+						return;
+					}
+					importData(fsg, dlg, dataList, newData);
+				}
+			}
+		}
+		else
+		{
+			Vector<T> row = new Vector<>();
+			row.add(newData);
+			table.appendRow(row);
+			dataList.add(newData);
+			tableRowSelected(table.getRowCount() -1);
+		}
+		fsg.setModified(true);
 	}
 
 
@@ -421,6 +462,7 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 	 * 
 	 */
 	protected abstract void buildLowerPanel(EnabledJPanel lowerPanel);
+	protected abstract boolean delete(T data, boolean deleteDueToOverwrite);
 	public abstract ForecastTable getTableForPanel();
 	
 	/**
@@ -528,7 +570,52 @@ public abstract class AbstractForecastPanel extends RmaJPanel
 			
 			
 		}
-		
+
+		public boolean isNameUsed(String name)
+		{
+			return getRowWithName(name) >= 0;
+		}
+
+		public int getRowWithName(String name)
+		{
+			int retVal = -1;
+			for(int row = 0; row < getRowCount(); row++)
+			{
+				Object value = getValueAt(row, 0);
+				if(value != null && value.toString().equalsIgnoreCase(name))
+				{
+					retVal = row;
+					break;
+				}
+			}
+			return retVal;
+		}
+
+		public void updateRowWithName(String name, T dataToUpdateWith)
+		{
+			int existingRow = getRowWithName(name);
+			if(existingRow >= 0)
+			{
+				_ignoreTableSelection = true;
+				insertRow(new Vector<>(Collections.singletonList(dataToUpdateWith)), existingRow);
+				deleteRow(existingRow + 1);
+				_ignoreTableSelection = false;
+				setSelectedIndices(existingRow,existingRow);
+			}
+		}
+	}
+	private boolean deleteForOverwrite(ForecastSimGroup fsg, List<T> dataList, T dataBeingOverwritten, T newData, int rowToReplace)
+	{
+		boolean retVal = false;
+		int indexToReplace = fsg.getOperationsData().indexOf(dataBeingOverwritten);
+		if(delete(dataBeingOverwritten, true))
+		{
+			retVal = true;
+			dataList.add(indexToReplace, newData);
+			_opsTable.insertRow(new Vector<>(Collections.singletonList(newData)), rowToReplace);
+			tableRowSelected(rowToReplace);
+		}
+		return retVal;
 	}
 
 	/**

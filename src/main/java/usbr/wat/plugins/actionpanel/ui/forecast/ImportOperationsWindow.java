@@ -24,13 +24,12 @@ import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDescriptionField;
-import rma.swing.RmaJDialog;
 import rma.swing.RmaJTextField;
 import rma.util.RMAFilenameFilter;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 
-public class ImportOperationsWindow extends RmaJDialog
+public class ImportOperationsWindow extends CancelableWindow<OperationsData>
 {
 	private RmaJTextField _nameFld;
 	private RmaJDescriptionField _descFld;
@@ -159,7 +158,7 @@ public class ImportOperationsWindow extends RmaJDialog
 						}
 						break;
 					case ButtonCmdPanel.CANCEL_BUTTON:
-						_canceled = false;
+						_canceled = true;
 						setVisible(false);
 						break;
 				}
@@ -188,6 +187,7 @@ public class ImportOperationsWindow extends RmaJDialog
 		return true;
 	}
 
+	@Override
 	public boolean isCanceled()
 	{
 		return _canceled;
@@ -207,4 +207,5 @@ public class ImportOperationsWindow extends RmaJDialog
 		opsData.setOperationsFile(relOpsPath);
 		return opsData;
 	}
+
 }

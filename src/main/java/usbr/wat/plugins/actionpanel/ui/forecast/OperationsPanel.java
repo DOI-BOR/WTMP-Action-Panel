@@ -7,7 +7,6 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.io.BufferedReader;
@@ -26,8 +25,9 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.swing.*;
-import javax.swing.table.TableCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 
 import com.rma.model.Project;
 import com.rma.swing.excel.ExcelTable;
@@ -55,7 +55,7 @@ import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
  * @author mark
  *
  */
-public class OperationsPanel extends AbstractForecastPanel
+public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 {
 	private static Logger LOGGER = Logger.getLogger(OperationsPanel.class.getName());
 	private static final LocalDateTime EXCEL_BASE_DATE = LocalDateTime.of(1899, 12, 31, 0, 0);
@@ -136,6 +136,7 @@ public class OperationsPanel extends AbstractForecastPanel
 		lowerPanel.add(_excelTable.getScrollPane(), gbc);
 
 	}
+
 	protected void addListeners()
 	{
 		super.addListeners();
@@ -151,14 +152,40 @@ public class OperationsPanel extends AbstractForecastPanel
 		{
 			return;
 		}
-		OperationsData opsData = dlg.getOperationsData();
-		ForecastTable opsTable = getTableForPanel();
-		Vector<OperationsData> row = new Vector<>();
-		row.add(opsData);
-		opsTable.appendRow(row);
-		_fsg.getOperationsData().add(opsData);
+		importData(_fsg, dlg, _fsg.getOperationsData(), dlg.getOperationsData());
+	}
+
+	private void importOperations(ImportOperationsWindow dlg)
+	{
+		dlg.setVisible(true);
+		if ( dlg.isCanceled())
+		{
+			return;
+		}
+		OperationsData newOpsData = dlg.getOperationsData();
+		if(_opsTable.isNameUsed(newOpsData.getName()))
+		{
+			int rowToReplace = _opsTable.getRowWithName(newOpsData.getName());
+			Object value = _opsTable.getValueAt(rowToReplace, 0);
+			if(value instanceof OperationsData)
+			{
+				OperationsData existingOpsData = (OperationsData) value;
+//				if(!deleteForOverwrite(existingOpsData, newOpsData, rowToReplace))
+//				{
+//					importOperations(dlg);
+//				}
+			}
+		}
+		else
+		{
+			ForecastTable opsTable = getTableForPanel();
+			Vector<OperationsData> row = new Vector<>();
+			row.add(newOpsData);
+			opsTable.appendRow(row);
+			_fsg.getOperationsData().add(newOpsData);
+			tableRowSelected(opsTable.getRowCount() -1);
+		}
 		_fsg.setModified(true);
-		tableRowSelected(opsTable.getRowCount() -1);
 	}
 
 	@Override
@@ -170,11 +197,6 @@ public class OperationsPanel extends AbstractForecastPanel
 	@Override
 	protected void savePanel()
 	{
-		if ( _fsg != null )
-		{
-			// TODO Auto-generated method stub
-			System.out.println("savePanel TODO implement me");
-		}
 
 	}
 
@@ -239,11 +261,14 @@ public class OperationsPanel extends AbstractForecastPanel
 	{
 		if (_fsg != null )
 		{
-			ForecastTable table = getTableForPanel();
 			_opInfoTable.deleteCells();
 			if (selRow > -1)
 			{
-				OperationsData opsData = (OperationsData) table.getValueAt(selRow, 0);
+				OperationsData opsData = (OperationsData) _opsTable.getValueAt(selRow, 0);
+				if(opsData == null)
+				{
+					return;
+				}
 				Vector row = new Vector();
 				row.add(opsData.getName());
 				row.add(opsData.getOperationsFile());
@@ -268,45 +293,77 @@ public class OperationsPanel extends AbstractForecastPanel
 		if (_fsg != null && value instanceof OperationsData)
 		{
 			OperationsData operationsData = (OperationsData) value;
-			List<BcData> bcDataUsingOpsData = _fsg.getBcDataUsingOperationsData(operationsData);
-			List<EnsembleSet> eSetsUsingBcData = bcDataUsingOpsData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
-					.flatMap(List::stream)
+			delete(operationsData, false);
+		}
+	}
+
+//	public boolean deleteForOverwrite(OperationsData dataBeingOverwritten, OperationsData newData, int rowToReplace)
+//	{
+//		boolean retVal = false;
+//		int indexToReplace = _fsg.getOperationsData().indexOf(dataBeingOverwritten);
+//		if(delete(dataBeingOverwritten, true))
+//		{
+//			retVal = true;
+//			_fsg.getOperationsData().add(indexToReplace, newData);
+//			_opsTable.insertRow(new Vector<>(Collections.singletonList(newData)), rowToReplace);
+//			tableRowSelected(rowToReplace);
+//		}
+//		return retVal;
+//	}
+	@Override
+	public boolean delete(OperationsData operationsData, boolean deletingDueToOverwrite)
+	{
+		boolean confirmDelete = false;
+		List<BcData> bcDataUsingOpsData = _fsg.getBcDataUsingOperationsData(operationsData);
+		List<EnsembleSet> eSetsUsingBcData = bcDataUsingOpsData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
+				.flatMap(List::stream)
+				.collect(Collectors.toList());
+		String confirmMessage = "Do you want to delete operations data " + operationsData.getName() + "?";
+		if(deletingDueToOverwrite)
+		{
+			confirmMessage = confirmMessage.replace("delete", "overwrite");
+		}
+		if (!bcDataUsingOpsData.isEmpty())
+		{
+			List<String> bcDataNames = bcDataUsingOpsData.stream()
+					.map(NamedType::getName)
 					.collect(Collectors.toList());
-			String confirmMessage = "Do you want to delete operations data " + operationsData.getName() + "?";
-			if (!bcDataUsingOpsData.isEmpty())
+			confirmMessage = "Deleting " + operationsData.getName() + " will also delete the following boundary condition sets that use it:" +
+					"\n\n" + String.join(",\n", bcDataNames);
+			if(deletingDueToOverwrite)
 			{
-				List<String> bcDataNames = bcDataUsingOpsData.stream()
+				confirmMessage = confirmMessage.replace("Deleting", "Overwriting");
+			}
+			if (!eSetsUsingBcData.isEmpty())
+			{
+				List<String> eSetNames = eSetsUsingBcData.stream()
 						.map(NamedType::getName)
 						.collect(Collectors.toList());
-				confirmMessage = "Deleting " + operationsData.getName() + " will also delete the following boundary condition sets that use it:" +
-						"\n\n" + String.join(",\n", bcDataNames);
-				if (!eSetsUsingBcData.isEmpty())
-				{
-					List<String> eSetNames = eSetsUsingBcData.stream()
-							.map(NamedType::getName)
-							.collect(Collectors.toList());
-					confirmMessage += "\n\nIt will also delete the following ensemble sets which use those boundary condition sets:"
-							+ "\n\n" + String.join(",\n", eSetNames);
-				}
-				confirmMessage += "\n\nDo you want to continue?";
+				confirmMessage += "\n\nIt will also delete the following ensemble sets which use those boundary condition sets:"
+						+ "\n\n" + String.join(",\n", eSetNames);
 			}
-			int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
-					"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-			if (opt == JOptionPane.YES_OPTION)
-			{
-				_fsg.removeOperationsData(operationsData);
-				_fsg.saveData();
-				if(!bcDataUsingOpsData.isEmpty())
-				{
-					getPanelForTable(_bcTable).setSimulationGroup(_fsg);
-				}
-				if(!eSetsUsingBcData.isEmpty())
-				{
-					_forecastPanel.refreshSimulationPanel();
-				}
-				_opsTable.deleteRow(rowToDelete);
-			}
+			confirmMessage += "\n\nDo you want to continue?";
 		}
+		String title = "Confirm " + (deletingDueToOverwrite ? "Overwrite" : "Delete");
+		int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
+				title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		if(opt == JOptionPane.YES_OPTION)
+		{
+			confirmDelete = true;
+			int rowToDelete = _opsTable.getRowWithName(operationsData.getName());
+			_fsg.removeOperationsData(operationsData);
+			_fsg.saveData();
+			if(!bcDataUsingOpsData.isEmpty())
+			{
+				getPanelForTable(_bcTable).setSimulationGroup(_fsg);
+			}
+			if(!eSetsUsingBcData.isEmpty())
+			{
+				_forecastPanel.refreshSimulationPanel();
+			}
+			_opsTable.deleteRow(rowToDelete);
+		}
+		return confirmDelete;
 	}
 
 	private void displayOpsData(OperationsData opsData)

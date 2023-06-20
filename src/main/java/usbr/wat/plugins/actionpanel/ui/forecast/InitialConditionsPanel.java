@@ -76,7 +76,7 @@ import usbr.wat.plugins.actionpanel.model.forecast.InitialConditions;
  * @author mark
  *
  */
-public class InitialConditionsPanel extends AbstractForecastPanel
+public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditions>
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String CONFIG_CSV_FILE = ForecastConfigFiles.getRelativeIcReservoirsFile();
@@ -136,6 +136,12 @@ public class InitialConditionsPanel extends AbstractForecastPanel
 		lowerPanel.add(_buttonPanel, gbc);
 	
 		buildButtonPanel(_buttonPanel);
+	}
+
+	@Override
+	protected boolean delete(InitialConditions data, boolean deleteDueToOverwrite)
+	{
+		return false;
 	}
 
 	/**
