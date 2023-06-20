@@ -29,13 +29,12 @@ import rma.util.RMAFilenameFilter;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 
-public class ImportOperationsWindow extends CancelableWindow<OperationsData>
+public class ImportOperationsWindow extends CancelableWindow
 {
 	private RmaJTextField _nameFld;
 	private RmaJDescriptionField _descFld;
 	private RmaFileChooserField _opsFileFld;
 	private ButtonCmdPanel _cmdPanel;
-	private boolean _canceled;
 
 	public ImportOperationsWindow(Window parent)
 	{
@@ -195,6 +194,7 @@ public class ImportOperationsWindow extends CancelableWindow<OperationsData>
 
 	public void fillForm(ForecastSimGroup fsg)
 	{
+		_canceled = true;
 	}
 
 	public OperationsData getOperationsData()

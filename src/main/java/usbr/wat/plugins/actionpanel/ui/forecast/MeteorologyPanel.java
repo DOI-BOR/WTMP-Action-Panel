@@ -150,14 +150,7 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 		List<MeteorlogicData> metData = dlg.getMetData();
 		for (int i = 0;i <metData.size(); i++ )
 		{
-			importData(_fsg, dlg, _fsg.getMeteorlogyData(), metData.get(i));
-//			ForecastTable metTable = getTableForPanel();
-//			Vector<MeteorlogicData> row = new Vector<>();
-//			row.add(metData.get(i));
-//			metTable.appendRow(row);
-//			_fsg.getMeteorlogyData().add(metData.get(i));
-//			_fsg.setModified(true);
-//			tableRowSelected(metTable.getRowCount()-1);
+			importData(_fsg, _metTable, dlg, _fsg.getMeteorlogyData(), metData.get(i));
 		}
 
 	}
@@ -355,7 +348,7 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 				title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		if (opt == JOptionPane.YES_OPTION)
 		{
-			int rowToDelete = _opsTable.getRowWithName(metData.getName());
+			int rowToDelete = _metTable.getRowWithName(metData.getName());
 			confirmDelete = true;
 			_fsg.removeMetData(metData);
 			_fsg.saveData();

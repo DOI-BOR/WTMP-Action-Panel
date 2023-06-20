@@ -78,7 +78,7 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 
 	private void addPanelListeners()
 	{
-		_createButton.addActionListener(e -> new TempTargetImportDialog(SwingUtilities.getWindowAncestor(this), getExistingSetNames(), new TempTargetConsumer(this)));
+		_createButton.addActionListener(e -> new TempTargetImportDialog(SwingUtilities.getWindowAncestor(this), getExistingSetNames(), _fsg, new TempTargetConsumer(this)));
 	}
 
 	private List<String> getExistingSetNames()
@@ -119,6 +119,7 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 		}
 		if(!tempTargetSets.isEmpty())
 		{
+			_forecastPanel.refreshSimulationPanel();
 			TemperatureTargetSet selectedSet = tempTargetSets.get(tempTargetSets.size() - 1);
 			_selectedTempTargetSet = selectedSet;
 			fillTempTargetInfoTable(selectedSet);

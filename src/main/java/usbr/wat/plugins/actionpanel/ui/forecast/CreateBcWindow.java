@@ -27,13 +27,12 @@ import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
 import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
 
-public class CreateBcWindow extends CancelableWindow<BcData>
+public class CreateBcWindow extends CancelableWindow
 {
 	private final ForecastSimGroup _fsg;
 	private ButtonCmdPanel _cmdPanel;
 	private RmaJTable _opsTable;
 	private RmaJTable _metTable;
-	private boolean _canceled;
 	private JLabel _infoLabel;
 
 	public CreateBcWindow(ForecastSimGroup fsg, Window parent)
@@ -198,6 +197,7 @@ public class CreateBcWindow extends CancelableWindow<BcData>
 	}
 	public void fillForm(ForecastSimGroup fsg)
 	{
+		_canceled = true;
 		_opsTable.deleteCells();
 		_metTable.deleteCells();
 		List<OperationsData> opsData = fsg.getOperationsData();

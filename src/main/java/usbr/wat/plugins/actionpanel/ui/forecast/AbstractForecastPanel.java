@@ -36,12 +36,7 @@ import rma.swing.RmaInsets;
 import rma.swing.RmaJPanel;
 import rma.swing.RmaJTable;
 import rma.swing.table.RmaTableModel;
-import usbr.wat.plugins.actionpanel.model.forecast.BcData;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
-import usbr.wat.plugins.actionpanel.model.forecast.InitialConditions;
-import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
-import usbr.wat.plugins.actionpanel.model.forecast.OperationsData;
-import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 import usbr.wat.plugins.actionpanel.ui.forecast.temptarget.TempTargetForecastTableModel;
 
 /**
@@ -73,7 +68,6 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	private static ListSelectionModel _metSelectionModel;
 	private static ListSelectionModel _bcSelectionModel;
 	private static ListSelectionModel _tempTargetSelectionModel;
-	private boolean _ignoreTableSelection = false;
 
 	/**
 	 * @param forecastPanel
@@ -364,7 +358,7 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	 */
 	private void tableSelected(ListSelectionEvent e, ForecastTable table)
 	{
-		if ( e.getValueIsAdjusting() || _ignoreTableSelection)
+		if ( e.getValueIsAdjusting())
 		{
 			return;
 		}
@@ -395,7 +389,7 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	 * @param forecastTable
 	 * @return
 	 */
-	public AbstractForecastPanel<?> getPanelForTable(ForecastTable forecastTable)
+	public AbstractForecastPanel getPanelForTable(ForecastTable forecastTable)
 	{
 		for(int i = 0; i < _panels.size(); i++ )
 		{
@@ -411,9 +405,9 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 		return null;
 	}
 
-	protected void importData(ForecastSimGroup fsg, CancelableWindow<T> dlg, List<T> dataList, T newData)
+	@SuppressWarnings("unchecked")
+	protected void importData(ForecastSimGroup fsg, ForecastTable table, CancelableWindow dlg, List<T> dataList, T newData)
 	{
-		ForecastTable table = getTableForPanel();
 		if(table.isNameUsed(newData.getName()))
 		{
 			int rowToReplace = table.getRowWithName(newData.getName());
@@ -421,14 +415,14 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 			if(value != null)
 			{
 				T existingOpsData = (T) value;
-				if(!deleteForOverwrite(fsg, dataList, existingOpsData, newData, rowToReplace))
+				if(!deleteForOverwrite(table, dataList, existingOpsData, newData, rowToReplace))
 				{
 					dlg.setVisible(true);
 					if ( dlg.isCanceled())
 					{
 						return;
 					}
-					importData(fsg, dlg, dataList, newData);
+					importData(fsg, table, dlg, dataList, newData);
 				}
 			}
 		}
@@ -438,7 +432,8 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 			row.add(newData);
 			table.appendRow(row);
 			dataList.add(newData);
-			tableRowSelected(table.getRowCount() -1);
+			AbstractForecastPanel panel = getPanelForTable(table);
+			panel.tableRowSelected(table.getRowCount() -1);
 		}
 		fsg.setModified(true);
 	}
@@ -590,30 +585,18 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 			}
 			return retVal;
 		}
-
-		public void updateRowWithName(String name, T dataToUpdateWith)
-		{
-			int existingRow = getRowWithName(name);
-			if(existingRow >= 0)
-			{
-				_ignoreTableSelection = true;
-				insertRow(new Vector<>(Collections.singletonList(dataToUpdateWith)), existingRow);
-				deleteRow(existingRow + 1);
-				_ignoreTableSelection = false;
-				setSelectedIndices(existingRow,existingRow);
-			}
-		}
 	}
-	private boolean deleteForOverwrite(ForecastSimGroup fsg, List<T> dataList, T dataBeingOverwritten, T newData, int rowToReplace)
+	private boolean deleteForOverwrite(ForecastTable table, List<T> dataList, T dataBeingOverwritten, T newData, int rowToReplace)
 	{
 		boolean retVal = false;
-		int indexToReplace = fsg.getOperationsData().indexOf(dataBeingOverwritten);
+		int indexToReplace = dataList.indexOf(dataBeingOverwritten);
 		if(delete(dataBeingOverwritten, true))
 		{
 			retVal = true;
 			dataList.add(indexToReplace, newData);
-			_opsTable.insertRow(new Vector<>(Collections.singletonList(newData)), rowToReplace);
-			tableRowSelected(rowToReplace);
+			table.insertRow(new Vector<>(Collections.singletonList(newData)), rowToReplace);
+			AbstractForecastPanel panel = getPanelForTable(table);
+			panel.tableRowSelected(rowToReplace);
 		}
 		return retVal;
 	}

@@ -12,6 +12,7 @@ import com.rma.model.Project;
 import com.rma.swing.RmaFileChooserField;
 import hec.heclib.dss.CondensedReference;
 import hec.heclib.dss.DSSPathname;
+import hec.lang.NamedType;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDescriptionField;
@@ -23,6 +24,8 @@ import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
 import rma.swing.table.RmaTableModel;
 import rma.util.RMAFilenameFilter;
+import usbr.wat.plugins.actionpanel.model.forecast.EnsembleSet;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.TemperatureTargetSet;
 
 import javax.swing.ButtonGroup;
@@ -73,6 +76,7 @@ public final class TempTargetImportDialog extends RmaJDialog
     private static final int MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET = 12;
     private final TempTargetConsumer _consumeTempTargetSetAction;
     private final List<String> _existingSetNames;
+    private final ForecastSimGroup _fsg;
     private RmaJRadioButton _importFromExistingRadioButton;
     private RmaJRadioButton _createNewRadioButton;
     private ButtonCmdPanel _okCancelPanel;
@@ -89,12 +93,13 @@ public final class TempTargetImportDialog extends RmaJDialog
     private RmaJDescriptionField _descriptionFieldImport;
     private RmaJIntegerField _numberTempTargetsField;
 
-    public TempTargetImportDialog(Window parent, List<String> existingSetNames, TempTargetConsumer consumeTempTargetSetAction)
+    public TempTargetImportDialog(Window parent, List<String> existingSetNames, ForecastSimGroup fsg, TempTargetConsumer consumeTempTargetSetAction)
     {
         super(parent, true);
         setTitle("Select Temperature Target Set");
         getContentPane().setLayout(new GridBagLayout());
         _existingSetNames = existingSetNames;
+        _fsg = fsg;
         _consumeTempTargetSetAction = consumeTempTargetSetAction;
         buildControls();
         addListeners();
@@ -346,13 +351,17 @@ public final class TempTargetImportDialog extends RmaJDialog
     private void okAction()
     {
         deleteInvalidFiles(_invalidFilesToDelete);
-        if(validateDuplicateNames())
+        List<String> setNamesToImport = validateDuplicateNames();
+        if(!setNamesToImport.isEmpty())
         {
             try
             {
-                List<TemperatureTargetSet> sets = buildTempTargetSets();
+                List<TemperatureTargetSet> sets = buildTempTargetSets(setNamesToImport);
                 _consumeTempTargetSetAction.accept(sets);
-                dispose();
+                if(setNamesToImport.size() == getExpectedNumberToImport())
+                {
+                    dispose();
+                }
             }
             catch(TempTargetSaveFailedException e)
             {
@@ -367,27 +376,55 @@ public final class TempTargetImportDialog extends RmaJDialog
         }
     }
 
-    private boolean validateDuplicateNames()
+    private List<String> validateDuplicateNames()
     {
-        boolean retVal = true;
+        List<String> setNamesToImport = new ArrayList<>();
         if(_importFromExistingRadioButton.isSelected())
         {
-            retVal = validateFromExistingNames();
+            setNamesToImport = validateFromExistingNames();
         }
         else
         {
             String name = _nameTextField.getText();
             if(name != null && !name.trim().isEmpty() && _existingSetNames.contains(name.trim()))
             {
-                retVal = handleDuplicateName(name);
+                if(handleDuplicateName(name))
+                {
+                    setNamesToImport.add(name);
+                }
+            }
+            else if(name != null && !name.trim().isEmpty())
+            {
+                setNamesToImport.add(name);
             }
         }
-        return retVal;
+        return setNamesToImport;
     }
 
-    private boolean validateFromExistingNames()
+    private int getExpectedNumberToImport()
     {
-        boolean retVal = true;
+        int expected = 0;
+        if(_importFromExistingRadioButton.isSelected())
+        {
+            for(int row =0; row < _temperatureSetsTable.getRowCount(); row++)
+            {
+                Object checkedVal = _temperatureSetsTable.getValueAt(row, 0);
+                if (checkedVal != null && Boolean.parseBoolean(checkedVal.toString()))
+                {
+                    expected++;
+                }
+            }
+        }
+        else //importing user defined set
+        {
+            expected = 1;
+        }
+        return expected;
+    }
+
+    private List<String> validateFromExistingNames()
+    {
+        List<String> setNamesToImport = new ArrayList<>();
         for(int row =0; row < _temperatureSetsTable.getRowCount(); row++)
         {
             Object checkedVal = _temperatureSetsTable.getValueAt(row, 0);
@@ -396,30 +433,57 @@ public final class TempTargetImportDialog extends RmaJDialog
                 Object name = _temperatureSetsTable.getValueAt(row, 1);
                 if(name != null && !name.toString().trim().isEmpty() && _existingSetNames.contains(name.toString().trim()))
                 {
-                    retVal = handleDuplicateName(name.toString());
-                    if(!retVal)
+                    boolean overwrite = handleDuplicateName(name.toString());
+                    if(overwrite)
+                    {
+                        setNamesToImport.add(name.toString());
+                    }
+                    if(!overwrite)
                     {
                         break;
                     }
                 }
+                else if(name != null)
+                {
+                    setNamesToImport.add(name.toString());
+                }
+            }
+        }
+        return setNamesToImport;
+    }
+
+    private boolean handleDuplicateName(String name)
+    {
+        TemperatureTargetSet existingTTSet = _fsg.getTemperatureTargetSet(name);
+        boolean retVal = true;
+        if(existingTTSet != null)
+        {
+            retVal = false;
+            List<EnsembleSet> ensembleSetsUsingTTSet = _fsg.getEnsembleSetsUsingTempTargetSet(existingTTSet);
+            StringBuilder confirmMessage = new StringBuilder("Do you want to overwrite existing temperature target set " + name + "?");
+            if (!ensembleSetsUsingTTSet.isEmpty())
+            {
+                List<String> eSetNames = ensembleSetsUsingTTSet.stream()
+                        .map(NamedType::getName)
+                        .collect(Collectors.toList());
+                confirmMessage.append("\n\nIt will also delete the following ensemble sets which use those boundary condition sets:");
+                confirmMessage.append("\n\n");
+                confirmMessage.append(String.join(",\n", eSetNames));
+            }
+            confirmMessage.append("\n\nDo you want to continue?");
+            int opt = JOptionPane.showConfirmDialog(this, confirmMessage, "Confirm Overwrite",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if(opt == JOptionPane.YES_OPTION)
+            {
+                retVal = true;
+                _fsg.removeTemperatureTargetSet(existingTTSet);
+                _fsg.saveData();
             }
         }
         return retVal;
     }
 
-    private boolean handleDuplicateName(String name)
-    {
-        boolean retVal = true;
-        int opt = JOptionPane.showConfirmDialog(this, name + " already exists. Overwrite it?", "Confirm Override",
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if(opt == JOptionPane.NO_OPTION)
-        {
-            retVal = false;
-        }
-        return retVal;
-    }
-
-    private List<TemperatureTargetSet> buildTempTargetSets()
+    private List<TemperatureTargetSet> buildTempTargetSets(List<String> setNamesToImport)
     {
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         List<TemperatureTargetSet> retVal = new ArrayList<>();
@@ -432,7 +496,7 @@ public final class TempTargetImportDialog extends RmaJDialog
                 if(checkedVal != null && Boolean.parseBoolean(checkedVal.toString()))
                 {
                     Object name = _temperatureSetsTable.getValueAt(row, 1);
-                    if(name != null && !name.toString().trim().isEmpty())
+                    if(name != null && !name.toString().trim().isEmpty() && setNamesToImport.contains(name.toString()))
                     {
                         List<DSSPathname> pathnames = getSelectedTempTargetSetPathNames(name.toString());
                         temperatureTargetSet.setDssPathNames(pathnames);
@@ -441,8 +505,8 @@ public final class TempTargetImportDialog extends RmaJDialog
                         temperatureTargetSet.setUserDefined(false);
                         temperatureTargetSet.setDssSourcePath(Paths.get(_importFileChooserField.getText()));
                         temperatureTargetSet.setModified(true);
+                        retVal.add(temperatureTargetSet);
                     }
-                    retVal.add(temperatureTargetSet);
                 }
             }
         }
@@ -482,7 +546,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         int opt = JOptionPane.YES_OPTION;
         if(isModified())
         {
-            opt = JOptionPane.showConfirmDialog(this, "Cancel Temperature Target Set Selection?", "Confirm Cancel",
+            opt = JOptionPane.showConfirmDialog(this, "Cancel Temperature Target Set Import?", "Confirm Cancel",
                     JOptionPane.YES_NO_OPTION);
         }
         if(opt == JOptionPane.YES_OPTION)

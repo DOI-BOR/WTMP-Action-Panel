@@ -7,6 +7,7 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.io.BufferedReader;
@@ -154,40 +155,7 @@ public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 		{
 			return;
 		}
-		importData(_fsg, dlg, _fsg.getOperationsData(), dlg.getOperationsData());
-	}
-
-	private void importOperations(ImportOperationsWindow dlg)
-	{
-		dlg.setVisible(true);
-		if ( dlg.isCanceled())
-		{
-			return;
-		}
-		OperationsData newOpsData = dlg.getOperationsData();
-		if(_opsTable.isNameUsed(newOpsData.getName()))
-		{
-			int rowToReplace = _opsTable.getRowWithName(newOpsData.getName());
-			Object value = _opsTable.getValueAt(rowToReplace, 0);
-			if(value instanceof OperationsData)
-			{
-				OperationsData existingOpsData = (OperationsData) value;
-//				if(!deleteForOverwrite(existingOpsData, newOpsData, rowToReplace))
-//				{
-//					importOperations(dlg);
-//				}
-			}
-		}
-		else
-		{
-			ForecastTable opsTable = getTableForPanel();
-			Vector<OperationsData> row = new Vector<>();
-			row.add(newOpsData);
-			opsTable.appendRow(row);
-			_fsg.getOperationsData().add(newOpsData);
-			tableRowSelected(opsTable.getRowCount() -1);
-		}
-		_fsg.setModified(true);
+		importData(_fsg, _opsTable, dlg, _fsg.getOperationsData(), dlg.getOperationsData());
 	}
 
 	@Override
@@ -299,19 +267,6 @@ public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 		}
 	}
 
-//	public boolean deleteForOverwrite(OperationsData dataBeingOverwritten, OperationsData newData, int rowToReplace)
-//	{
-//		boolean retVal = false;
-//		int indexToReplace = _fsg.getOperationsData().indexOf(dataBeingOverwritten);
-//		if(delete(dataBeingOverwritten, true))
-//		{
-//			retVal = true;
-//			_fsg.getOperationsData().add(indexToReplace, newData);
-//			_opsTable.insertRow(new Vector<>(Collections.singletonList(newData)), rowToReplace);
-//			tableRowSelected(rowToReplace);
-//		}
-//		return retVal;
-//	}
 	@Override
 	public boolean delete(OperationsData operationsData, boolean deletingDueToOverwrite)
 	{
@@ -379,39 +334,48 @@ public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 		{
 			return;
 		}
-		if(opsFilePath.endsWith(".csv"))
+		try
 		{
-			sheet = readCsv(opsFilePath);
-		}
-		else
-		{
-			String csvString = convertXlsxToCsv(opsFilePath);
-			try (BufferedReader reader = new BufferedReader(new StringReader(csvString)))
+			if(opsFilePath.endsWith(".csv"))
 			{
-				sheet = readIntoSheet(reader);
+				sheet = readCsv(opsFilePath);
 			}
-			catch (IOException e)
+			else
 			{
-				LOGGER.log(Level.SEVERE, e, () -> "Failed to read file: " + opsFilePath);
+				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				String csvString = convertXlsxToCsv(opsFilePath);
+				try (BufferedReader reader = new BufferedReader(new StringReader(csvString)))
+				{
+					sheet = readIntoSheet(reader);
+				}
+				catch (IOException e)
+				{
+					LOGGER.log(Level.SEVERE, e, () -> "Failed to read file: " + opsFilePath);
+				}
+			}
+			if(sheet != null)
+			{
+				_lowerPanel.remove(_excelTable.getScrollPane());
+				_excelTable = new ExcelTable(this, sheet);
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx     = GridBagConstraints.RELATIVE;
+				gbc.gridy     = GridBagConstraints.RELATIVE;
+				gbc.gridwidth = GridBagConstraints.REMAINDER;
+				gbc.weightx   = 1.0;
+				gbc.weighty   = 1.0;
+				gbc.anchor    = GridBagConstraints.NORTHWEST;
+				gbc.fill      = GridBagConstraints.BOTH;
+				gbc.insets    = RmaInsets.INSETS5505;
+				_lowerPanel.add(_excelTable.getScrollPane(), gbc);
+				_lowerPanel.revalidate();
+				_lowerPanel.repaint();
 			}
 		}
-		if(sheet != null)
+		finally
 		{
-			_lowerPanel.remove(_excelTable.getScrollPane());
-			_excelTable = new ExcelTable(this, sheet);
-			GridBagConstraints gbc = new GridBagConstraints();
-			gbc.gridx     = GridBagConstraints.RELATIVE;
-			gbc.gridy     = GridBagConstraints.RELATIVE;
-			gbc.gridwidth = GridBagConstraints.REMAINDER;
-			gbc.weightx   = 1.0;
-			gbc.weighty   = 1.0;
-			gbc.anchor    = GridBagConstraints.NORTHWEST;
-			gbc.fill      = GridBagConstraints.BOTH;
-			gbc.insets    = RmaInsets.INSETS5505;
-			_lowerPanel.add(_excelTable.getScrollPane(), gbc);
-			_lowerPanel.revalidate();
-			_lowerPanel.repaint();
+			setCursor(Cursor.getDefaultCursor());
 		}
+
 	}
 
 	private Sheet readCsv(String opsFilePath)
@@ -435,9 +399,10 @@ public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 		Font font = workbook.createFont();
 		java.awt.Font fontToUse = UIManager.getFont("Table.font");
 		int fontSize = fontToUse.getSize();
-		double fontConversionFactor = 0.6;
+		Integer scalePercent = Integer.getInteger(OPS_TABLE_FONT_CONVERSION_SCALE_PERCENT, DEFAULT_OPS_TABLE_FONT_CONVERSION_SCALE_PERCENT);
+		double scale = scalePercent/100.0;
 		font.setFontName(fontToUse.getFontName());
-		font.setFontHeightInPoints((short) (fontSize * fontConversionFactor));
+		font.setFontHeightInPoints((short) (fontSize * scale));
 
 		// Apply the font to the cell
 		CellStyle cellStyle = workbook.createCellStyle();

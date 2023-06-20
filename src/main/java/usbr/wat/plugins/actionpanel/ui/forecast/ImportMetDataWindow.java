@@ -43,7 +43,7 @@ import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
  * @author mark
  *
  */
-public class ImportMetDataWindow extends CancelableWindow<MeteorlogicData>
+public class ImportMetDataWindow extends CancelableWindow
 {
 	private static final String AVE_TEMP_FILE = ForecastConfigFiles.getRelativeYearlyTempDataFile();
 	private RmaJTextField _nameFld;
@@ -51,7 +51,6 @@ public class ImportMetDataWindow extends CancelableWindow<MeteorlogicData>
 	private RmaJComboBox _importTypeCombo;
 	private RmaJTable _metTable;
 	private ButtonCmdPanel _cmdPanel;
-	protected boolean _canceled;
 
 	public ImportMetDataWindow(Window parent)
 	{
@@ -437,7 +436,7 @@ public class ImportMetDataWindow extends CancelableWindow<MeteorlogicData>
 	 */
 	public void fillForm(ForecastSimGroup fsg)
 	{
-
+		_canceled = true;
 	}
 
 

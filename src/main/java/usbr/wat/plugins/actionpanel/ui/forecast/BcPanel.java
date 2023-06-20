@@ -121,27 +121,46 @@ public class BcPanel extends AbstractForecastPanel<BcData>
 		boolean confirmDelete = false;
 		List<EnsembleSet> eSetsUsingBcData = _fsg.getEnsembleSetsUsingBcData(bcData);
 		String confirmMessage = "Do you want to delete boundary condition set " + bcData.getName() + "?";
+		if(deleteDueToOverwrite)
+		{
+			confirmMessage = confirmMessage.replace("delete", "overwrite");
+		}
 		if(!eSetsUsingBcData.isEmpty())
 		{
 			List<String> eSetNames = eSetsUsingBcData.stream()
 					.map(NamedType::getName)
 					.collect(Collectors.toList());
-			confirmMessage = "Deleting " + bcData.getName() + " will also delete the following ensemble sets that use it:" +
+			String action = "Deleting";
+			if(deleteDueToOverwrite)
+			{
+				action = "Overwriting";
+			}
+			confirmMessage = action + " " + bcData.getName() + " will also delete the following ensemble sets that use it:" +
 					"\n\n" + String.join(",\n", eSetNames) + "\n\nDo you want to continue?";
 		}
+		String title = "Confirm " + (deleteDueToOverwrite ? "Overwrite" : "Delete");
 		int opt = JOptionPane.showConfirmDialog(this, confirmMessage,
-				"Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+				title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		if(opt == JOptionPane.YES_OPTION)
 		{
-			int rowToDelete = _bcTable.getRowWithName(bcData.getName());
-			confirmDelete = true;
-			_fsg.removeBcData(bcData);
-			_fsg.saveData();
-			if(!eSetsUsingBcData.isEmpty())
+			try
 			{
-				_forecastPanel.refreshSimulationPanel();
+				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				int rowToDelete = _bcTable.getRowWithName(bcData.getName());
+				confirmDelete = true;
+				_fsg.removeBcData(bcData);
+				_fsg.saveData();
+				if(!eSetsUsingBcData.isEmpty())
+				{
+					_forecastPanel.refreshSimulationPanel();
+				}
+				_bcTable.deleteRow(rowToDelete);
 			}
-			_bcTable.deleteRow(rowToDelete);
+			finally
+			{
+				setCursor(Cursor.getDefaultCursor());
+			}
+
 		}
 		return confirmDelete;
 	}
@@ -165,6 +184,9 @@ public class BcPanel extends AbstractForecastPanel<BcData>
 		List<BcData> bcDataList = dlg.getBcData();
 		try
 		{
+			_plotPanel.getPlotPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			_bcInfoTable.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			_plotPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			WatAnalysisPeriod analysisPeriod = _fsg.getAnalysisPeriod();
 			if(analysisPeriod == null)
@@ -180,6 +202,9 @@ public class BcPanel extends AbstractForecastPanel<BcData>
 		finally
 		{
 			setCursor(Cursor.getDefaultCursor());
+			_plotPanel.setCursor(Cursor.getDefaultCursor());
+			_bcInfoTable.setCursor(Cursor.getDefaultCursor());
+			_plotPanel.getPlotPanel().setCursor(Cursor.getDefaultCursor());
 		}
 		_fsg.setModified(true);
 
@@ -210,7 +235,7 @@ public class BcPanel extends AbstractForecastPanel<BcData>
 		for (BcData bcData : bcDataList)
 		{
 			runScript(bcData, scriptFile);
-			importData(_fsg, dlg, _fsg.getBcData(), bcData);
+			importData(_fsg, _bcTable, dlg, _fsg.getBcData(), bcData);
 		}
 		tableRowSelected(bcTable.getRowCount() -1);
 	}
