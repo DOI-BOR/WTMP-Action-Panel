@@ -165,7 +165,11 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 		List<MeteorlogicData> metData = importMetDataWindow.getMetData();
 		for (int i = 0;i <metData.size(); i++ )
 		{
-			importData(_fsg, _metTable, importMetDataWindow, _fsg.getMeteorlogyData(), metData.get(i));
+			boolean imported = importData(_fsg, _metTable, importMetDataWindow, _fsg.getMeteorlogyData(), metData.get(i));
+			if(!imported)
+			{
+				break;
+			}
 		}
 
 	}
@@ -326,17 +330,27 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 	@Override
 	protected boolean delete(MeteorlogicData metData, boolean deletingDueToOverwrite)
 	{
+		boolean retVal = false;
 		List<BcData> bcDataUsingMetData = _fsg.getBcDataUsingMetData(metData);
 		List<EnsembleSet> eSetsUsingBcData = bcDataUsingMetData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
 				.flatMap(List::stream)
 				.collect(Collectors.toList());
-		String initialMessage = "Do you want to delete meteorologic data " + metData.getName() + "?";
+		String initialMessage;
 		if(deletingDueToOverwrite)
 		{
 			initialMessage = metData.getName() + " already exists." + "Do you want to overwrite it?";
 		}
-		return displayDeleteMessage(initialMessage, bcDataUsingMetData, eSetsUsingBcData, deletingDueToOverwrite,
-				metData, _fsg, _metTable);
+		else
+		{
+			initialMessage = "Do you want to delete meteorologic data " + metData.getName() + "?";
+		}
+		if(displayDeleteMessage(initialMessage, bcDataUsingMetData, eSetsUsingBcData, deletingDueToOverwrite,
+				metData))
+		{
+			retVal = true;
+			performDelete(_fsg, metData, _metTable, bcDataUsingMetData, eSetsUsingBcData);
+		}
+		return retVal;
 	}
 
 }

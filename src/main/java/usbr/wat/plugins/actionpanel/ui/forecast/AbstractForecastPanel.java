@@ -410,17 +410,19 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void importData(ForecastSimGroup fsg, ForecastTable table, ImportForecastWindow dlg, List<T> dataList, T newData)
+	protected boolean importData(ForecastSimGroup fsg, ForecastTable table, ImportForecastWindow dlg, List<T> dataList, T newData)
 	{
+		boolean retVal = true;
 		if(table.isNameUsed(newData.getName()))
 		{
 			int rowToReplace = table.getRowWithName(newData.getName());
 			Object value = table.getValueAt(rowToReplace, 0);
 			if(value != null)
 			{
-				T existingOpsData = (T) value;
-				if(!deleteForOverwrite(table, dataList, existingOpsData, newData, rowToReplace))
+				T existingData = (T) value;
+				if(!deleteForOverwrite(table, dataList, existingData, newData, rowToReplace))
 				{
+					retVal = false;
 					importForecastData(dlg);
 				}
 			}
@@ -435,16 +437,13 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 			panel.tableRowSelected(table.getRowCount() -1);
 		}
 		fsg.setModified(true);
+		return retVal;
 	}
 
-	public boolean displayDeleteMessage(String initialMessage, List<BcData> bcDataUsingData, List<EnsembleSet> eSetsUsingData, boolean deletingDueToOverwrite,
-											   T data, ForecastSimGroup fsg, ForecastTable table)
+	protected boolean displayDeleteMessage(String initialMessage, List<BcData> bcDataUsingData, List<EnsembleSet> eSetsUsingData,
+										   boolean deletingDueToOverwrite, T data)
 	{
 		boolean confirmDelete = false;
-		if(deletingDueToOverwrite)
-		{
-			initialMessage = data.getName() + " already exists. " + "Do you want to overwrite it?";
-		}
 		StringBuilder confirmMessage = new StringBuilder(initialMessage);
 		if (!bcDataUsingData.isEmpty())
 		{
@@ -473,32 +472,36 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 				title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		if(opt == JOptionPane.YES_OPTION)
 		{
-			try
-			{
-				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				confirmDelete = true;
-				int rowToDelete = table.getRowWithName(data.getName());
-				removeData(fsg, data);
-				fsg.saveData();
-				if (!bcDataUsingData.isEmpty())
-				{
-					getPanelForTable(_bcTable).setSimulationGroup(fsg);
-				}
-				if (!eSetsUsingData.isEmpty())
-				{
-					_forecastPanel.refreshSimulationPanel(fsg);
-				}
-				if(rowToDelete > -1)
-				{
-					table.deleteRow(rowToDelete);
-				}
-			}
-			finally
-			{
-				setCursor(Cursor.getDefaultCursor());
-			}
+			confirmDelete = true;
 		}
 		return confirmDelete;
+	}
+
+	protected void performDelete(ForecastSimGroup fsg, T data, ForecastTable table, List<BcData> bcDataUsingData, List<EnsembleSet> eSetsUsingData)
+	{
+		try
+		{
+			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			int rowToDelete = table.getRowWithName(data.getName());
+			removeData(fsg, data);
+			fsg.saveData();
+			if (!bcDataUsingData.isEmpty())
+			{
+				getPanelForTable(_bcTable).setSimulationGroup(fsg);
+			}
+			if (!eSetsUsingData.isEmpty())
+			{
+				_forecastPanel.refreshSimulationPanel(fsg);
+			}
+			if(rowToDelete > -1)
+			{
+				table.deleteRow(rowToDelete);
+			}
+		}
+		finally
+		{
+			setCursor(Cursor.getDefaultCursor());
+		}
 	}
 
 	private void appendEnsembleDeleteMessage(List<EnsembleSet> eSetsUsingData, StringBuilder confirmMessage)

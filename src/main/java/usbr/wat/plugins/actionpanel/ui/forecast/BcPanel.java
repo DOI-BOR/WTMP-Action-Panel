@@ -119,14 +119,24 @@ public class BcPanel extends AbstractForecastPanel<BcData>
 	@Override
 	protected boolean delete(BcData bcData, boolean deleteDueToOverwrite)
 	{
+		boolean retVal = false;
 		List<EnsembleSet> eSetsUsingBcData = _fsg.getEnsembleSetsUsingBcData(bcData);
-		String initialMessage = "Do you want to delete boundary condition set " + bcData.getName() + "?";
+		String initialMessage;
 		if(deleteDueToOverwrite)
 		{
 			initialMessage = bcData.getName() + " already exists." + "Do you want to overwrite it?";
 		}
-		return displayDeleteMessage(initialMessage, new ArrayList<>(), eSetsUsingBcData, deleteDueToOverwrite,
-				bcData, _fsg, _bcTable);
+		else
+		{
+			initialMessage = "Do you want to delete boundary condition set " + bcData.getName() + "?";
+		}
+		if(displayDeleteMessage(initialMessage, new ArrayList<>(), eSetsUsingBcData, deleteDueToOverwrite,
+				bcData))
+		{
+			retVal = true;
+			performDelete(_fsg, bcData, _bcTable, new ArrayList<>(), eSetsUsingBcData);
+		}
+		return retVal;
 	}
 
 	@Override
@@ -205,12 +215,20 @@ public class BcPanel extends AbstractForecastPanel<BcData>
 
 	private void runScriptOnBCDataList(CreateBcWindow dlg, List<BcData> bcDataList, ForecastTable bcTable, Path scriptFile)
 	{
+		boolean success = true;
 		for (BcData bcData : bcDataList)
 		{
 			runScript(bcData, scriptFile);
-			importData(_fsg, _bcTable, dlg, _fsg.getBcData(), bcData);
+			success = importData(_fsg, _bcTable, dlg, _fsg.getBcData(), bcData);
+			if(!success)
+			{
+				break;
+			}
 		}
-		tableRowSelected(bcTable.getRowCount() -1);
+		if(success)
+		{
+			tableRowSelected(bcTable.getRowCount() -1);
+		}
 	}
 
 	private void runScript(BcData bcData, Path scriptFile)

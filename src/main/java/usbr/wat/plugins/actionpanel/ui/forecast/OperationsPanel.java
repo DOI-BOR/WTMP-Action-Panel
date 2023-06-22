@@ -285,13 +285,27 @@ public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 	@Override
 	public boolean delete(OperationsData operationsData, boolean deletingDueToOverwrite)
 	{
+		boolean retVal = false;
 		List<BcData> bcDataUsingOpsData = _fsg.getBcDataUsingOperationsData(operationsData);
 		List<EnsembleSet> eSetsUsingBcData = bcDataUsingOpsData.stream().map(bcData -> _fsg.getEnsembleSetsUsingBcData(bcData))
 				.flatMap(List::stream)
 				.collect(Collectors.toList());
-		String initialMessage = "Do you want to delete operations data" + operationsData.getName() + "?";
-		return displayDeleteMessage(initialMessage, bcDataUsingOpsData, eSetsUsingBcData, deletingDueToOverwrite,
-				operationsData, _fsg, _opsTable);
+		String initialMessage;
+		if(deletingDueToOverwrite)
+		{
+			initialMessage = operationsData.getName() + " already exists." + "Do you want to overwrite it?";
+		}
+		else
+		{
+			initialMessage = "Do you want to delete operations data " + operationsData.getName() + "?";
+		}
+		if(displayDeleteMessage(initialMessage, bcDataUsingOpsData, eSetsUsingBcData, deletingDueToOverwrite,
+				operationsData))
+		{
+			retVal = true;
+			performDelete(_fsg, operationsData, _opsTable, bcDataUsingOpsData, eSetsUsingBcData);
+		}
+		return retVal;
 	}
 
 	private void displayOpsData(OperationsData opsData)
