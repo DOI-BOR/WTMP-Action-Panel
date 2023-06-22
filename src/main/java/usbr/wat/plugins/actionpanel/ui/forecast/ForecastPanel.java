@@ -225,6 +225,11 @@ public class ForecastPanel extends RmaJPanel
 
 	public void refreshSimulationPanel(ForecastSimGroup fsg)
 	{
-		_simulationPanel.setSimulationGroup(fsg);
+		WatSimulation simulation = getSelectedSimulation();
+		_simulationPanel.fillSimulationTable();
+		_simulationPanel.setEnsembleSets(fsg.getEnsembleSets(simulation));
+		_simulationPanel.fillAnalysisWindow();
+		setEnabled(true);
+		_simulationPanel.refreshSimTableSelection();
 	}
 }

@@ -565,10 +565,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 			setEnsembleSets(fsg.getEnsembleSets(simulation));
 			fillAnalysisWindow();
 			setEnabled(true);
-			if ( _simulationTable.getRowCount() > 0 )
-			{
-				_simulationTable.setRowSelectionInterval(0,0);
-			}
+			refreshSimTableSelection();
 		}
 		else
 		{
@@ -581,10 +578,18 @@ public class SimulationPanel extends AbstractSimulationPanel
 		tableSelectionChanged();
 	}
 
+	void refreshSimTableSelection()
+	{
+		if ( _simulationTable.getRowCount() > 0 )
+		{
+			_simulationTable.setRowSelectionInterval(0,0);
+		}
+	}
+
 	/**
 	 * 
 	 */
-	private void fillAnalysisWindow()
+	void fillAnalysisWindow()
 	{
 		clearApLabels();
 		AbstractSimulationGroup fsg = getSimulationGroup();
