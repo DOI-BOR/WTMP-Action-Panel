@@ -306,7 +306,8 @@ public final class TemperatureTargetSet extends NamedType
         else
         {
             int i=1;
-            for(DSSPathname pathname : _dssPathNames)
+            List<DSSPathname> pathnames = getDssPathNames(TemperatureTargetTimeStep.REGULAR_WEEKLY);
+            for(DSSPathname pathname : pathnames)
             {
                 TimeSeriesContainer tsc = buildTsFromPathname(i, pathname, timeWindow);
                 if(tsc != null)
