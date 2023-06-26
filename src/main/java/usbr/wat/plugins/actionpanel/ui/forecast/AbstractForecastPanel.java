@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
@@ -31,6 +32,7 @@ import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import hec.lang.NamedType;
 import rma.swing.EnabledJPanel;
@@ -700,8 +702,33 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	 * 
 	 */
 	protected abstract void savePanel();
-	
-	public abstract void setSimulationGroup(ForecastSimGroup fsg);
+
+	public void setSimulationGroup(ForecastSimGroup fsg)
+	{
+		DefaultListSelectionModel selectionModel = (DefaultListSelectionModel) getTableForPanel().getSelectionModel();
+		ListSelectionListener[] selectionListeners = selectionModel.getListeners(ListSelectionListener.class);
+		removeSelectionListeners(selectionListeners);
+		fillPanel(fsg);
+		addSelectionListeners(selectionListeners);
+	}
+
+	private void addSelectionListeners(ListSelectionListener[] selectionListeners)
+	{
+		for(ListSelectionListener selectionListener : selectionListeners)
+		{
+			getTableForPanel().getSelectionModel().addListSelectionListener(selectionListener);
+		}
+	}
+
+	private void removeSelectionListeners(ListSelectionListener[] selectionListeners)
+	{
+		for(ListSelectionListener selectionListener : selectionListeners)
+		{
+			getTableForPanel().getSelectionModel().removeListSelectionListener(selectionListener);
+		}
+	}
+
+	public abstract void fillPanel(ForecastSimGroup fsg);
 
 	
 	

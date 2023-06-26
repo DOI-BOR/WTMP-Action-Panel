@@ -715,7 +715,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 	 * @param fsg
 	 */
 	@Override
-	public void setSimulationGroup(ForecastSimGroup fsg)
+	public void fillPanel(ForecastSimGroup fsg)
 	{
 		setEnabled(fsg != null);
 		clearTableSelections();

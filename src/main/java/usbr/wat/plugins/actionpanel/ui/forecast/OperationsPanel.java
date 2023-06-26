@@ -190,7 +190,7 @@ public class OperationsPanel extends AbstractForecastPanel<OperationsData>
 	}
 
 	@Override
-	public void setSimulationGroup(ForecastSimGroup fsg)
+	public void fillPanel(ForecastSimGroup fsg)
 	{
 		clearPanel();
 		setEnabled(fsg != null);

@@ -518,7 +518,7 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 	}
 
 	@Override
-	public void setSimulationGroup(ForecastSimGroup fsg)
+	public void fillPanel(ForecastSimGroup fsg)
 	{
 		if ( fsg != null )
 		{

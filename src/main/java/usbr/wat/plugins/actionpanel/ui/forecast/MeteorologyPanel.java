@@ -200,14 +200,15 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 	}
 
 	@Override
-	public void setSimulationGroup(ForecastSimGroup fsg)
+	public void fillPanel(ForecastSimGroup fsg)
 	{
 		setEnabled(fsg != null);
 		_fsg = fsg;
+		getTableForPanel().deleteCells();
 		_plotPanel.setEnabled(false);
 		if ( _fsg != null )
 		{
-			List<MeteorlogicData> data = new ArrayList<>(_fsg.getMeteorlogyData());
+			List<MeteorlogicData> data = _fsg.getMeteorlogyData();
 			_metTable.deleteCells();
 			Vector<MeteorlogicData> row;
 			for (int i = 0; i < data.size(); i++ )
@@ -216,12 +217,7 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 				row.add(data.get(i));
 				_metTable.appendRow(row);
 			}
-			_fsg.setMeteorlogyData(data);
 			fillNavPanel();
-		}
-		else
-		{
-			_metTable.deleteCells();
 		}
 	}
 

@@ -300,7 +300,7 @@ public class BcPanel extends AbstractForecastPanel<BcData>
 	}
 
 	@Override
-	public void setSimulationGroup(ForecastSimGroup fsg)
+	public void fillPanel(ForecastSimGroup fsg)
 	{
 		setEnabled(fsg != null);
 		_fsg = fsg;
