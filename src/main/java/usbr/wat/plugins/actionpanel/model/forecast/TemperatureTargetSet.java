@@ -47,8 +47,6 @@ public final class TemperatureTargetSet extends NamedType
     private static final String PATH_NAMES_ELEM_NAME = "dss-pathnames";
     private static final String PATH_NAME_ELEM_NAME = "dss-pathname";
     private static final String RIVER_LOC_ELEM_NAME = "River-Location";
-    private static final String RIVER_LOC_NAME_ATTRIBUTE = "Name";
-    private static final String RIVER_LOC_ID_ATTRIBUTE = "Id";
     private final List<TimeSeriesContainer> _timeSeriesData = new ArrayList<>();
     private final List<DSSPathname> _dssPathNames = new ArrayList<>();
     private boolean _isUserDefined;
@@ -80,10 +78,9 @@ public final class TemperatureTargetSet extends NamedType
         }
         myElem.addContent(dssOutputPathElem);
         Element riverLocationElement = new Element(RIVER_LOC_ELEM_NAME);
-        if(_riverLocation != null && _riverLocation.getName() != null && _riverLocation.getId() != null)
+        if(_riverLocation != null && _riverLocation.getName() != null)
         {
-            riverLocationElement.setAttribute(RIVER_LOC_NAME_ATTRIBUTE, _riverLocation.getName());
-            riverLocationElement.setAttribute(RIVER_LOC_ID_ATTRIBUTE, _riverLocation.getId());
+            XMLUtilities.saveNamedType(riverLocationElement, _riverLocation);
         }
         myElem.addContent(riverLocationElement);
         Element dssPathnamesElem = new Element(PATH_NAMES_ELEM_NAME);
@@ -118,11 +115,10 @@ public final class TemperatureTargetSet extends NamedType
             }
         }
         Element riverLocationElem = myElem.getChild(RIVER_LOC_ELEM_NAME);
-        if(riverLocationElem != null)
+        if(riverLocationElem != null && !riverLocationElem.getChildren().isEmpty())
         {
-            String name = riverLocationElem.getAttributeValue(RIVER_LOC_NAME_ATTRIBUTE);
-            String id = riverLocationElem.getAttributeValue(RIVER_LOC_ID_ATTRIBUTE);
-            _riverLocation = new RiverLocation(name, id);
+            _riverLocation = new RiverLocation();
+            XMLUtilities.loadNamedType(riverLocationElem, _riverLocation);
         }
         Element dssPathNamesElem = myElem.getChild(PATH_NAMES_ELEM_NAME);
         if(dssPathNamesElem != null)

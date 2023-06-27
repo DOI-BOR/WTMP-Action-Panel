@@ -23,6 +23,7 @@ import rma.swing.RmaJPanel;
 import rma.swing.RmaJRadioButton;
 import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
+import rma.swing.list.RmaListModel;
 import rma.swing.table.RmaTableModel;
 import rma.util.RMAFilenameFilter;
 import usbr.wat.plugins.actionpanel.model.SharedConfigFiles;
@@ -211,10 +212,10 @@ public final class TempTargetImportDialog extends RmaJDialog
         {
             List<RiverLocation> riverLocations = CsvReader.readCsv(riverLocationConfig, RiverLocation.class);
             riverLocations.removeIf(rl -> rl.getName().isEmpty());
-            DefaultComboBoxModel<RiverLocation> riverLocationComboModel = new DefaultComboBoxModel<>(new Vector<>(riverLocations));
+            RmaListModel<RiverLocation> riverLocationComboModel = new RmaListModel<>(true, riverLocations);
             _riverLocationCombo.setModel(riverLocationComboModel);
             _riverLocationCombo.setSelectedIndex(-1);
-            DefaultComboBoxModel<RiverLocation> riverLocationTableComboModel = new DefaultComboBoxModel<>(new Vector<>(riverLocations));
+            RmaListModel<RiverLocation> riverLocationTableComboModel = new RmaListModel<>(true, riverLocations);
             _riverLocationTableCombo.setModel(riverLocationTableComboModel);
         }
         catch (IOException e)
@@ -354,12 +355,14 @@ public final class TempTargetImportDialog extends RmaJDialog
 
     private void validateOkButton()
     {
+        //commented out validation of river location selected until river location config file is ready
+        //Once config is ready, lines should be un-commented
         JButton okButton = _okCancelPanel.getButton(ButtonCmdPanel.OK_BUTTON);
         boolean invalidCreate = _nameTextField.getText() == null || _nameTextField.getText().trim().isEmpty();
-//                || _riverLocationCombo.getSelectedIndex() < 0;
+//                || _riverLocationCombo.getSelectedIndex() < 0; TODO: un-comment once river location config is ready
         String absPath = Project.getCurrentProject().getAbsolutePath(_importFileChooserField.getText());
         boolean invalidImport = !(Paths.get(absPath).toFile().exists()) || getNumCheckedRows() == 0;
-//                || !allCheckedRowsHaveRiverLocationAssigned();
+//                || !allCheckedRowsHaveRiverLocationAssigned(); TODO: un-comment once river location config is ready
         if(_createNewRadioButton.isSelected())
         {
             okButton.setEnabled(!invalidCreate);
@@ -760,7 +763,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
         gbc.weighty   = 0.001;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         nameDescPanel.add(_riverLocationCombo, gbc);
