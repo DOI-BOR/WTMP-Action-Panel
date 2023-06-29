@@ -65,13 +65,15 @@ public class RunExtractAction
 	 * @param selectedFiles
 	 * @param infoString
 	 * @param url
+	 * @return
 	 */
-	public void extract(Window parent, MerlinTimeSeriesParameters tsParams, MerlinProfileParameters profileParams, List<Path> selectedFiles, String infoString, String url)
+	public CompletableFuture<Void> extract(Window parent, MerlinTimeSeriesParameters tsParams, MerlinProfileParameters profileParams, List<Path> selectedFiles, String infoString, String url)
 	{
+		CompletableFuture<Void> retVal = new CompletableFuture<>();
 		ProgressListener progress = createProjectListener();
 		if(progress == null)
 		{
-			return;
+			return retVal;
 		}
 
 		try
@@ -81,43 +83,39 @@ public class RunExtractAction
 
 			((ProgressListenerDialog)progress).setVisible(true);
 
-			Thread t = new Thread("Extract Wait Thread")
+			retVal = CompletableFuture.runAsync(() ->
 			{
-				@Override
-				public void run()
+				boolean failed = false;
+				if(!timeSeriesFiles.isEmpty())
 				{
-					boolean failed = false;
-					if(!timeSeriesFiles.isEmpty())
-					{
-						DataExchangeEngine dataExchangeEngineTS = new MerlinDataExchangeEngineBuilder()
-								.withConfigurationFiles(timeSeriesFiles)
-								.withParameters(tsParams)
-								.withProgressListener(progress)
-								.build();
-						CompletableFuture<MerlinDataExchangeStatus> futureTS = dataExchangeEngineTS.runExtract();
-						_status = futureTS.join();
-						failed = handleTSExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
-					}
-					if(!failed && !profileFiles.isEmpty())
-					{
-						DataExchangeEngine dataExchangeEngineProfiles = new MerlinDataExchangeEngineBuilder()
-								.withConfigurationFiles(profileFiles)
-								.withParameters(profileParams)
-								.withProgressListener(progress)
-								.build();
-						CompletableFuture<MerlinDataExchangeStatus> futureProfiles = dataExchangeEngineProfiles.runExtract();
-						_status = futureProfiles.join();
-						handleProfileExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
-					}
+					DataExchangeEngine dataExchangeEngineTS = new MerlinDataExchangeEngineBuilder()
+							.withConfigurationFiles(timeSeriesFiles)
+							.withParameters(tsParams)
+							.withProgressListener(progress)
+							.build();
+					CompletableFuture<MerlinDataExchangeStatus> futureTS = dataExchangeEngineTS.runExtract();
+					_status = futureTS.join();
+					failed = handleTSExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
 				}
-			};
-			t.start();
+				if(!failed && !profileFiles.isEmpty())
+				{
+					DataExchangeEngine dataExchangeEngineProfiles = new MerlinDataExchangeEngineBuilder()
+							.withConfigurationFiles(profileFiles)
+							.withParameters(profileParams)
+							.withProgressListener(progress)
+							.build();
+					CompletableFuture<MerlinDataExchangeStatus> futureProfiles = dataExchangeEngineProfiles.runExtract();
+					_status = futureProfiles.join();
+					handleProfileExtractStatus(parent, tsParams, profileParams, selectedFiles, infoString, url);
+				}
+			});
 		}
 		catch (MerlinConfigParseException e)
 		{
 			JOptionPane.showMessageDialog(parent, e.getMessage(), "Invalid Config", JOptionPane.ERROR_MESSAGE);
 			LOGGER.log(Level.CONFIG, e, () -> "Failed to parse config to determine parameter object to use");
 		}
+		return retVal;
 	}
 
 	private void handleProfileExtractStatus(Window parent, MerlinTimeSeriesParameters tsParams, MerlinProfileParameters profileParams, List<Path> selectedFiles, String infoString, String url)

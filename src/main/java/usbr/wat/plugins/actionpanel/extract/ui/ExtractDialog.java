@@ -38,6 +38,7 @@ import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
+import gov.usbr.wq.merlindataexchange.MerlinDataExchangeStatus;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParametersBuilder;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
@@ -87,7 +88,6 @@ public class ExtractDialog extends RmaJDialog
 	private ButtonCmdPanel _cmdPanel;
 	private JMenuItem _viewConfigFileMenu;
 	private JMenuItem _validateConfigFileMenu;
-	private boolean _extractRan = false;
 
 	public ExtractDialog(Window parent, AbstractSimulationGroup simulationGroup, Runnable postUpdateAction)
 	{
@@ -355,10 +355,6 @@ public class ExtractDialog extends RmaJDialog
 						break;
 					case ButtonCmdPanel.CLOSE_BUTTON :
 						setVisible(false);
-						if(_postUpdateAction != null && _extractRan)
-						{
-							_postUpdateAction.run();
-						}
 						break;
 				}
 			}
@@ -614,9 +610,15 @@ public class ExtractDialog extends RmaJDialog
 
 		RunExtractAction action = new RunExtractAction(this);
 		action.extract(this, tsParams, profileParams, selectedPaths,
-				"Enter login information for "+GRAB_DATA_URL, GRAB_DATA_URL);
-		_extractRan = true;
-		
+				"Enter login information for "+GRAB_DATA_URL, GRAB_DATA_URL)
+				.thenRun(() ->
+				{
+					MerlinDataExchangeStatus status = action.getExtractStatus();
+					if(status == MerlinDataExchangeStatus.COMPLETE_SUCCESS || status == MerlinDataExchangeStatus.PARTIAL_SUCCESS)
+					{
+						_postUpdateAction.run();
+					}
+				});
 	}
 
 
