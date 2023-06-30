@@ -141,11 +141,8 @@ public class ReportXmlFile
 		Document doc = new Document(root);
 
 		
-		String rptType = SINGLE_TYPE;
-		if ( _simulationInfos.size() > 1 )
-		{
-			rptType = COMPARISON_TYPE;
-		}
+		String rptType = getReportType();
+
 
 		XMLUtilities.addChildContent(root, REPORT_TYPE_ELEM, rptType);
 		SimulationReportInfo baseSimulation = _simulationInfos.get(0);
@@ -161,6 +158,16 @@ public class ReportXmlFile
 		RmaFile file = FileManagerImpl.getFileManager().getFile(_fileName);
 		return XMLUtilities.saveDocument(doc, file);
 					
+	}
+
+	protected String getReportType()
+	{
+		String rptType = SINGLE_TYPE;
+		if ( _simulationInfos.size() > 1 )
+		{
+			rptType = COMPARISON_TYPE;
+		}
+		return rptType;
 	}
 
 	/**
