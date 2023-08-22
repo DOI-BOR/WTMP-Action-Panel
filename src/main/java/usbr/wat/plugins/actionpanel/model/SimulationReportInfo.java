@@ -24,6 +24,7 @@ public class SimulationReportInfo
 	private String _simDssFile;
 	private String _lastComputedDate;
 	private boolean _isSimulation;
+	private String _reportCsvFile;
 
 	public SimulationReportInfo()
 	{
@@ -162,5 +163,14 @@ public class SimulationReportInfo
 	{
 		return _shortName;
 	}
-	
+
+	public void setReportCsvFile(String reportCsv)
+	{
+		_reportCsvFile = reportCsv;
+	}
+
+	public String getReportCsvFile()
+	{
+		return _reportCsvFile;
+	}
 }

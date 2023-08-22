@@ -91,6 +91,8 @@ public class ReportXmlFile
 	private static final String SIM_START_TIME_ELEM = "StartTime";
 	private static final String SIM_END_TIME_ELEM = "EndTime";
 	private static final String SIM_LAST_COMPUTED_ELEM = "LastComputed";
+
+	private static final String SIM_REPORT_CSV_FILE = "CsvFile";
 	
 	private static final String MODEL_ALTS_ELEM = "ModelAlternatives";
 	private static final String MODEL_ALT_ELEM = "ModelAlternative";
@@ -192,6 +194,11 @@ public class ReportXmlFile
 		Date date = new Date(info.getLastComputedDate());
 		HecTime computedDate = new HecTime(date, 0);
 		XMLUtilities.addChildContent(simElem, SIM_LAST_COMPUTED_ELEM, computedDate.toString());
+		
+		if ( info.getReportCsvFile() != null )
+		{
+			XMLUtilities.addChildContent(simElem, SIM_REPORT_CSV_FILE, info.getReportCsvFile());
+		}
 		
 		List<ModelAlternative> modelAlts = info.getSimulation().getAllModelAlternativeList();
 		Element modelAltsElem = new Element(MODEL_ALTS_ELEM);
