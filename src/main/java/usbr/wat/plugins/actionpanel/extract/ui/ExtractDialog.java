@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
@@ -581,8 +585,13 @@ public class ExtractDialog extends RmaJDialog
 		//int tzOffset = TimeZone.getDefault().getRawOffset();
 		//Instant startInstant = _startDateTimePanel.getDateTime().elementAt(0).getJavaDate(tzOffset*60).toInstant();
 		//Instant endInstant = _endDateTimePanel.getDateTime().elementAt(0).getJavaDate(tzOffset*60).toInstant();
-		Instant startInstant = _startDateTimePanel.getDateTime().elementAt(0).getJavaDate(0).toInstant();
-		Instant endInstant = _endDateTimePanel.getDateTime().elementAt(0).getJavaDate(0).toInstant();
+		ZoneId localZone = ZoneId.systemDefault();
+		LocalDateTime localStart = _startDateTimePanel.getDateTime().elementAt(0).getLocalDateTime();
+		ZonedDateTime zonedStartDateTime = localStart.atZone(localZone);
+		Instant startInstant = zonedStartDateTime.toInstant();
+		LocalDateTime localEnd = _endDateTimePanel.getDateTime().elementAt(0).getLocalDateTime();
+		ZonedDateTime zonedEndDateTime = localEnd.atZone(localZone);
+		Instant endInstant = zonedEndDateTime.toInstant();
 		String fpart = _dssFpartFld.getText().trim();
 		if ( fpart.isEmpty())
 		{
@@ -620,9 +629,6 @@ public class ExtractDialog extends RmaJDialog
 					}
 				});
 	}
-
-
-
 
 
 	/**
