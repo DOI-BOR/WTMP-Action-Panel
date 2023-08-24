@@ -85,7 +85,7 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(button, gbc);
+		//add(button, gbc);
 		
 		_selectSimGroupAction = new SelectSimulationGroupAction(_parent);
 		button = new JButton(_selectSimGroupAction);
@@ -97,7 +97,7 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(button, gbc);
+		//add(button, gbc);
 	
 		_editSimulationAction = new EditSimulationGroupAction(_parent, _parentPanel);
 		button = new JButton(_editSimulationAction);
@@ -109,7 +109,7 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(button, gbc);
+		//add(button, gbc);
 
 		_deleteSimulationAction = new DeleteSimulationGroupAction(_parent);
 		button = new JButton(_deleteSimulationAction);
@@ -121,7 +121,7 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5555;
-		add(button, gbc);
+		//add(button, gbc);
 		
 	
 		
@@ -135,7 +135,7 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(button, gbc);
+		//add(button, gbc);
 	
 		_selectAlternativeAction = new SelectAlternativesAction();
 		button = new JButton(_selectAlternativeAction);

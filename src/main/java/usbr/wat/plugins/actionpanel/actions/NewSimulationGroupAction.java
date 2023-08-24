@@ -25,7 +25,7 @@ public class NewSimulationGroupAction extends BaseActionsPanelAction
 	private CalibrationPanel _parent;
 	public NewSimulationGroupAction(CalibrationPanel calibrationPanel)
 	{
-		super("Create Simulation Group...");
+		super("New...");
 		setEnabled(false);
 		_parent = calibrationPanel;
 	}
