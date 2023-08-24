@@ -18,6 +18,7 @@ import com.rma.factories.DeleteManagerFactory;
 
 import hec2.wat.model.WatSimulation;
 
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
@@ -36,7 +37,7 @@ public class DeleteSimulationGroupAction extends AbstractAction
 	 */
 	public DeleteSimulationGroupAction(ActionsWindow parent)
 	{
-		super("Delete Simulation Group");
+		super("Delete");
 		setEnabled(false);
 		_parent = parent;
 	}
@@ -44,15 +45,16 @@ public class DeleteSimulationGroupAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
-		AbstractSimulationGroup simGroup = _parent.getSimulationGroup();
+		ActionsWindow parent = ActionPanelPlugin.getInstance().getActionsWindow();
+		AbstractSimulationGroup simGroup = parent.getSimulationGroup();
 		if ( simGroup == null )
 		{
-			JOptionPane.showMessageDialog(_parent,"Please create or select a Simulation Group first",
+			JOptionPane.showMessageDialog(parent,"Please create or select a Simulation Group first",
 					"No Simulation Group Selected", JOptionPane.INFORMATION_MESSAGE);
 			return;
 			
 		}
-		int opt = JOptionPane.showConfirmDialog(_parent, "<html>Do you want to delete Simulation Group <b>"
+		int opt = JOptionPane.showConfirmDialog(parent, "<html>Do you want to delete Simulation Group <b>"
 				+simGroup.getName()+"</b> and all its simulations", "Confirm Delete", JOptionPane.YES_NO_OPTION);
 		if ( opt != JOptionPane.YES_OPTION ) 
 		{
@@ -61,11 +63,11 @@ public class DeleteSimulationGroupAction extends AbstractAction
 		boolean rv = deleteSimulationGroup(simGroup);
 		if ( rv )
 		{
-			_parent.setSimulationGroup(null);
+			parent.setSimulationGroup(null);
 		}
 		else
 		{
-			JOptionPane.showMessageDialog(_parent, "Failed to completely delete Simulation Group "
+			JOptionPane.showMessageDialog(parent, "Failed to completely delete Simulation Group "
 					+simGroup.getName(),"Delete Failed", JOptionPane.INFORMATION_MESSAGE);
 		}
 	}

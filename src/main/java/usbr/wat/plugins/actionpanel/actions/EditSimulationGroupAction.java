@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.editors.NewSimulationGroupDialog;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
@@ -32,7 +33,7 @@ public class EditSimulationGroupAction extends AbstractAction
 	 */
 	public EditSimulationGroupAction(ActionsWindow parent, AbstractSimulationPanel parentPanel)
 	{
-		super("Edit Simulation Group...");
+		super("Edit ...");
 		setEnabled(false);
 		_parent = parent;
 		_parentPanel = parentPanel;
@@ -43,7 +44,7 @@ public class EditSimulationGroupAction extends AbstractAction
 	{
 		NewSimulationGroupDialog dlg = new NewSimulationGroupDialog(_parent, true, "Edit Simulation Group");
 			
-		SimulationGroup simGroup = _parent.getCalibrationPanel().getSimulationGroup();
+		SimulationGroup simGroup = ActionPanelPlugin.getInstance().getActionsWindow().getCalibrationPanel().getSimulationGroup();
 		dlg.fillForm(simGroup);
 		
 		dlg.setVisible(true);

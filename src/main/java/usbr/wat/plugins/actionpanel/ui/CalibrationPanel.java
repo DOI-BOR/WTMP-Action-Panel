@@ -60,6 +60,7 @@ public class CalibrationPanel extends AbstractSimulationPanel
 	private JLabel _apStartLabel;
 	private JLabel _apEndLabel;
 	private SimulationGroup _simGroup;
+	private CalibrationSimulationGroupPanel _simPanel;
 
 	public CalibrationPanel(ActionsWindow parent)
 	{
@@ -72,8 +73,19 @@ public class CalibrationPanel extends AbstractSimulationPanel
 	 */
 	private void buildControls(ActionsWindow parent)
 	{
-		_actionsPanel = new ActionsPanel(parent, this);
+		_simPanel = new CalibrationSimulationGroupPanel(this);
 		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = GridBagConstraints.RELATIVE;
+		gbc.gridy = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx = 1.0;
+		gbc.weighty = 0.0;
+		gbc.anchor = GridBagConstraints.NORTHWEST;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = RmaInsets.INSETS5505;
+		add(_simPanel, gbc);
+
+		_actionsPanel = new ActionsPanel(parent, this);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = 1; 
