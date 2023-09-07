@@ -301,6 +301,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 	 */
 	public void fillForm(AbstractSimulationGroup simGroup)
 	{
+		fillAnalysisPeriodCombo();
 		_simGroup = simGroup;
 		fillTable();
 		

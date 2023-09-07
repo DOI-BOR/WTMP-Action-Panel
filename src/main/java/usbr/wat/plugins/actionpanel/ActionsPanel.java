@@ -50,10 +50,7 @@ public class ActionsPanel extends JPanel
 	private ReviewDataAction _reviewDataAction;
 	private PostResultsAction _postResultsAction;
 	private EditSimulationGroupAction _editSimulationAction;
-	private DeleteSimulationGroupAction _deleteSimulationAction;
 	private EditInterativeSimulationAction _editInterativeSimAction;
-	private NewSimulationGroupAction _newSimGroupAction;
-	private SelectSimulationGroupAction _selectSimGroupAction;
 	private AboutAction _aboutAction;
 	private CalibrationPanel _parentPanel;
 
@@ -74,83 +71,10 @@ public class ActionsPanel extends JPanel
 	 */
 	private void buildControls()
 	{
-		_newSimGroupAction = new NewSimulationGroupAction(_parent.getCalibrationPanel());
-		JButton button = new JButton(_newSimGroupAction);
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		//add(button, gbc);
-		
-		_selectSimGroupAction = new SelectSimulationGroupAction(_parent);
-		button = new JButton(_selectSimGroupAction);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		//add(button, gbc);
-	
-		_editSimulationAction = new EditSimulationGroupAction(_parent, _parentPanel);
-		button = new JButton(_editSimulationAction);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		//add(button, gbc);
 
-		_deleteSimulationAction = new DeleteSimulationGroupAction(_parent);
-		button = new JButton(_deleteSimulationAction);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5555;
-		//add(button, gbc);
-		
-	
-		
-		_updateModelsAction = new UpdateModelsAction(_parent);
-		button = new JButton(_updateModelsAction);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		//add(button, gbc);
-	
-		_selectAlternativeAction = new SelectAlternativesAction();
-		button = new JButton(_selectAlternativeAction);
-		gbc.gridx     = GridBagConstraints.RELATIVE;
-		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 0.0;
-		gbc.weighty   = 0.0;
-		gbc.anchor    = GridBagConstraints.NORTHWEST;
-		gbc.fill      = GridBagConstraints.HORIZONTAL;
-		gbc.insets    = RmaInsets.INSETS5505;
-		//add(button, gbc);
-	
 		_updateDataAction = new UpdateDataAction();
-		button = new JButton(_updateDataAction);
+		JButton button = new JButton(_updateDataAction);
+		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -227,8 +151,6 @@ public class ActionsPanel extends JPanel
 			@Override
 			public void projectClosed(ProjectEvent arg0)
 			{
-				_newSimGroupAction.setEnabled(false);
-				_selectSimGroupAction.setEnabled(false);
 				setSimulationGroup(null);
 				enableActions(false);
 			}
@@ -236,8 +158,6 @@ public class ActionsPanel extends JPanel
 			@Override
 			public void projectOpened(ProjectEvent arg0)
 			{
-				_newSimGroupAction.setEnabled(true);
-				_selectSimGroupAction.setEnabled(true);
 				_updateModelsAction.setEnabled(true);
 			}
 			
@@ -255,8 +175,6 @@ public class ActionsPanel extends JPanel
 	{
 		_reviewDataAction.setEnabled(enabled);
 		_editInterativeSimAction.setEnabled(enabled);
-		_editSimulationAction.setEnabled(enabled);
-		_deleteSimulationAction.setEnabled(enabled);
 		_updateDataAction.setEnabled(enabled);
 	}
 }

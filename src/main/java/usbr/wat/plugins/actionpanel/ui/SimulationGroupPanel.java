@@ -82,7 +82,7 @@ public class SimulationGroupPanel extends BaseSimulationGroupPanel
 	@Override
 	protected Action getNewSimGroupAction()
 	{
-		return new NewForecastSimGroupAction(_parent);
+		return new NewForecastSimGroupAction(_parent, this);
 	}
 
 	@Override

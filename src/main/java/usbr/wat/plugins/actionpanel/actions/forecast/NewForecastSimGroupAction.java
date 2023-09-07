@@ -17,6 +17,7 @@ import usbr.wat.plugins.actionpanel.editors.NewSimulationGroupDialog;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.ui.AbstractSimulationPanel;
+import usbr.wat.plugins.actionpanel.ui.SimulationGroupPanel;
 
 /**
  * @author mark
@@ -24,12 +25,14 @@ import usbr.wat.plugins.actionpanel.ui.AbstractSimulationPanel;
  */
 public class NewForecastSimGroupAction extends AbstractAction
 {
+	private final SimulationGroupPanel _simGroupPanel;
 	private AbstractSimulationPanel _parent;
-	public NewForecastSimGroupAction(AbstractSimulationPanel simulationPanel)
+	public NewForecastSimGroupAction(AbstractSimulationPanel simulationPanel, SimulationGroupPanel simGroupPanel)
 	{
 		super("New...");
 		setEnabled(false);
 		_parent = simulationPanel;
+		_simGroupPanel = simGroupPanel;
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -46,7 +49,8 @@ public class NewForecastSimGroupAction extends AbstractAction
 			return;
 		}
 		AbstractSimulationGroup sg = dlg.getSimulationGroup();
-		_parent.setSimulationGroup(sg);
+		ActionPanelPlugin.getInstance().getActionsWindow().getForecastPanel().setSimulationGroup((ForecastSimGroup) sg);
+		_simGroupPanel.addSimulationGroup(sg, true);
 	}
 
 }

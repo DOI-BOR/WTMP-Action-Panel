@@ -111,9 +111,9 @@ public class ActionsWindow extends RmaJDialog
 		getContentPane().add(_tabbedPane, gbc);
 
 		_calibrationPanel = new CalibrationPanel(this);
-		_tabbedPane.addTab("Validation", _calibrationPanel);
+		_tabbedPane.addTab("Prescribed Conditions", _calibrationPanel);
 		_forecastPanel = new ForecastPanel(this);
-		_tabbedPane.addTab("Forecast", _forecastPanel);
+		_tabbedPane.addTab("Forecast Conditions", _forecastPanel);
 
 	}
 

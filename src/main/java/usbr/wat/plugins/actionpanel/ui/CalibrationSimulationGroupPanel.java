@@ -56,7 +56,7 @@ public class CalibrationSimulationGroupPanel extends BaseSimulationGroupPanel
 	@Override
 	protected Action getNewSimGroupAction()
 	{
-		return new NewSimulationGroupAction((CalibrationPanel) _parent);
+		return new NewSimulationGroupAction((CalibrationPanel) _parent, this);
 	}
 
 	@Override

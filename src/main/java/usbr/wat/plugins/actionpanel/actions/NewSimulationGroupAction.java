@@ -14,6 +14,7 @@ import usbr.wat.plugins.actionpanel.commands.NewSimulationGroupCmd;
 import usbr.wat.plugins.actionpanel.editors.NewSimulationGroupDialog;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;
+import usbr.wat.plugins.actionpanel.ui.CalibrationSimulationGroupPanel;
 
 /**
  * @author Mark Ackerman
@@ -22,12 +23,14 @@ import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;
 @SuppressWarnings("serial")
 public class NewSimulationGroupAction extends BaseActionsPanelAction
 {
+	private final CalibrationSimulationGroupPanel _simGroupPanel;
 	private CalibrationPanel _parent;
-	public NewSimulationGroupAction(CalibrationPanel calibrationPanel)
+	public NewSimulationGroupAction(CalibrationPanel calibrationPanel, CalibrationSimulationGroupPanel simGroupPanel)
 	{
 		super("New...");
 		setEnabled(false);
 		_parent = calibrationPanel;
+		_simGroupPanel = simGroupPanel;
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -48,6 +51,7 @@ public class NewSimulationGroupAction extends BaseActionsPanelAction
 		{
 			_parent.setSimulationGroup(sg);
 		}
+		_simGroupPanel.addSimulationGroup(sg, true);
 	}
 
 }

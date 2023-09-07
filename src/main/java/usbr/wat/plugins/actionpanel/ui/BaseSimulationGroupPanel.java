@@ -34,6 +34,7 @@ import usbr.wat.plugins.actionpanel.actions.UpdateModelsAction;
 import usbr.wat.plugins.actionpanel.actions.forecast.DeleteForecastSimGroupAction;
 import usbr.wat.plugins.actionpanel.actions.forecast.EditForecastSimGroupAction;
 import usbr.wat.plugins.actionpanel.actions.forecast.NewForecastSimGroupAction;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 
 public abstract class BaseSimulationGroupPanel extends EnabledJPanel
@@ -213,7 +214,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 	/**
 	 * @param fsg
 	 */
-	public void setSimulationGroup(ForecastSimGroup fsg)
+	public void setSimulationGroup(AbstractSimulationGroup fsg)
 	{
 		if ( fsg == null )
 		{
@@ -260,4 +261,23 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 	}
 
 	protected abstract Class getSimGroupClass();
+
+	public void addSimulationGroup(AbstractSimulationGroup simGroup, boolean selectSimGroup)
+	{
+		if ( simGroup == null )
+		{
+			return;
+		}
+		ManagerProxy proxy = Project.getCurrentProject().getManagerProxy(simGroup);
+		if ( proxy != null )
+		{
+			_simulationGroupCombo.addItem(proxy);
+		}
+		if ( selectSimGroup )
+		{
+			setSimulationGroup(simGroup);
+		}
+
+	}
+
 }
