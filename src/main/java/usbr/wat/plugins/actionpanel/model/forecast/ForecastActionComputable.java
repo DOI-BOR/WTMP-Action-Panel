@@ -106,7 +106,7 @@ public class ForecastActionComputable
 	private ComputeType _computeType;
 
 	private DssPathMap _bcDssPathMap;
-	private DssPathMap _tempTargetDssPathMap;
+	private TempTargetDssPathMap _tempTargetDssPathMap;
 	private ComputeProgressPanel _computeProgressPanel;
 	private int _memberCnt;
 	private int _memberIdx;
@@ -450,7 +450,7 @@ public class ForecastActionComputable
 
 		configPath = RMAIO.concatPath(prjDir, TEMP_TARGET_CONFIG_FILE);
 		_computeProgressPanel.setStatusMessage("Reading Temperature Target Data..");
-		_tempTargetDssPathMap = new DssPathMap(_sim, configPath);
+		_tempTargetDssPathMap = new TempTargetDssPathMap(_sim, configPath);
 		_tempTargetDssPathMap.setSourceDssFile(eset.getTemperatureTargetSet().getDssOutputPath().toString());
 		_tempTargetDssPathMap.setSourceFPart(eset.getTemperatureTargetSet().getFPartWithoutCollection());
 
@@ -1322,7 +1322,7 @@ LOGGER.atInfo().log("Found "+srcList+" records for "+dssPath+" in "+dssFileAbs+"
 
 		Path filePath = ttSet.getDssOutputPath();
 
-		List<DSSIdentifier> destDssIdentifiers = _tempTargetDssPathMap.getDestDssIdentifiersFor(pathname.getPathname());
+		List<DSSIdentifier> destDssIdentifiers = _tempTargetDssPathMap.getDestDssIdentifiersFor(pathname.getPathname(), TemperatureTargetTimeStep.REGULAR_HOURLY);
 
 		DSSIdentifier srcDssId = new DSSIdentifier(Project.getCurrentProject().getAbsolutePath(filePath.toString()),pathname.getPathname());
 		HecTime[] times = getCopyTimeWindow();

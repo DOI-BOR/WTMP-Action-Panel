@@ -197,6 +197,11 @@ public class DssPathMap
 
 	public List<DSSIdentifier> getDestDssIdentifiersFor(String srcDssPath)
 	{
+		return getDestDssIdentifiersFor(srcDssPath, null);
+	}
+
+	public List<DSSIdentifier> getDestDssIdentifiersFor(String srcDssPath, String overrideTimeStep)
+	{
 		List<DSSIdentifier>destDssIds = new ArrayList<>();
 		if ( srcDssPath == null )
 		{
@@ -209,6 +214,12 @@ public class DssPathMap
 		{
 			dssItem = _dssPathMapList.get(i);
 			srcDssItemPath = dssItem.getSrcDssPath();
+			DSSPathname srcDssPathname = new DSSPathname(srcDssItemPath);
+			if(overrideTimeStep != null)
+			{
+				srcDssPathname.setEPart(overrideTimeStep);
+			}
+			srcDssItemPath = srcDssPathname.getPathname();
 			if ( DssPathMapItem.dssPathsEqual(srcDssItemPath, srcDssPath))
 			{
 				for(int j = 0;j < dssItem.getNumberOfDests(); j++ )
