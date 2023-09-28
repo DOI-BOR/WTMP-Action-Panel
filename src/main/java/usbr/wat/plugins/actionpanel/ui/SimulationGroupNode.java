@@ -59,11 +59,13 @@ public class SimulationGroupNode extends ManagerNode
 	{
 		_folderIcon = RmaImage.getImageIcon("Images/compMulti16x16.gif");
 	}
-	private boolean _showCnt;	
-	
+	private boolean _showCnt;
+	private ProjectTree _tree;
+
 	public SimulationGroupNode()
 	{
 		super("Simulation Group");
+		addManagerListener();
 		
 	}
 	public SimulationGroupNode(Object obj)
@@ -148,7 +150,19 @@ public class SimulationGroupNode extends ManagerNode
 		}
 		return null;
 	}
-	
+
+	@Override
+	public void add(MutableTreeNode node)
+	{
+		super.add(node);
+		_tree.nodesWereInserted(this, new TreeNode[]{node});
+		_tree.nodeChanged(this);
+		if (this.shouldAlwaysExpand())
+		{
+			_tree.expandNode(this);
+		}
+	}
+
 	public List getContentNodes()
 	{
 		List contentNodes = new ArrayList<>();
@@ -272,7 +286,6 @@ public class SimulationGroupNode extends ManagerNode
 		List<WatSimulation> allSims = Project.getCurrentProject().getManagerListForType(WatSimulation.class);
 		List<SimulationGroup> simGroups = Project.getCurrentProject().getManagerListForType(SimulationGroup.class);
 		int cnt = simGroups.size();
-		SimulationGroupNode sgNode;
 		List<WatSimulation> sgSims;
 		TreeNode parentNode = getParent();
 		SimGroupContainerNode  containerParent = null;
@@ -315,63 +328,7 @@ public class SimulationGroupNode extends ManagerNode
 	 */
 	private void addNotInGroupManagerListener()
 	{
-		Project.getCurrentProject().addManagerListener(new ProjectManagerListener()
-		{
-
-			@Override
-			public void managerAdded(ManagerProxy proxy)
-			{
-				WatSimulation sim = (WatSimulation) proxy.getManager();
-				
-				int cnt = getParent().getChildCount();
-				SimulationGroupNode sgNode;
-				List<WatSimulation> sgSims;
-				
-				for (int i = 1; i < cnt; i++ ) // first child should be this
-				{
-					TreeNode node = getParent().getChildAt(i);
-					if ( node instanceof SimulationGroupNode )
-					{
-						sgNode = (SimulationGroupNode) node;
-						sgSims = sgNode.getSimulations();
-						if ( sgSims.contains(sim))
-						{
-							return;
-						}
-					}
-				}
-				MutableTreeNode node = addSimulation(sim);
-				if ( node != null )
-				{
-					add(node);
-					ProjectTree tree = Browser.getBrowserFrame().getProjectTree();
-					tree.nodesWereInserted(SimulationGroupNode.this, new TreeNode[] {node});
-					tree.nodeChanged(SimulationGroupNode.this);
-					tree.expandNode(SimulationGroupNode.this);
-				}
-			}
-
-			@Override
-			public void managerDeleted(ManagerProxy proxy)
-			{
-				WatSimulation sim = (WatSimulation) proxy.getManager();
-				TreeNode simNode = findSimNode(sim);
-				if ( simNode != null )
-				{
-					int idx = getIndex(simNode);
-					remove(idx);
-					Browser.getBrowserFrame().getProjectTree().nodesWereRemoved(SimulationGroupNode.this,
-							new TreeNode[] {simNode});
-				}
-			}
-
-			@Override
-			public Class getManagerClass()
-			{
-				return WatSimulation.class;
-			}
-			
-		});
+		Project.getCurrentProject().addManagerListener(new SimGroupProjectManagerListener());
 	}
 	/**
 	 * @param sim
@@ -413,6 +370,67 @@ public class SimulationGroupNode extends ManagerNode
 			return super.toString()+" ("+getChildCount()+")";
 		}
 		return super.toString();
+	}
+
+	public void setTree(ProjectTree tree)
+	{
+		_tree = tree;
+	}
+
+
+	private class SimGroupProjectManagerListener implements ProjectManagerListener
+	{
+		@Override
+		public void managerAdded(ManagerProxy proxy)
+		{
+			WatSimulation sim = (WatSimulation) proxy.getManager();
+
+			int cnt = getParent().getChildCount();
+			SimulationGroupNode sgNode;
+			List<WatSimulation> sgSims;
+
+			for (int i = 1; i < cnt; i++ ) // first child should be this
+			{
+				TreeNode node = getParent().getChildAt(i);
+				if ( node instanceof SimulationGroupNode )
+				{
+					sgNode = (SimulationGroupNode) node;
+					sgSims = sgNode.getSimulations();
+					if ( sgSims.contains(sim))
+					{
+						return;
+					}
+				}
+			}
+			MutableTreeNode node = addSimulation(sim);
+			if ( node != null )
+			{
+				add(node);
+				_tree.nodesWereInserted(SimulationGroupNode.this, new TreeNode[] {node});
+				_tree.nodeChanged(SimulationGroupNode.this);
+				_tree.expandNode(SimulationGroupNode.this);
+			}
+		}
+
+		@Override
+		public void managerDeleted(ManagerProxy proxy)
+		{
+			WatSimulation sim = (WatSimulation) proxy.getManager();
+			TreeNode simNode = findSimNode(sim);
+			if ( simNode != null )
+			{
+				int idx = getIndex(simNode);
+				remove(idx);
+				_tree.nodesWereRemoved(SimulationGroupNode.this,
+						new TreeNode[] {simNode});
+			}
+		}
+
+		@Override
+		public Class getManagerClass()
+		{
+			return WatSimulation.class;
+		}
 	}
 	
 

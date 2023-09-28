@@ -19,6 +19,7 @@ import com.rma.model.ManagerProxy;
 import com.rma.model.Project;
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 
 /**
@@ -57,8 +58,16 @@ public class DeleteForecastSimGroupAction extends AbstractAction
 		{
 			proxy = (ManagerProxy) objects[i];
 			manager = proxy.loadManager();
-			if ( manager != null )
+			if ( manager instanceof AbstractSimulationGroup)
 			{
+				List<String> simNames = ((AbstractSimulationGroup) manager).getSimulationNames();
+				for(String simName : simNames)
+				{
+					prj.getManagerProxyList().stream()
+							.filter(p -> p.getName().equalsIgnoreCase(simName))
+							.findFirst()
+							.ifPresent(p -> prj.removeManager(p.loadManager()));
+				}
 				 prj.removeManager(manager);
 			}
 		}

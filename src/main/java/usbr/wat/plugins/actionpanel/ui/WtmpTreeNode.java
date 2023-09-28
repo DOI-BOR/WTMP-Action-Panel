@@ -7,6 +7,7 @@
  */
 package usbr.wat.plugins.actionpanel.ui;
 
+import javax.swing.SwingUtilities;
 import javax.swing.tree.MutableTreeNode;
 
 import com.rma.model.ManagerProxy;
@@ -32,21 +33,23 @@ public class WtmpTreeNode extends ProjectTreeNode
 	public WtmpTreeNode(Project currentProject, MutableTreeNode parent, WtmpTree tree)
 	{
 		super(currentProject, parent);
-		_tree =  tree;
+		_tree = tree;
 	}
 	@Override
 	public void buildTree()
 	{
-		removeAllChildren();
-		if ( getProject() == null )
+		SwingUtilities.invokeLater(() ->
 		{
-			return;
-		}
-		SimGroupContainerNode containerNode = new SimGroupContainerNode();
-		add(containerNode);
-		
-		getProject().addManagerListener(this);
-		
+			removeAllChildren();
+			if ( getProject() == null )
+			{
+				return;
+			}
+			SimGroupContainerNode containerNode = new SimGroupContainerNode(_tree);
+			add(containerNode);
+
+			getProject().addManagerListener(this);
+		});
 	}
 	
 	@Override

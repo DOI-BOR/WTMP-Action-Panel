@@ -8,6 +8,7 @@
 package usbr.wat.plugins.actionpanel;
 
 import java.awt.EventQueue;
+import java.util.Objects;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -43,10 +44,13 @@ public class SimGroupContainerNode extends AbstractContainerNode
 	{
 		_folderIcon = RmaImage.getImageIcon("Images/simGroupContainer.png");
 	}
+
+	private final ProjectTree _tree;
 	private ProjectAdapter _projectListener;
-	public SimGroupContainerNode()
+	public SimGroupContainerNode(ProjectTree tree)
 	{
 		super("Simulation Groups");
+		_tree = Objects.requireNonNull(tree, "Project tree must be specified");
 		addManagerListener();
 		addNoGroupNode();
 	}
@@ -73,7 +77,7 @@ public class SimGroupContainerNode extends AbstractContainerNode
 				{
 					int idx = getIndex(node);
 					remove(idx);
-					Browser.getBrowserFrame().getProjectTree().nodesWereRemoved(SimGroupContainerNode.this, new TreeNode[] {node});
+					_tree.nodesWereRemoved(SimGroupContainerNode.this, new TreeNode[] {node});
 				}
 			}
 
@@ -95,8 +99,12 @@ public class SimGroupContainerNode extends AbstractContainerNode
 		{
 			MutableTreeNode mgrNode = ProjectNodeFactory.getProjectNode(proxy, this);
 			add(mgrNode);
-			ProjectTree tree = getTree();
-			EventQueue.invokeLater(()->tree.nodesWereInserted(this, new TreeNode[] {node}));
+			if(mgrNode instanceof SimulationGroupNode)
+			{
+				SimulationGroupNode sgNode = (SimulationGroupNode) mgrNode;
+				sgNode.setTree(_tree);
+			}
+			EventQueue.invokeLater(()->_tree.nodesWereInserted(this, new TreeNode[] {node}));
 			return true;
 		}
 		return false;
@@ -106,11 +114,7 @@ public class SimGroupContainerNode extends AbstractContainerNode
 	 */
 	private ProjectTree getTree()
 	{
-		if ( getParent() instanceof WtmpTreeNode )
-		{
-			return ActionsProjectTab.getTab().getProjectTree();
-		}
-		return Browser.getBrowserFrame().getProjectTree();
+		return _tree;
 	}
 	/**
 	 * 
@@ -148,6 +152,7 @@ public class SimGroupContainerNode extends AbstractContainerNode
 		if ( node instanceof SimulationGroupNode )
 		{
 			SimulationGroupNode sgNode = (SimulationGroupNode) node;
+			sgNode.setTree(_tree);
 			sgNode.setAddSimsNotInGroup();
 			sgNode.setShowCount(true);
 			sgNode.setManagerProxy(Project.getCurrentProject().getManagerProxy(simGroup));

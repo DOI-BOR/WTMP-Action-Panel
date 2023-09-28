@@ -441,19 +441,30 @@ public class ActionsWindow extends RmaJDialog
 			if ( simGroup != null )
 			{
 				boolean deleted = false;
+				boolean isSimGroup = false;
 				List<WatSimulation> sims = simGroup.getSimulations();
 				for (int i = 0;i < sims.size(); i++ )
 				{
 					sim = sims.get(i);
 					if ( name.equals(sim.getName()))
 					{
+						String[] fPartSplit = sim.getFPart().split(":");
+						if(fPartSplit.length > 0)
+						{
+							String originalSimName = fPartSplit[0];
+							String[] nameSplit = name.split(originalSimName + "-");
+							if(nameSplit.length > 1 && nameSplit[1].equalsIgnoreCase(simGroup.getName()))
+							{
+								isSimGroup = true;
+							}
+						}
 						simGroup.removeSimulation(sim);
 						simGroup.setModified(true);
 						deleted = true;
 						break;
 					}
 				}
-				if ( deleted )
+				if ( deleted && !isSimGroup)
 				{
 					_calibrationPanel.setSimulationTable(simGroup);
 					if ( simGroup.getSimulations().isEmpty() )
