@@ -7,6 +7,7 @@
  */
 package usbr.wat.plugins.actionpanel.model.forecast;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,6 +16,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.common.flogger.FluentLogger;
+import com.rma.model.Project;
+import hec.heclib.dss.DSSPathname;
 import org.jdom.Element;
 
 import hec.lang.NamedType;
@@ -25,7 +29,8 @@ import hec.lang.NamedType;
  */
 public class InitialConditions extends NamedType
 {
-	private Map<String, List<String>> _icMap = new HashMap<>();
+	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+	private Map<String, Profile> _icMap = new HashMap<>();
 
 	public InitialConditions()
 	{
@@ -34,18 +39,17 @@ public class InitialConditions extends NamedType
 
 	/**
 	 * @param resName
-	 * @param selectedProfileNames
+	 * @param selectedProfile
 	 */
-	public void putSelectedProfiles(String resName,
-			List<String> selectedProfileNames)
+	public void putSelectedProfile(String resName, Profile selectedProfile)
 	{
-		if ( resName != null && selectedProfileNames != null )
+		if ( resName != null && selectedProfile != null )
 		{
-			_icMap.put(resName, selectedProfileNames);
+			_icMap.put(resName, selectedProfile);
 		}
 	}
-	
-	public List<String>getSelectedProfiles(String resName)
+
+	public Profile getSelectedProfile(String resName)
 	{
 		return _icMap.get(resName);
 	}
@@ -60,27 +64,34 @@ public class InitialConditions extends NamedType
 	 */
 	public void saveData(Element icElem)
 	{
-		Set<Entry<String, List<String>>> entrySet = _icMap.entrySet();
-		Iterator<Entry<String, List<String>>> iter = entrySet.iterator();
+		Set<Entry<String, Profile>> entrySet = _icMap.entrySet();
+		Iterator<Entry<String, Profile>> iter = entrySet.iterator();
 		String resName;
-		List<String>profiles;
+		Profile profile;
 		Element resElem;
 		Element profElem;
 		while (iter.hasNext())
 		{
-			Entry<String, List<String>> entry = iter.next();
+			Entry<String, Profile> entry = iter.next();
 			resName = entry.getKey();
-			profiles = entry.getValue();
+			profile = entry.getValue();
 			resElem = new Element("Reservoir");
 			resElem.setAttribute("Name", resName);
 			icElem.addContent(resElem);
-			for (int i = 0;i < profiles.size(); i++ )
+			profElem = new Element("Profile");
+			profElem.setAttribute("Name", profile.getName());
+			Element fileElem = new Element("Output-DSS-File");
+			fileElem.setText(Project.getCurrentProject().getRelativePath(profile.getDssFileName()));
+			Element pathnameElement = new Element("DSS-Pathname");
+			DSSPathname dssPathname = new DSSPathname();
+			if(profile.getDssPath() != null)
 			{
-				profElem = new Element("Profile");
-				profElem.setAttribute("Name", profiles.get(i));
-				resElem.addContent(profElem);
+				dssPathname = profile.getDssPath();
 			}
-			
+			pathnameElement.setText(dssPathname.toString());
+			profElem.addContent(fileElem);
+			profElem.addContent(pathnameElement);
+			resElem.addContent(profElem);
 		}
 	}
 
@@ -96,27 +107,47 @@ public class InitialConditions extends NamedType
 		}
 		List resElems = icElem.getChildren();
 		List profElems;
-		Element resElem, profileElem;
+		Element resElem;
 		String reservoirName, profileName;
 		for (int r = 0; r < resElems.size(); r++ )
 		{
 			resElem = (Element) resElems.get(r);
 			reservoirName = resElem.getAttributeValue("Name");
 			profElems = resElem.getChildren();
-			if ( profElems != null )
+			if ( profElems != null && !profElems.isEmpty())
 			{
-				List<String>profileNames = new ArrayList<>();
-				for(int p = 0; p < profElems.size(); p++ )
+				Element profileElem = (Element) profElems.get(0);
+				profileName = profileElem.getAttributeValue("Name");
+				Element fileElem = profileElem.getChild("Output-DSS-File");
+				String dssFileName = null;
+				if(fileElem != null)
 				{
-					profileElem = (Element) profElems.get(p);
-					profileName = profileElem.getAttributeValue("Name");
-					profileNames.add(profileName);
-					
+					dssFileName = fileElem.getText();
 				}
-				_icMap.put(reservoirName, profileNames);
+				String dssPathName = null;
+				Element pathnameElement = profileElem.getChild("DSS-Pathname");
+				if(pathnameElement != null)
+				{
+					dssPathName = pathnameElement.getText();
+				}
+				try
+				{
+					Profile profile = new Profile(profileName);
+					if(dssFileName != null)
+					{
+						profile.setDssFileName(Project.getCurrentProject().getAbsolutePath(dssFileName));
+					}
+					if(dssPathName != null)
+					{
+						profile.setDssPath(new DSSPathname(dssPathName));
+					}
+					_icMap.put(reservoirName, profile);
+				}
+				catch (ParseException e)
+				{
+					LOGGER.atWarning().withCause(e).log("Failed to parse profile date: " + profileName);
+				}
 			}
 		}
-		
-		
 	}
 }

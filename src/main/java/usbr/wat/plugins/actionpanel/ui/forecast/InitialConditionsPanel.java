@@ -16,18 +16,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -74,6 +70,7 @@ import usbr.wat.plugins.actionpanel.model.forecast.ForecastConfigFiles;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.IcReservoirInfo;
 import usbr.wat.plugins.actionpanel.model.forecast.InitialConditions;
+import usbr.wat.plugins.actionpanel.model.forecast.Profile;
 
 /**
  * @author mark
@@ -83,7 +80,6 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 	private static final String CONFIG_CSV_FILE = ForecastConfigFiles.getRelativeIcReservoirsFile();
-	private static final SimpleDateFormat OUTPUT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	private static final Pattern UNIT_PATTERN = Pattern.compile("\\((.*?)\\)");
 	private static final String TEMP_PLOT_MIN_PROPERTY = "WTMP.Forecast.LowerTempPlotMLimit.Celsius";
 	private static final String TEMP_PLOT_MAX_PROPERTY = "WTMP.Forecast.UpperTempPlotLimit.Celsius";
@@ -259,7 +255,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 				if ( "true".equalsIgnoreCase(obj.toString())||obj == Boolean.TRUE)
 				{
 					profile = (Profile) table.getValueAt(r, 1);
-					pdcsToPlot.add(new PairedDataSet(profile._pdc));
+					pdcsToPlot.add(new PairedDataSet(profile.getPdc()));
 				}
 			}
 			String resName = table.getName();
@@ -434,7 +430,15 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 							{
 								date = date.substring(0, idx);
 							}
-							profile = new Profile(date);
+							Profile existingProfile = _fsg.getInitialConditions().getSelectedProfile(resInfo.getReservoirName());
+							if(existingProfile.getName().equalsIgnoreCase(date))
+							{
+								profile = existingProfile;
+							}
+							else
+							{
+								profile = new Profile(date);
+							}
 							profiles.add(profile);
 							pathname.setBPart(resInfo.getReservoirName());
 							String depthParam = Parameter.getParameter(Parameter.PARAMID_DEPTH).getParameter();
@@ -442,7 +446,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 							pathname.setCPart(depthParam.toUpperCase() + "-" + tempParam.toUpperCase());
 							pathname.setEPart(date);
 							pdc.fullName = pathname.getPathname();
-							profile._pdc = pdc;
+							profile.setPdc(pdc);
 						}
 						temps.add(parts[1]);
 						depths.add(parts[2]);
@@ -483,7 +487,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 
 	private void writeProfileToDss(Profile profile)
 	{
-		PairedDataContainer pdc = profile._pdc;
+		PairedDataContainer pdc = profile.getPdc();
 		int success = DssFileManagerImpl.getDssFileManager().write(pdc);
 		if(success != 0)
 		{
@@ -502,19 +506,19 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 	{
 		try
 		{
-			profile._pdc.setNumberCurves(1);
-			profile._pdc.setNumberOrdinates(depthsList.size());
+			profile.getPdc().setNumberCurves(1);
+			profile.getPdc().setNumberOrdinates(depthsList.size());
 			//these are always C and ft. In future csv file should provide units.
-			profile._pdc.xunits = DEFAULT_DEPTH_UNITS;
-			profile._pdc.xparameter = Parameter.getParameter(Parameter.PARAMID_DEPTH).getParameter();
-			profile._pdc.yparameter = Parameter.getParameter(Parameter.PARAMID_TEMP).getParameter();
-			profile._pdc.yunits = DEFAULT_TEMP_UNITS;
+			profile.getPdc().xunits = DEFAULT_DEPTH_UNITS;
+			profile.getPdc().xparameter = Parameter.getParameter(Parameter.PARAMID_DEPTH).getParameter();
+			profile.getPdc().yparameter = Parameter.getParameter(Parameter.PARAMID_TEMP).getParameter();
+			profile.getPdc().yunits = DEFAULT_TEMP_UNITS;
 			double[] temps = toDoubleArray(tempsList);
 			double[] depths = toDoubleArray(depthsList);
 			double[][] temps2 = new double[1][0];
 			temps2[0] = temps;
-			profile._pdc.setValues(depths, temps2);
-			profile._pdc.switchXyAxis = true;
+			profile.getPdc().setValues(depths, temps2);
+			profile.getPdc().switchXyAxis = true;
 		}
 		catch (DataSetIllegalArgumentException e)
 		{
@@ -711,17 +715,17 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 			Iterator<String> keyIter = keySet.iterator();
 			String resName;
 			ResComponents comp;
-			List<String>selectedProfileNames;
 			while (keyIter.hasNext())
 			{
 				resName = keyIter.next();
 				comp = _resComponents.get(resName);
-				selectedProfileNames = findSelectedRows(comp.table);
-				if ( selectedProfileNames.size() > 0 )
+				Profile selectedProfile = findSelectedRow(comp.table);
+				if ( selectedProfile != null )
 				{
-					ics.putSelectedProfiles(resName, selectedProfileNames);
+					ics.putSelectedProfile(resName, selectedProfile);
 				}
 			}
+			ics.setModified(true);
 			simGrp.setInitialConditions(ics);
 		}
 
@@ -731,25 +735,22 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 	 * @param table
 	 * @return
 	 */
-	private List<String> findSelectedRows(RmaJTable table)
+	private Profile findSelectedRow(RmaJTable table)
 	{
 		int rowCnt = table.getRowCount();
 		Object obj;
-		
-		List<String>selectedProfileNames = new ArrayList<>();
-		Profile profile;
+
+		Profile profile = null;
 		for (int r = 0;r < rowCnt; r++ )
 		{
 			obj = table.getValueAt(r, 0);
 			if ( obj == Boolean.TRUE || "true".equalsIgnoreCase(obj.toString()))
 			{
 				profile = (Profile) table.getValueAt(r, 1);
-				selectedProfileNames.add(profile._name);
+				break;
 			}
 		}
-		
-		
-		return selectedProfileNames;
+		return profile;
 	}
 	/**
 	 * @param fsg
@@ -768,13 +769,12 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 			Iterator<Entry<String, ResComponents>> iter = entrySet.iterator();
 			Entry<String, ResComponents> entry;
 			String resName;
-			List<String> selectedProfiles;
 			while (iter.hasNext())
 			{
 				entry = iter.next();
 				resName = entry.getKey();
-				selectedProfiles = ic.getSelectedProfiles(resName);
-				fillTableSelections(entry.getValue().table, selectedProfiles);
+				Profile selectedProfile = ic.getSelectedProfile(resName);
+				fillTableSelections(entry.getValue().table, selectedProfile);
 				buildTablePlot(entry.getValue().table);
 			}
 			fillUpperInitialConditionsTable();
@@ -789,20 +789,16 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 		List<String> reservoirs = initialConditions.getReservoirs();
 		for(String reservoir : reservoirs)
 		{
-			List<String> profiles = initialConditions.getSelectedProfiles(reservoir);
-			if(!profiles.isEmpty())
+			Profile profile = initialConditions.getSelectedProfile(reservoir);
+			String displayValue = reservoir + " (" + profile + ")";
+			if(tableHasProfileSelected(reservoir, profile))
 			{
-				String profile = profiles.get(0);
-				String displayValue = reservoir + " (" + profile + ")";
-				if(tableHasProfileSelected(reservoir, profile))
-				{
-					_initialConditionsTable.appendRow(new Vector<>(Collections.singletonList(displayValue)));
-				}
+				_initialConditionsTable.appendRow(new Vector<>(Collections.singletonList(displayValue)));
 			}
 		}
 	}
 
-	private boolean tableHasProfileSelected(String reservoir, String profile)
+	private boolean tableHasProfileSelected(String reservoir, Profile profile)
 	{
 		boolean retVal = false;
 		ResComponents resComponent = _resComponents.get(reservoir);
@@ -813,7 +809,7 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 				Object checked = resComponent.table.getValueAt(row, 0);
 				Object date = resComponent.table.getValueAt(row, 1);
 				if(checked != null && Boolean.parseBoolean(checked.toString())
-					&& date != null && date.toString().equalsIgnoreCase(profile))
+					&& date != null && date.toString().equalsIgnoreCase(profile.getName()))
 				{
 					retVal = true;
 					break;
@@ -859,31 +855,26 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 
 	/**
 	 * @param table
-	 * @param selectedProfiles
+	 * @param selectedProfile
 	 */
 	private void fillTableSelections(RmaJTable table,
-			List<String> selectedProfiles)
+									 Profile selectedProfile)
 	{
-		if ( selectedProfiles == null )
+		if ( selectedProfile == null )
 		{
 			return;
 		}
-		String profileName;
 		int rowCnt = table.getRowCount();
 		Profile profile;
-		for (int p = 0; p < selectedProfiles.size(); p++ )
+		for (int r = 0; r < rowCnt; r++ )
 		{
-			profileName = selectedProfiles.get(p);
-			for (int r = 0; r < rowCnt; r++ )
+			profile = (Profile) table.getValueAt(r, 1);
+			if ( selectedProfile.getName().equalsIgnoreCase(profile.getName()))
 			{
-				profile = (Profile) table.getValueAt(r, 1);;
-				if ( profileName.equals(profile._name))
-				{
-					table.setValueAt(Boolean.TRUE, r, 0);
-					Rectangle cellRect = table.getCellRect(r, 0, true);
-					table.scrollRectToVisible(cellRect);
-					break;
-				}
+				table.setValueAt(Boolean.TRUE, r, 0);
+				Rectangle cellRect = table.getCellRect(r, 0, true);
+				table.scrollRectToVisible(cellRect);
+				break;
 			}
 		}
 	}
@@ -898,65 +889,6 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 			plotPanel = p;
 		}
 
-	}
-
-	private class Profile implements Comparable<Profile>
-	{
-		private final Date _date;
-		PairedDataContainer _pdc;
-		String _name;
-		
-		/**
-		 * @param date
-		 */
-		public Profile(String date) throws ParseException
-		{
-			_date = parseDate(date);
-			_name = OUTPUT_DATE_FORMAT.format(_date);
-		}
-
-		@Override
-		public String toString()
-		{
-			return _name;
-		}
-
-		@Override
-		public int compareTo(Profile other)
-		{
-			int retVal = 1;
-			if(other != null)
-			{
-				retVal = other._date.compareTo(_date);
-			}
-			return retVal;
-		}
-
-		@Override
-		public boolean equals(Object o)
-		{
-			if (this == o)
-			{
-				return true;
-			}
-			if (o == null || getClass() != o.getClass())
-			{
-				return false;
-			}
-			Profile profile = (Profile) o;
-			return Objects.equals(_date, profile._date) && Objects.equals(_name, profile._name);
-		}
-
-		@Override
-		public int hashCode()
-		{
-			return Objects.hash(_date, _name);
-		}
-
-		private Date parseDate(String dateString) throws ParseException
-		{
-			return OUTPUT_DATE_FORMAT.parse(dateString);
-		}
 	}
 
 	@Override
