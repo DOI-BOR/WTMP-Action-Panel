@@ -68,12 +68,16 @@ public class CalibrationSimulationGroupPanel extends BaseSimulationGroupPanel
 	@Override
 	protected void simGroupSelected(ItemEvent e)
 	{
-		if ( ItemEvent.DESELECTED == e.getStateChange())
+		if ( e != null && ItemEvent.DESELECTED == e.getStateChange())
 		{
 			return;
 		}
 		ManagerProxy proxy = (ManagerProxy) _simulationGroupCombo.getSelectedItem();
-		SimulationGroup simGroup = (SimulationGroup) proxy.loadManager();
+		SimulationGroup simGroup = null;
+		if(proxy != null)
+		{
+			simGroup = (SimulationGroup) proxy.loadManager();
+		}
 		fillForm(simGroup);
 	}
 	private void fillForm(SimulationGroup simGroup)

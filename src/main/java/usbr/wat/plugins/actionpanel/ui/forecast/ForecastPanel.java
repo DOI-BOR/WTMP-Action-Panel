@@ -175,15 +175,29 @@ public class ForecastPanel extends RmaJPanel
 	public void setSimulationGroup(ForecastSimGroup fsg)
 	{
 		_simGroup = fsg;
-		_simGroupPanel.setSimulationGroup(fsg);
-		_initialConditionsPanel.setSimulationGroup(fsg);
-		_operationsPanel.setSimulationGroup(fsg);
-		_metPanel.setSimulationGroup(fsg);
-		_tempTargetsPanel.setSimulationGroup(fsg);
-		_bcPanel.setSimulationGroup(fsg);
-		if ( _simGroup != null )
+		if(fsg != null)
 		{
+			_simGroupPanel.setSimulationGroup(fsg);
+			_initialConditionsPanel.setSimulationGroup(fsg);
+			_operationsPanel.setSimulationGroup(fsg);
+			_metPanel.setSimulationGroup(fsg);
+			_tempTargetsPanel.setSimulationGroup(fsg);
+			_bcPanel.setSimulationGroup(fsg);
 		}
+		else
+		{
+			clearPanel();
+		}
+	}
+
+	private void clearPanel()
+	{
+		_initialConditionsPanel.clearPanel();
+		_operationsPanel.clearPanel();
+		_metPanel.clearPanel();
+		_bcPanel.clearPanel();
+		_tempTargetsPanel.clearPanel();
+		_currentPanel.clearTables();
 	}
 
 	public void loadSimulationGroupCombo()
@@ -231,5 +245,16 @@ public class ForecastPanel extends RmaJPanel
 		_simulationPanel.fillAnalysisWindow();
 		setEnabled(true);
 		_simulationPanel.refreshSimTableSelection();
+	}
+
+	@Override
+	public void setVisible(boolean visible)
+	{
+		if(visible && _simGroup == null)
+		{
+			clearPanel();
+		}
+		super.setVisible(visible);
+
 	}
 }

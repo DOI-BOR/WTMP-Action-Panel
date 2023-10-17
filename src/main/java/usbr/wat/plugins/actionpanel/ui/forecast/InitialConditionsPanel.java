@@ -574,7 +574,9 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 	@Override
 	protected void clearPanel()
 	{
-		//noop
+		_plotsPanel.removeAll();
+		_plotsPanel.revalidate();
+		_plotsPanel.repaint();
 	}
 
 	@Override

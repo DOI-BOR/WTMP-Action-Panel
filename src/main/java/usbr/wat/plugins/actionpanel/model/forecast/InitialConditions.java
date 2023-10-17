@@ -86,7 +86,7 @@ public class InitialConditions extends NamedType
 			DSSPathname dssPathname = new DSSPathname();
 			if(profile.getDssPath() != null)
 			{
-				dssPathname = profile.getDssPath();
+				dssPathname = new DSSPathname(profile.getDssPath());
 			}
 			pathnameElement.setText(dssPathname.toString());
 			profElem.addContent(fileElem);
@@ -139,7 +139,7 @@ public class InitialConditions extends NamedType
 					}
 					if(dssPathName != null)
 					{
-						profile.setDssPath(new DSSPathname(dssPathName));
+						profile.setDssPath(dssPathName);
 					}
 					_icMap.put(reservoirName, profile);
 				}

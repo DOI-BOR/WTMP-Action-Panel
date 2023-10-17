@@ -180,7 +180,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 				EventQueue.invokeLater(()->studyClosed());
 			}
 		});
-		_simulationGroupCombo.addItemListener(e->simGroupSelected(e));
+		_simulationGroupCombo.addItemListener(this::simGroupSelected);
 
 	}
 
@@ -257,6 +257,10 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		else if ( _simulationGroupCombo.getItemCount() == 1 )
 		{
 			_simulationGroupCombo.setSelectedIndex(0);
+		}
+		if(_simulationGroupCombo.getSelectedIndex() < 0)
+		{
+			simGroupSelected(null);
 		}
 	}
 

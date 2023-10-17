@@ -647,7 +647,7 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 	}
 
 	@Override
-	protected void clearPanel()
+	public void clearPanel()
 	{
 		_ttTable.commitEdit(true);
 		_ttInfoTable.commitEdit(true);

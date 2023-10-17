@@ -67,8 +67,7 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	private static RmaTableModel _opsTableModel;
 	private static RmaTableModel _metTableModel;
 	private static RmaTableModel _bcTableModel;
-	private static RmaTableModel _tempTargetTableModel;
-
+	private static TempTargetForecastTableModel _tempTargetTableModel;
 	private static ListSelectionModel _initialConditionsSelectionModel;
 	private static ListSelectionModel _opsSelectionModel;
 	private static ListSelectionModel _metSelectionModel;
@@ -243,11 +242,27 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 		
 		if ( _tempTargetTableModel != null )
 		{
-			_tempTargetTable = new ForecastTable(this, _tempTargetTableModel);
+			_tempTargetTable = new ForecastTable(this, _tempTargetTableModel)
+			{
+				@Override
+				public void deleteCells()
+				{
+					_tempTargetTableModel.clearTempTargets();
+					super.deleteCells();
+				}
+			};
 		}
 		else
 		{
-			_tempTargetTable = new ForecastTable(this, new String[] {"Temperature Target Sets"});
+			_tempTargetTable = new ForecastTable(this, new String[] {"Temperature Target Sets"})
+			{
+				@Override
+				public void deleteCells()
+				{
+					_tempTargetTableModel.clearTempTargets();
+					super.deleteCells();
+				}
+			};
 		}
 		if ( _tempTargetSelectionModel != null )
 		{
@@ -382,7 +397,8 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	public void setVisible(boolean visible)
 	{
 		super.setVisible(visible);
-		if(visible && getTableForPanel() != null && getTableForPanel().getSelectedRow() < 0)
+		if(visible && getTableForPanel() != null && getTableForPanel().getSelectedRow() < 0
+			&& !(this instanceof InitialConditionsPanel))
 		{
 			clearPanel();
 		}
@@ -403,6 +419,14 @@ public abstract class AbstractForecastPanel<T extends NamedType> extends RmaJPan
 	}
 
 	protected abstract void clearPanel();
+
+	public void clearTables()
+	{
+		for(ForecastTable table : _tables)
+		{
+			table.deleteCells();
+		}
+	}
 
 
 	/**

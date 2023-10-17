@@ -511,7 +511,11 @@ public class SimulationPanel extends AbstractSimulationPanel
 				String members = (String) _simEnsembleTable.getValueAt(r, 3);
 				_esetsInTable.get(r).setMemberSetToCompute(members);
 			}
-			_parentPanel.getSimulationGroup().setModified(true);
+			ForecastSimGroup simGroup = _parentPanel.getSimulationGroup();
+			if(simGroup != null)
+			{
+				simGroup.setModified(true);
+			}
 		}
 		int row = _simulationTable.getSelectedRow();
 		_simEnsembleTable.deleteCells();

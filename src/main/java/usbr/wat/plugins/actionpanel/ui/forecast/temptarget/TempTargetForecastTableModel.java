@@ -92,7 +92,7 @@ public final class TempTargetForecastTableModel extends RmaTableModel
         }
     }
 
-    void clearTempTargets()
+    public void clearTempTargets()
     {
         _sets.clear();
         fireTableDataChanged();
