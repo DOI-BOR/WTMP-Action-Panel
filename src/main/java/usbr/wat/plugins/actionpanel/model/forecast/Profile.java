@@ -22,7 +22,7 @@ public class Profile implements Comparable<Profile>
     private PairedDataContainer _pdc;
     private String _name;
     private String _dssFileName;
-    private DSSPathname _dssPath;
+    private String _dssPath;
 
     /**
      * @param date
@@ -90,7 +90,7 @@ public class Profile implements Comparable<Profile>
     {
         _pdc = pdc;
         _dssFileName = pdc.fileName;
-        _dssPath = new DSSPathname(pdc.fullName);
+        _dssPath = pdc.fullName;
     }
 
     public String getName()
@@ -108,7 +108,7 @@ public class Profile implements Comparable<Profile>
         return _dssFileName;
     }
 
-    public DSSPathname getDssPath()
+    public String getDssPath()
     {
         return _dssPath;
     }
@@ -118,7 +118,7 @@ public class Profile implements Comparable<Profile>
         _dssFileName = dssFileName;
     }
 
-    public void setDssPath(DSSPathname dssPath)
+    public void setDssPath(String dssPath)
     {
         _dssPath = dssPath;
     }
