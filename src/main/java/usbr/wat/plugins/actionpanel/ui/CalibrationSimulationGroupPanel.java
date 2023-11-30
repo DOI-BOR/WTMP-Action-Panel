@@ -50,7 +50,7 @@ public class CalibrationSimulationGroupPanel extends BaseSimulationGroupPanel
 	@Override
 	protected Action getDeleteSimGroupAction()
 	{
-		return new DeleteSimulationGroupAction(ActionPanelPlugin.getInstance().getActionsWindow());
+		return new DeleteSimulationGroupAction();
 	}
 
 	@Override

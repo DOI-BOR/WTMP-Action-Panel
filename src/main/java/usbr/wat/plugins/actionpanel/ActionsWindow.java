@@ -410,7 +410,7 @@ public class ActionsWindow extends RmaJDialog
 			if ( proxy.getManager()==getSimulationGroup() )
 			{
 				setSimulationGroup(null);
-				new DeleteSimulationGroupAction(ActionsWindow.this).deleteSimulationGroup(simGroup);
+				new DeleteSimulationGroupAction().deleteSimulationGroup(simGroup);
 			}
 		}
 	}
@@ -463,7 +463,7 @@ public class ActionsWindow extends RmaJDialog
 						int opt = JOptionPane.showConfirmDialog(ActionsWindow.this, msg, title, JOptionPane.YES_NO_OPTION);
 						if ( opt == JOptionPane.YES_OPTION )
 						{
-							if ( new DeleteSimulationGroupAction(ActionsWindow.this).deleteSimulationGroup(simGroup))
+							if ( new DeleteSimulationGroupAction().deleteSimulationGroup(simGroup))
 							{
 								setSimulationGroup(null);
 							}
