@@ -30,16 +30,14 @@ import usbr.wat.plugins.actionpanel.model.SimulationGroup;
 public class DeleteSimulationGroupAction extends AbstractAction
 {
 
-	private ActionsWindow _parent;
 
 	/**
 	 * @param parent
 	 */
-	public DeleteSimulationGroupAction(ActionsWindow parent)
+	public DeleteSimulationGroupAction()
 	{
 		super("Delete");
 		setEnabled(false);
-		_parent = parent;
 	}
 
 	@Override
@@ -81,7 +79,7 @@ public class DeleteSimulationGroupAction extends AbstractAction
 		{
 			return false;
 		}
-		_parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		ActionPanelPlugin.getInstance().getActionsWindow().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		try
 		{
 			List<WatSimulation> sims = simGroup.getSimulations();
@@ -100,7 +98,7 @@ public class DeleteSimulationGroupAction extends AbstractAction
 		}
 		finally
 		{
-			_parent.setCursor(Cursor.getDefaultCursor());	
+			ActionPanelPlugin.getInstance().getActionsWindow().setCursor(Cursor.getDefaultCursor());
 		}
 	}
 
