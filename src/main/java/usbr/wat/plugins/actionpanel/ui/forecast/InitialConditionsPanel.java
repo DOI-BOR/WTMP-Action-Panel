@@ -431,6 +431,10 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 								date = date.substring(0, idx);
 							}
 							Profile existingProfile = _fsg.getInitialConditions().getSelectedProfile(resInfo.getReservoirName());
+							if(existingProfile == null)
+							{
+								break;
+							}
 							if(existingProfile.getName().equalsIgnoreCase(date))
 							{
 								profile = existingProfile;
