@@ -296,12 +296,20 @@ public final class TemperatureTargetSet extends NamedType
             _dssPathNames.addAll(dssPathNames);
         }
     }
+    public List<DSSPathname> getDssPathNames()
+    {
+        return getDssPathNames(null);
+    }
+
     public List<DSSPathname> getDssPathNames(TemperatureTargetTimeStep timeStep)
     {
         List<DSSPathname> retVal = new ArrayList<>(_dssPathNames);
-        for(DSSPathname pathname : retVal)
+        if(timeStep != null)
         {
-            pathname.setEPart(timeStep.toString());
+            for(DSSPathname pathname : retVal)
+            {
+                pathname.setEPart(timeStep.toString());
+            }
         }
         return retVal;
     }
@@ -320,7 +328,7 @@ public final class TemperatureTargetSet extends NamedType
         else
         {
             int i=1;
-            List<DSSPathname> pathnames = getDssPathNames(TemperatureTargetTimeStep.REGULAR_WEEKLY);
+            List<DSSPathname> pathnames = getDssPathNames();
             for(DSSPathname pathname : pathnames)
             {
                 TimeSeriesContainer tsc = buildTsFromPathname(i, pathname, timeWindow);
@@ -555,4 +563,5 @@ public final class TemperatureTargetSet extends NamedType
     {
         return _riverLocation;
     }
+
 }

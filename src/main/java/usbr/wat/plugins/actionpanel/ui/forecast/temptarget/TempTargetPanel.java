@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.TableColumnModel;
 
@@ -67,6 +68,7 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 	private TemperatureTargetSet _selectedTempTargetSet;
 	private int _topTableRowSelected;
 	private ForecastSimGroup _fsg;
+	private int _defaultResizeMode;
 
 	/**
 	 * @param forecastPanel - parent forecast panel
@@ -221,6 +223,8 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 		_ttTable = new RmaJTable(this, new String[] {"Date",""});
 		_ttTableModel = new TempTargetTableModel();
 		_ttTable.setModel(_ttTableModel);
+		_ttTable.getScrollPane().setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		_defaultResizeMode = _ttTable.getAutoResizeMode();
 		_ttTable.removePopupMenuRowEditingOptions();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -564,6 +568,14 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 		}
 		_ttTableModel.setTempTargetSet(temperatureTargetSet, _fsg);
 		_ttTableModel.fireTableStructureChanged();
+		if(_ttTable.getColumnCount() > 12)
+		{
+			_ttTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		}
+		else
+		{
+			_ttTable.setAutoResizeMode(_defaultResizeMode);
+		}
 		_ttTable.setColumnWidth(TempTargetTableModel.DATE_COL_INDEX, DATE_COL_MIN_WIDTH);
 	}
 
