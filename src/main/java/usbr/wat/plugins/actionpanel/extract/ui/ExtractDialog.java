@@ -75,6 +75,45 @@ import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 @SuppressWarnings("serial")
 public class ExtractDialog extends RmaJDialog
 {
+	enum StoreTypes
+	{
+		OptionReplaceAll("Replace All", "0-replace-all", "Always replace data"),
+		OptionReplaceMissing("Replace Missing Values Only", "1-replace-missing-values-only", "Only replace missing data"),
+		OptionReplaceAllCreate("Replace All Create ", "2-replace-all-create","Write regardless, even if all missing data (write a missing record)"),
+		OptionReplaceAllDelete("Replace All Delete ", "3-replace-all-delete","If a record is all missing, do not write it, and delete it from disk if it exists."),
+		OptionReplaceWithNonMissing("Replace With Non-Missing", "4-replace-with-non-missing","Do not allow a missing input data to replace a valid data piece.");
+
+		private String _comboText;
+		private String _storeRule;
+		private String _tooltip;
+
+		StoreTypes(String comboText, String storeRule, String tooltip)
+		{
+			_comboText = comboText;
+			_storeRule = storeRule;
+			_tooltip = tooltip;
+		}
+
+
+		public String toString()
+		{
+			return _comboText;
+		}
+
+		public String getStoreRule()
+		{
+			return _storeRule;
+		}
+
+		public String getToolTip()
+		{
+			return _tooltip;
+		}
+
+
+
+	}
+
 	private static final String SHARED_DIR = "shared";
 	private static final String EXTRACT_LOGS_DIR = "extract/logs";
 	private static final String EXTRACT_CONFIG_DIR = "extract/config";
@@ -85,7 +124,7 @@ public class ExtractDialog extends RmaJDialog
 	private RmaJTextField _simGroupFld;
 	private DateTimePanel _startDateTimePanel;
 	private DateTimePanel _endDateTimePanel;
-	private RmaJComboBox _storeRuleCombo;
+	private RmaJComboBox<StoreTypes> _storeRuleCombo;
 	private RmaJTextField _dssFpartFld;
 	private RmaJTable _extractTable;
 	private JButton _viewLogBtn;
@@ -196,19 +235,20 @@ public class ExtractDialog extends RmaJDialog
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(label, gbc);
 		
-		Vector<String>storeOptions = new Vector<>();
-		//bah.  having to use these strings instead of constants sucks
-		storeOptions.add("0-replace-all");
-		storeOptions.add("1-replace-missing-values-only");
-		storeOptions.add("2-replace-all-create");
-		storeOptions.add("3-replace-all-delete");
-		storeOptions.add("4-replace-with-non-missing");
-		storeOptions.add("delete-insert");
-		storeOptions.add("do-not-replace");
-		storeOptions.add("replace-all");
-		storeOptions.add("replace-missing-values-only");
-		storeOptions.add("replace-with-non-missing");
-		_storeRuleCombo = new RmaJComboBox<>(storeOptions);
+		_storeRuleCombo = new RmaJComboBox<StoreTypes>(StoreTypes.values())
+		{
+			public String getToolTipText(MouseEvent e)
+			{
+				StoreTypes st = (StoreTypes) getSelectedItem();
+				if ( st != null )
+				{
+					return st.getToolTip();
+				}
+				return super.getToolTipText(e);
+			}
+
+		};
+
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -637,7 +677,8 @@ public class ExtractDialog extends RmaJDialog
 	private StoreOptionImpl getStoreOption()
 	{
 		StoreOptionImpl soi = new StoreOptionImpl();
-		soi.setRegular((String)_storeRuleCombo.getSelectedItem());
+		StoreTypes st = (StoreTypes) _storeRuleCombo.getSelectedItem();
+		soi.setRegular(st.getStoreRule());
 		return soi;
 	}
 
