@@ -9,12 +9,14 @@
 
 package usbr.wat.plugins.actionpanel.ui;
 
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 import com.rma.io.DssFileManagerImpl;
 import com.rma.model.Project;
@@ -29,6 +31,7 @@ import hec.io.TimeSeriesContainer;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJComboBox;
+import rma.swing.RmaJTextField;
 import rma.swing.RmaNavigationPanel;
 import rma.swing.list.RmaListModel;
 import usbr.wat.plugins.actionpanel.ui.forecast.DssLocation;
@@ -45,6 +48,7 @@ public class MetPlotPanel extends EnabledJPanel
 	private double _maxYScale = Double.MIN_VALUE;
 	private double _minYScale = Double.MAX_VALUE;
 	private int _year;
+	private JLabel _msgLine;
 
 	public MetPlotPanel()
 	{
@@ -141,6 +145,19 @@ public class MetPlotPanel extends EnabledJPanel
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.insets = RmaInsets.INSETS5505;
 		add(_plotPanel, gbc);
+
+
+		_msgLine = new JLabel();
+		_msgLine.setForeground(Color.RED);
+		gbc.gridx = GridBagConstraints.RELATIVE;
+		gbc.gridy = GridBagConstraints.RELATIVE;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.weightx = 1.0;
+		gbc.weighty = 0.0;
+		gbc.anchor = GridBagConstraints.SOUTHWEST;
+		gbc.fill = GridBagConstraints.NONE;
+		gbc.insets = RmaInsets.INSETS5505;
+		add(_msgLine, gbc);
 	}
 
 	/**
@@ -224,14 +241,24 @@ public class MetPlotPanel extends EnabledJPanel
 		dssFile = prj.getAbsolutePath(dssFile);
 		DSSIdentifier dssId = new DSSIdentifier(dssFile, dssPath);
 		dssId.setStartTime(new HecTime("01Jan"+_year, "0000"));
+		dssId.getStartTime().showTimeAsBeginningOfDay(true);
 		dssId.setEndTime(new HecTime("31Dec"+_year, "2400"));
-		TimeSeriesContainer tsc = DssFileManagerImpl.getDssFileManager().readTS(dssId, false);
-		tsc.trimToTime(dssId.getStartTime(), dssId.getEndTime());
-		TimeSeriesDataSet tsds = new TimeSeriesDataSet(tsc);
-		List<G2dObject> v = new ArrayList<>();
-		v.add(tsds);
-		_plotPanel.buildComponents(v);
-		fixZoomScale();
+		TimeSeriesContainer tsc = DssFileManagerImpl.getDssFileManager().readTS(dssId, true);
+		if ( tsc != null && tsc.numberValues > 0 )
+		{
+			tsc.trimToTime(dssId.getStartTime(), dssId.getEndTime());
+			TimeSeriesDataSet tsds = new TimeSeriesDataSet(tsc);
+			List<G2dObject> v = new ArrayList<>();
+			v.add(tsds);
+			_plotPanel.buildComponents(v);
+			fixZoomScale();
+			_msgLine.setText("");
+		}
+		else
+		{
+			_msgLine.setText("No Met Data Found for " +_locationCombo.getSelectedItem()+" - "+dssLocation.getName() + " for time window " + dssId.getStartTime()+" to "+dssId.getEndTime());
+			_plotPanel.clearPanel();
+		}
 	}
 
 	public G2dPanel getPlotPanel()
