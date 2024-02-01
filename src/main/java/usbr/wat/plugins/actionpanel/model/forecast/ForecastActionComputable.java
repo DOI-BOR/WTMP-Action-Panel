@@ -12,8 +12,10 @@ import java.awt.EventQueue;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,6 +98,7 @@ public class ForecastActionComputable
 	private static final String DSSFILE = "DSS File";
 	public static final String METHOD_SIGNATURE = "runIteration(modelAlternative, currentIteration, maxIteration)";
 	public static final String TEMP_TARGET_CONTROL_LOC_REPLACE = "%location%";
+	private static final String CURRENT_ENSEMBLE_FILE_NAME = "current_ensemble.txt";
 	private final boolean _recomputeAll;
 	private int[] _members;
 	/** the starting collection number to copy the data to the collections output file */
@@ -351,6 +354,10 @@ public class ForecastActionComputable
 				{
 					return false;
 				}
+				if( !writeCurrentMember(currentMember))
+				{
+					return false;
+				}
 
 				if ( _canceled )
 				{
@@ -447,6 +454,25 @@ public class ForecastActionComputable
 		
 		
 		return true;
+	}
+
+	private boolean writeCurrentMember(int currentMember)
+	{
+		boolean success = true;
+		String runDir = Project.getCurrentProject().getAbsolutePath(_sim.getRunDirectory());
+		Path currentEnsembleFile = Paths.get(runDir).resolve(CURRENT_ENSEMBLE_FILE_NAME);
+		try
+		{
+			// Create the file if it doesn't exist, truncate it if it does
+			Files.write(currentEnsembleFile, String.valueOf(currentMember).getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+		}
+		catch (IOException e)
+		{
+			_sim.addErrorMessage("Failed to write current ensemble member " + currentMember + " to file " + currentEnsembleFile);
+			LOGGER.atWarning().withCause(e).log("Failed to write current ensemble member " + currentMember + " to file " + currentEnsembleFile);
+			success = false;
+		}
+		return success;
 	}
 
 	private boolean copyTempTargetControlLocs()
