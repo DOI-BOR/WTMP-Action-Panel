@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.google.common.flogger.FluentLogger;
+import com.rma.model.Project;
 import org.jdom.Document;
 import org.jdom.Element;
 
@@ -44,24 +45,39 @@ import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
 		<Directory>J:/studies/study1</Directory>
 		<ObservedData>j:/studies/study1/shared</ObservedData>
 	</Study>
+	<SimulationGroup>
+		<Name>sgroup1</Name>
+		<Description>some description</Description>
+	</SimulationGroup>
 	<Simulations>
 		<Simulation>
 			<Name>sim1-group1</Name>
+			<Description>some description</Description>
 			<BaseName>sim1</BaseName>
 			<Directory>j:/studies/study1/runs/al1/ap1</Directory>
 			<DSSFile>j:/studies/study1/runs/al1/ap1/sim1.dss</DSSFile>
+			<WatAlternative>
+				<Name>ap1</Name>
+				<Description>some description</Description>
+			</WatAlternative>
+			<AnalysisPeriod>
+				<Name>ap1</Name>
+				<Description>some description</Description>
+			</AnalysisPeriod>
 			<StartTime>01jan2000 1500</StartTime>
 			<EndTime>31jan2000 1500</StartTime>
 			<LastComputed>7Jul2021 1400</LastComputed>
 			<ModelAlternatives>
 				<ModelAlternative>
 					<Name>alt1</Name>
+					<Description>some description</Description>
 					<Program>CE-QUAl-W2</Program>
 					<FPart>some fpart</FPart>
 					<Directory>path to simulation compute folder for the model</Directory>
 				</ModelAlternative>
 				<ModelAlternative>
 					<Name>alt2</Name>
+					<Description>some description</Description>
 					<Program>ResSim</Program>
 					<FPart>some fpart</FPart>
 					<Directory>path to simulation compute folder for the model</Directory>
@@ -83,7 +99,8 @@ public class ReportXmlFile
 	
 	private static final String SIMS_ELEM = "Simulations";
 	private static final String SIM_ELEM = "Simulation";
-	private static final String SIM_NAME_ELEM = "Name";
+	private static final String NAME_ELEM = "Name";
+	private static final String DESC_ELEM = "Description";
 	private static final String ID_ELEM = "ID";
 	private static final String BASE_SIM_NAME_ELEM = "BaseName";
 	private static final String SIM_DIR_ELEM = "Directory";
@@ -111,8 +128,11 @@ public class ReportXmlFile
 	private static final String ALT_NUM = "alt_";
 	private static final String INSTALL_DIR_ELEM = "InstallDirectory";
 	private static final String WRITE_DIR_ELEM = "WriteDirectory";
-	
-	
+	private static final String SIM_GROUP_ELEM = "SimulationGroup";
+	private static final String WAT_ALT_ELEM = "WatAlternative";
+	private static final String ANALYSIS_PERIOD_ELEM = "AnalysisPeriod";
+
+
 	private String _fileName;
 	private String _prjDir;
 	private String _obsDir;
@@ -149,7 +169,11 @@ public class ReportXmlFile
 		XMLUtilities.addChildContent(root, REPORT_TYPE_ELEM, rptType);
 		SimulationReportInfo baseSimulation = _simulationInfos.get(0);
 		addProjectInfo(root, baseSimulation.getSimFolder());
-		
+		Element sgElem = new Element(SIM_GROUP_ELEM);
+		root.addContent(sgElem);
+		XMLUtilities.addChildContent(sgElem, NAME_ELEM, baseSimulation.getSimulationGroup().getName());
+		XMLUtilities.addChildContent(sgElem, DESC_ELEM, baseSimulation.getSimulationGroup().getDescription());
+
 		Element simsElem  = new Element(SIMS_ELEM);
 		root.addContent(simsElem);
 		for (int i = 0;i < _simulationInfos.size(); i++ )
@@ -180,13 +204,30 @@ public class ReportXmlFile
 	{
 		Element simElem = new Element(SIM_ELEM);
 		parent.addContent(simElem);
-		XMLUtilities.addChildContent(simElem, SIM_NAME_ELEM, info.getShortName());
+		XMLUtilities.addChildContent(simElem, NAME_ELEM, info.getShortName());
 		XMLUtilities.addChildContent(simElem, ID_ELEM, (simNumber==0?BASE_ALT:ALT_NUM+simNumber));
+		XMLUtilities.addChildContent(simElem, DESC_ELEM, info.getSimulation().getDescription());
 		
 		XMLUtilities.addChildContent(simElem, BASE_SIM_NAME_ELEM, getBaseSimulationName(info.getSimulation().getName()));
 		XMLUtilities.addChildContent(simElem, SIM_DIR_ELEM, info.getSimFolder());
 		XMLUtilities.addChildContent(simElem, SIM_DSS_FILE_ELEM, info.getSimDssFile());
-		
+
+		if ( info.getSimulation().getContainerParent().getAlternative() != null )
+		{
+			Element altElem = new Element(WAT_ALT_ELEM);
+			simElem.addContent(altElem);
+			XMLUtilities.addChildContent(altElem, NAME_ELEM, info.getSimulation().getContainerParent().getAlternativeName());
+			XMLUtilities.addChildContent(altElem, DESC_ELEM, info.getSimulation().getContainerParent().getAlternative().getDescription());
+		}
+		if ( info.getSimulation().getContainerParent().getAnalysisPeriod() != null )
+		{
+			Element apElem = new Element(ANALYSIS_PERIOD_ELEM);
+			simElem.addContent(apElem);
+			XMLUtilities.addChildContent(apElem, NAME_ELEM, info.getSimulation().getContainerParent().getAnalysisPeriodName());
+			XMLUtilities.addChildContent(apElem, DESC_ELEM, info.getSimulation().getContainerParent().getAnalysisPeriod().getDescription());
+		}
+
+
 		RunTimeWindow rtw = info.getSimulation().getRunTimeWindow();
 		XMLUtilities.addChildContent(simElem, SIM_START_TIME_ELEM, rtw.getStartTime().toString());
 		XMLUtilities.addChildContent(simElem, SIM_END_TIME_ELEM, rtw.getEndTime().toString());
@@ -229,6 +270,7 @@ public class ReportXmlFile
 		Element modelAltElem = new Element(MODEL_ALT_ELEM);
 		parent.addContent(modelAltElem);
 		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_NAME_ELEM, modelAlt.getName());
+		XMLUtilities.addChildContent(modelAltElem, DESC_ELEM, modelAlt.getDescription());
 		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_PROGRAM_ELEM, modelAlt.getProgram());
 		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_FPART_ELEM, sim.getFPart(modelAlt));
 		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_FOLDER_ELEM, getModelFolder(modelAlt, sim));
@@ -291,6 +333,8 @@ public class ReportXmlFile
 	private void addProjectInfo(Element parent, String baseSimDir)
 	{
 		Element prjInfoElem = new Element(STUDY_ELEM);
+		XMLUtilities.addChildContent(prjInfoElem, NAME_ELEM, Project.getCurrentProject().getName());
+		XMLUtilities.addChildContent(prjInfoElem, DESC_ELEM, Project.getCurrentProject().getDescription());
 		parent.addContent(prjInfoElem);
 		if ( _prjDir != null )
 		{
