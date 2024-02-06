@@ -284,6 +284,7 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 		if(simGrp != null && simGrp.equals(_fsg) && _selectedTempTargetSet != null && _ttTable.getRowCount() > 0 && isModified())
 		{
 			_ttInfoTable.commitEdit(true);
+			_ttTable.commitEdit(true);
 			List<TemperatureTargetSet> sets = new ArrayList<>(simGrp.getTemperatureTargetSets());
 			if(!sets.contains(_selectedTempTargetSet))
 			{
@@ -629,6 +630,10 @@ public class TempTargetPanel extends AbstractForecastPanel<TemperatureTargetSet>
 		if(visible)
 		{
 			tableRowSelected(_tempTargetTable.getSelectedRow());
+		}
+		else
+		{
+			savePanel();
 		}
 	}
 
