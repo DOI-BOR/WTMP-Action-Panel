@@ -137,6 +137,7 @@ public class SaveSimulationToGroupCmd extends AbstractNewManagerCommand
 			{
 				continue;
 			}
+			modelAlt.setVariantName(srcSim.getVariantName());
 			dataLocs = mlm.getDataLocationsFor(srcSimName, modelAlt);
 			if (dataLocs != null )
 			{
