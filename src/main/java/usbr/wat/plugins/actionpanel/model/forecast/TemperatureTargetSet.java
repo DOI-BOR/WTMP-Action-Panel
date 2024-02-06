@@ -10,6 +10,7 @@ package usbr.wat.plugins.actionpanel.model.forecast;
 import com.rma.io.DssFileManagerImpl;
 import com.rma.model.Project;
 import com.rma.util.XMLUtilities;
+import hec.data.Parameter;
 import hec.data.Units;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecTimeSeriesBase;
@@ -54,6 +55,7 @@ public final class TemperatureTargetSet extends NamedType
     private int _numberOfUserDefinedTempTargets;
     private Path _dssOutputPath;
     private RiverLocation _riverLocation;
+    private String _units = Parameter.getUnitsStringForSystem(Parameter.PARAMID_TEMP, Units.ENGLISH_ID);
 
     public TemperatureTargetSet()
     {
@@ -86,6 +88,7 @@ public final class TemperatureTargetSet extends NamedType
         Element dssPathnamesElem = new Element(PATH_NAMES_ELEM_NAME);
         for(DSSPathname pathname : _dssPathNames)
         {
+            pathname.setEPart(TemperatureTargetTimeStep.REGULAR_WEEKLY.toString());
             Element dssPathnameElem = new Element(PATH_NAME_ELEM_NAME);
             dssPathnameElem.setText(pathname.getPathname());
             dssPathnamesElem.addContent(dssPathnameElem);
@@ -403,7 +406,7 @@ public final class TemperatureTargetSet extends NamedType
 
     private TimeSeriesContainer buildFixedDataForUserDefined(int col, RunTimeWindow timeWindow)
     {
-        TimeSeriesContainer tsc = buildTemplateUserDefinedTSContainer(col);
+        TimeSeriesContainer tsc = buildTemplateUserDefinedTSContainer(col, _units);
         int year = timeWindow.getStartTime().year();
         //this is a workaround to odd dss write behavior
         int dayOfMonthToTrimTo = 2;
@@ -444,6 +447,7 @@ public final class TemperatureTargetSet extends NamedType
         tsc.startHecTime = tsc.getHecTime(0);
         tsc.endHecTime = tsc.getHecTime(tsc.numberValues-1);
         trimEnd(tsc, new HecTime("07Jan" + endDate.getYear(), "0100"));
+        tsc.units = _units;
         return tsc;
     }
 
@@ -510,7 +514,7 @@ public final class TemperatureTargetSet extends NamedType
         return retVal;
     }
 
-    public static TimeSeriesContainer buildTemplateUserDefinedTSContainer(int col)
+    public static TimeSeriesContainer buildTemplateUserDefinedTSContainer(int col, String units)
     {
         TimeSeriesContainer tsc = new TimeSeriesContainer();
         DSSPathname pathname = new DSSPathname();
@@ -523,7 +527,7 @@ public final class TemperatureTargetSet extends NamedType
         ZoneId dataZoneId = ZoneId.systemDefault();
         tsc.setTimeZoneID(dataZoneId.getId());
         tsc.locationTimezone = dataZoneId.getId();
-        tsc.units = Units.getBestMatch("C");
+        tsc.units = units;
         tsc.interval = HecTimeSeriesBase.getIntervalFromEPart(pathname.getEPart());
         tsc.type = "INST-VAL";
         tsc.parameter = pathname.getCPart();
@@ -564,4 +568,13 @@ public final class TemperatureTargetSet extends NamedType
         return _riverLocation;
     }
 
+    public void setUnits(String units)
+    {
+        _units = units;
+    }
+
+    public String getUnits()
+    {
+        return _units;
+    }
 }

@@ -10,6 +10,8 @@ package usbr.wat.plugins.actionpanel.ui.forecast.temptarget;
 import com.rma.io.DssFileManagerImpl;
 import com.rma.model.Project;
 import com.rma.swing.RmaFileChooserField;
+import hec.data.Parameter;
+import hec.data.Units;
 import hec.heclib.dss.CondensedReference;
 import hec.heclib.dss.DSSPathname;
 import hec.lang.NamedType;
@@ -101,6 +103,7 @@ public final class TempTargetImportDialog extends RmaJDialog
     private RmaJIntegerField _numberTempTargetsField;
     private RmaJComboBox<RiverLocation> _riverLocationCombo;
     private JComboBox<RiverLocation> _riverLocationTableCombo;
+    private RmaJComboBox<String> _unitsComboBox;
 
     public TempTargetImportDialog(Window parent, List<String> existingSetNames, ForecastSimGroup fsg, TempTargetConsumer consumeTempTargetSetAction)
     {
@@ -586,6 +589,7 @@ public final class TempTargetImportDialog extends RmaJDialog
             temperatureTargetSet.setUserDefined(true);
             temperatureTargetSet.setNumberOfUserDefinedTempTargets(_numberTempTargetsField.getValue());
             temperatureTargetSet.setRiverLocation((RiverLocation) _riverLocationCombo.getSelectedItem());
+            temperatureTargetSet.setUnits((String) _unitsComboBox.getSelectedItem());
             temperatureTargetSet.setModified(true);
             retVal.add(temperatureTargetSet);
         }
@@ -797,11 +801,37 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
-        gbc.weighty   = 0.001;
+        gbc.weighty   = 0.0;
         gbc.anchor    = GridBagConstraints.NORTHWEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         createPanel.add(_numberTempTargetsField, gbc);
+
+        gbc.gridx     = GridBagConstraints.RELATIVE;
+        gbc.gridy     = GridBagConstraints.RELATIVE;
+        gbc.gridwidth = GridBagConstraints.RELATIVE;
+        gbc.weightx   = 0.0;
+        gbc.weighty   = 0.0;
+        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.fill      = GridBagConstraints.NONE;
+        gbc.insets    = RmaInsets.INSETS5505;
+        createPanel.add(new JLabel("Units:"), gbc);
+
+        _unitsComboBox = new RmaJComboBox<>();
+        String ft = Parameter.getUnitsStringForSystem(Parameter.PARAMID_TEMP, Units.ENGLISH_ID);
+        String celsius = Parameter.getUnitsStringForSystem(Parameter.PARAMID_TEMP, Units.SI_ID);
+        RmaListModel<String> unitsModel = new RmaListModel<>(false, ft, celsius);
+        _unitsComboBox.setModel(unitsModel);
+        _unitsComboBox.setSelectedIndex(0);
+        gbc.gridx     = GridBagConstraints.RELATIVE;
+        gbc.gridy     = GridBagConstraints.RELATIVE;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx   = 0.001;
+        gbc.weighty   = 0.001;
+        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.fill      = GridBagConstraints.HORIZONTAL;
+        gbc.insets    = RmaInsets.INSETS5505;
+        createPanel.add(_unitsComboBox, gbc);
 
         return createPanel;
     }

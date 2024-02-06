@@ -149,6 +149,16 @@ public class DssPathMapItem extends NamedType
 			&& path1.getFPart().equalsIgnoreCase(path2.getFPart()) );
 	}
 
+	void setSourceDssPath(String pathname)
+	{
+		_srcDssPath = pathname;
+	}
+
+	void addMapping(String destFile, String destPath)
+	{
+		_destDssItems.add(new DssItem(destFile, destPath));
+	}
+
 	class DssItem
 	{
 		private String _dssFile;

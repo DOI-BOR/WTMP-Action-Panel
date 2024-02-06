@@ -43,7 +43,7 @@ final class TempTargetTableModel extends RmaTableModel
     public Object getValueAt(int row, int col)
     {
         Object retVal;
-        if(row < 0 || col < 0)
+        if(row < 0 || col < 0 || row >= _rowDataList.size() || col >= getColumnCount())
         {
             return null;
         }
@@ -95,6 +95,10 @@ final class TempTargetTableModel extends RmaTableModel
         }
         else
         {
+            if(aValue == null)
+            {
+                aValue = RMAConst.HEC_UNDEFINED_DOUBLE;
+            }
             rowData.setValueForTempTargetColumn(col, parseDouble(aValue.toString()));
         }
     }
