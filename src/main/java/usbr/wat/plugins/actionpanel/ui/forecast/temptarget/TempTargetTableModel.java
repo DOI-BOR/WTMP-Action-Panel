@@ -95,6 +95,10 @@ final class TempTargetTableModel extends RmaTableModel
         }
         else
         {
+            if(aValue == null)
+            {
+                aValue = RMAConst.HEC_UNDEFINED_DOUBLE;
+            }
             rowData.setValueForTempTargetColumn(col, parseDouble(aValue.toString()));
         }
     }

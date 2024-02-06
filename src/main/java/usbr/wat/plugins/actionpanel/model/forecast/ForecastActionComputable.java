@@ -99,6 +99,7 @@ public class ForecastActionComputable
 	public static final String METHOD_SIGNATURE = "runIteration(modelAlternative, currentIteration, maxIteration)";
 	public static final String TEMP_TARGET_CONTROL_LOC_REPLACE = "%location%";
 	private static final String CURRENT_ENSEMBLE_FILE_NAME = "current_ensemble.txt";
+	private final int DSS_WRITE_TYPE_MISMATCH_ERROR_CODE = -534304000;
 	private final boolean _recomputeAll;
 	private int[] _members;
 	/** the starting collection number to copy the data to the collections output file */
@@ -1496,6 +1497,23 @@ public class ForecastActionComputable
 			srcTsc.fileName = destDssId.getFileName();
 			srcTsc.fullName = destDssId.getDSSPath();
 			int rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
+			if(rv == DSS_WRITE_TYPE_MISMATCH_ERROR_CODE)
+			{
+				Vector<String> pathnamesToDelete = new Vector<>();
+				Vector destPaths = DssFileManagerImpl.getDssFileManager().searchDSSPaths(destDssId);
+				for(Object destPath : destPaths)
+				{
+					pathnamesToDelete.add((String) destPath);
+				}
+				int deleteResult = DssFileManagerImpl.getDssFileManager().delete(destDssId.getFileName(), pathnamesToDelete);
+				if(deleteResult != 0)
+				{
+					LOGGER.atWarning().log("Failed to delete TS DSS records for "+destDssId + " rv="+deleteResult);
+					_sim.addErrorMessage("Failed to delete TS DSS records for "+destDssId + " rv="+deleteResult);
+				}
+
+				rv = DssFileManagerImpl.getDssFileManager().write(srcTsc);
+			}
 			if ( rv != 0 )
 			{
 				copySuccessful= false;
