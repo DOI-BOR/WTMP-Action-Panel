@@ -86,9 +86,9 @@ public final class TemperatureTargetSet extends NamedType
         }
         myElem.addContent(riverLocationElement);
         Element dssPathnamesElem = new Element(PATH_NAMES_ELEM_NAME);
-        for(DSSPathname pathname : _dssPathNames)
+        List<DSSPathname> pathnames = getDssPathNames(TemperatureTargetTimeStep.REGULAR_WEEKLY);
+        for(DSSPathname pathname : pathnames)
         {
-            pathname.setEPart(TemperatureTargetTimeStep.REGULAR_WEEKLY.toString());
             Element dssPathnameElem = new Element(PATH_NAME_ELEM_NAME);
             dssPathnameElem.setText(pathname.getPathname());
             dssPathnamesElem.addContent(dssPathnameElem);
