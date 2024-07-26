@@ -14,6 +14,8 @@ import java.awt.GridBagLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -21,7 +23,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,18 +43,18 @@ import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
-import gov.usbr.wq.merlindataexchange.MerlinDataExchangeStatus;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParametersBuilder;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParametersBuilder;
 import hec.io.Identifier;
 import hec.io.impl.StoreOptionImpl;
 import hec.model.RunTimeWindow;
 
 import gov.usbr.wq.merlindataexchange.MerlinConfigParseException;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeParser;
+import gov.usbr.wq.merlindataexchange.MerlinDataExchangeStatus;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParametersBuilder;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParametersBuilder;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
 import rma.swing.DateTimePanel;
@@ -95,6 +96,7 @@ public class ExtractDialog extends RmaJDialog
 		}
 
 
+		@Override
 		public String toString()
 		{
 			return _comboText;
@@ -237,6 +239,7 @@ public class ExtractDialog extends RmaJDialog
 		
 		_storeRuleCombo = new RmaJComboBox<StoreTypes>(StoreTypes.values())
 		{
+			@Override
 			public String getToolTipText(MouseEvent e)
 			{
 				StoreTypes st = (StoreTypes) getSelectedItem();
@@ -398,9 +401,17 @@ public class ExtractDialog extends RmaJDialog
 						runExtract();
 						break;
 					case ButtonCmdPanel.CLOSE_BUTTON :
-						setVisible(false);
+						closeWindow();
 						break;
 				}
+			}
+		});
+		addWindowListener(new WindowAdapter()
+		{
+			@Override
+			public void windowClosing(WindowEvent e)
+			{
+				closeWindow();
 			}
 		});
 		_viewLogBtn.addActionListener(e->viewExtractLog());
@@ -409,6 +420,19 @@ public class ExtractDialog extends RmaJDialog
 	}
 	
 	
+
+
+
+
+
+
+	/**
+	 * 
+	 */
+	protected void closeWindow()
+	{
+		setVisible(false);
+	}
 
 
 
