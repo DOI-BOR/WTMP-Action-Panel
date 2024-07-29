@@ -25,6 +25,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
@@ -33,11 +34,17 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.tree.MutableTreeNode;
 
+import com.rma.client.Browser;
+import com.rma.event.ModifiableListener;
 import hec.util.NumericComparator;
+import hec2.wat.client.WatFrame;
 import hec2.wat.model.WatAnalysisPeriod;
 
 import hec2.wat.model.WatSimulation;
+import hec2.wat.ui.WatAnalysisPeriodNode;
+import rma.lang.Modifiable;
 import rma.swing.EnabledJPanel;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJCheckBox;
@@ -89,6 +96,8 @@ public class SimulationPanel extends AbstractSimulationPanel
 	private List<EnsembleSet> _esetsInTable = new ArrayList<>();
 	private RmaJIntegerSetField _ensembleMembersFld;
 	private boolean _enabledCheckBox;
+	private WatAnalysisPeriod _ap;
+	private ModifiableListener _apModListener;
 
 	public SimulationPanel(ActionsWindow parentWindow, ForecastPanel parentPanel)
 	{
@@ -131,6 +140,7 @@ public class SimulationPanel extends AbstractSimulationPanel
 		topPanel.add(label, gbc);
 		
 		_apLabel = new JLabel();
+		_apLabel.setComponentPopupMenu(getApPopupMenu());
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -393,7 +403,41 @@ public class SimulationPanel extends AbstractSimulationPanel
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5555;
 		add(_simActionsPanel, gbc);
+
+		_apModListener = new ModifiableListener()
+		{
+			@Override
+			public void modifiedStateChanged(Modifiable modifiable, boolean b)
+			{
+				fillApFields(_ap);
+			}
+		};
+
 	
+	}
+
+	private JPopupMenu getApPopupMenu()
+	{
+		JPopupMenu popup = new JPopupMenu();
+		JMenuItem editAp = new JMenuItem("Edit...");
+		editAp.setToolTipText("Edit the Analysis Period");
+		editAp.addActionListener(e->editAnalysisPeriod());
+		popup.add(editAp);
+		return popup;
+	}
+
+	private void editAnalysisPeriod()
+	{
+		if ( _ap == null )
+		{
+			return;
+		}
+		MutableTreeNode node = ((WatFrame) Browser.getBrowserFrame()).getProjectTree().getNodeForManager(_ap);
+		if ( node instanceof WatAnalysisPeriodNode )
+		{
+			WatAnalysisPeriodNode apNode = (WatAnalysisPeriodNode) node;
+			apNode.editManager();
+		}
 	}
 
 	private void displayEnsembleFPartIndexing()
@@ -597,15 +641,25 @@ public class SimulationPanel extends AbstractSimulationPanel
 	{
 		clearApLabels();
 		AbstractSimulationGroup fsg = getSimulationGroup();
-		if ( fsg != null )
+		if (fsg != null)
 		{
 			WatAnalysisPeriod ap = fsg.getAnalysisPeriod();
-			if ( ap != null )
+			fillApFields(ap);
+		}
+	}
+	private void fillApFields(WatAnalysisPeriod ap)
+	{
+		if (ap != null)
+		{
+			_apLabel.setText(ap.getName());
+			_apStartLabel.setText(ap.getRunTimeWindow().getStartTime().toString());
+			_apEndLabel.setText(ap.getRunTimeWindow().getEndTime().toString());
+			if ( _ap != null )
 			{
-				_apLabel.setText(ap.getName());
-				_apStartLabel.setText(ap.getRunTimeWindow().getStartTime().toString());
-				_apEndLabel.setText(ap.getRunTimeWindow().getEndTime().toString());
+				_ap.removeModifiableListener(_apModListener);
 			}
+			_ap = ap;
+			_ap.addModifiableListener(_apModListener);
 		}
 	}
 
@@ -804,5 +858,13 @@ public class SimulationPanel extends AbstractSimulationPanel
 			}
 		}
 		return builder.toString();
+	}
+
+	public void closing()
+	{
+		if ( _ap != null )
+		{
+			_ap.removeModifiableListener(_apModListener);
+		}
 	}
 }

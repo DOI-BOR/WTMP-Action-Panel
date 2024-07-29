@@ -18,15 +18,23 @@ import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.tree.MutableTreeNode;
 
+import com.rma.client.Browser;
+import com.rma.event.ModifiableListener;
 import hec.gui.NameDescriptionPanel;
 
+import hec2.wat.client.WatFrame;
 import hec2.wat.model.WatAnalysisPeriod;
 import hec2.wat.model.WatSimulation;
 
+import hec2.wat.ui.WatAnalysisPeriodNode;
+import rma.lang.Modifiable;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJList;
 import rma.swing.list.RmaListModel;
@@ -62,6 +70,8 @@ public class CalibrationPanel extends AbstractSimulationPanel
 	private JLabel _apEndLabel;
 	private SimulationGroup _simGroup;
 	private CalibrationSimulationGroupPanel _simPanel;
+	private ModifiableListener _apModListener;
+	private WatAnalysisPeriod _ap;
 
 	public CalibrationPanel(ActionsWindow parent)
 	{
@@ -141,6 +151,7 @@ public class CalibrationPanel extends AbstractSimulationPanel
 		_rightPanel.add(label, gbc);
 		
 		_apLabel = new JLabel();
+		_apLabel.setComponentPopupMenu(getApPopupMenu());
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -296,12 +307,41 @@ public class CalibrationPanel extends AbstractSimulationPanel
 		gbc.fill      = GridBagConstraints.BOTH;
 		gbc.insets    = RmaInsets.INSETS5555;
 		_rightPanel.add(new JScrollPane(_statusList), gbc);
+
+		_apModListener = new ModifiableListener()
+		{
+			@Override
+			public void modifiedStateChanged(Modifiable modifiable, boolean b)
+			{
+				fillAnalysisPeriodFields(_ap);
+			}
+		};
 	}
-	
-	
-	
-	
-	
+
+
+	private JPopupMenu getApPopupMenu()
+	{
+		JPopupMenu popup = new JPopupMenu();
+		JMenuItem editAp = new JMenuItem("Edit...");
+		editAp.setToolTipText("Edit the Analysis Period");
+		editAp.addActionListener(e->editAnalysisPeriod());
+		popup.add(editAp);
+		return popup;
+	}
+
+	private void editAnalysisPeriod()
+	{
+		if ( _ap == null )
+		{
+			return;
+		}
+		MutableTreeNode node = ((WatFrame) Browser.getBrowserFrame()).getProjectTree().getNodeForManager(_ap);
+		if ( node instanceof WatAnalysisPeriodNode)
+		{
+			WatAnalysisPeriodNode apNode = (WatAnalysisPeriodNode) node;
+			apNode.editManager();
+		}
+	}
 	
 	/**
 	 * @return
@@ -335,18 +375,8 @@ public class CalibrationPanel extends AbstractSimulationPanel
 				_nameDescPanel.setName(sg.getName());
 				_nameDescPanel.setDescription(sg.getDescription());
 				WatAnalysisPeriod ap = sg.getAnalysisPeriod();
-				String apName = "";
-				String apStart = "";
-				String apEnd = "";
-				if ( ap!= null )
-				{
-					apName = ap.getName();
-					apStart = ap.getRunTimeWindow().getStartTime().toString();
-					apEnd = ap.getRunTimeWindow().getEndTime().toString();
-				}
-				_apLabel.setText(apName);
-				_apStartLabel.setText(apStart);
-				_apEndLabel.setText(apEnd);
+				fillAnalysisPeriodFields(ap);
+
 				/*
 				List<WatSimulation> sims= sg.getSimulations();
 				Vector row;
@@ -382,9 +412,33 @@ public class CalibrationPanel extends AbstractSimulationPanel
 			setCursor(Cursor.getDefaultCursor());
 		}
 	}
-	
-	
-	
+
+	private void fillAnalysisPeriodFields(WatAnalysisPeriod ap)
+	{
+		String apName = "";
+		String apStart = "";
+		String apEnd = "";
+		if ( ap!= null )
+		{
+			apName = ap.getName();
+			apStart = ap.getRunTimeWindow().getStartTime().toString();
+			apEnd = ap.getRunTimeWindow().getEndTime().toString();
+		}
+		_apLabel.setText(apName);
+		_apStartLabel.setText(apStart);
+		_apEndLabel.setText(apEnd);
+		if (_ap != null )
+		{
+			_ap.removeModifiableListener(_apModListener);
+		}
+		_ap = ap;
+		if ( _ap != null )
+		{
+			_ap.addModifiableListener(_apModListener);
+		}
+	}
+
+
 	/**
 	 * @return
 	 */

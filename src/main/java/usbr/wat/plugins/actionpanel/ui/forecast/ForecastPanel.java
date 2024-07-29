@@ -253,6 +253,7 @@ public class ForecastPanel extends RmaJPanel
 		if(visible && _simGroup == null)
 		{
 			clearPanel();
+			_simulationPanel.closing();
 		}
 		super.setVisible(visible);
 

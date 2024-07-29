@@ -38,7 +38,7 @@ public abstract class AbstractSimulationGroup extends AbstractXMLManager
 	private List<SimulationInfo>_simulationInfo = new ArrayList<>();
 	private WatAnalysisPeriod _analysisPeriod;
 	private String _apName;
-	
+
 	
 	public AbstractSimulationGroup()
 	{
@@ -122,6 +122,10 @@ public abstract class AbstractSimulationGroup extends AbstractXMLManager
 			_analysisPeriod = (WatAnalysisPeriod) getProject().getManager(_apName, WatAnalysisPeriod.class);
 		}
 		return _analysisPeriod;
+	}
+	public String getAnalysisPeriodName()
+	{
+		return _apName;
 	}
 
 	/**
@@ -289,7 +293,9 @@ public abstract class AbstractSimulationGroup extends AbstractXMLManager
 	 * @param simName
 	 */
 	protected abstract void loadSimulationSettings(Element simElem, String simName);
-	
+
+
+
 	class SimulationInfo
 	{
 		public String simName;

@@ -39,6 +39,7 @@ import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.utils.GitRepoUtils;
+import usbr.wat.plugins.actionpanel.listener.AnalysisPeriodRenameListener;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.MissingManagersChecker;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
@@ -73,6 +74,7 @@ public class ActionsWindow extends RmaJDialog
 	private CalibrationPanel _calibrationPanel;
 
 	private ForecastPanel _forecastPanel;
+	private AnalysisPeriodRenameListener _analysisPeriodListener;
 
 	public ActionsWindow(Frame parent)
 	{
@@ -228,6 +230,7 @@ public class ActionsWindow extends RmaJDialog
 				Project prj = e.getProject();
 				if ( !prj.isNoProject())
 				{
+					startAnalysisPeriodRenameListener(prj);
 					checkForMissingManagers(e.getProject());
 					prj.addManagerListener(_projectSimulationListener);
 					prj.addManagerListener(_projectSimulationGroupListener);
@@ -239,12 +242,33 @@ public class ActionsWindow extends RmaJDialog
 			public void  projectClosed(ProjectEvent e ) 
 			{
 				clearForm();
+				Project prj = e.getProject();
+				stopAnalysisPeriodRenameListener();
 				e.getProject().removeManagerListener(_projectSimulationListener);
 				e.getProject().removeManagerListener(_projectSimulationGroupListener);
 			}
 		});
 		
 	}
+
+	private void stopAnalysisPeriodRenameListener()
+	{
+		if ( _analysisPeriodListener != null )
+		{
+			_analysisPeriodListener.stopListening();
+		}
+		_analysisPeriodListener = null;
+	}
+
+	private void startAnalysisPeriodRenameListener(Project prj)
+	{
+		if ( _analysisPeriodListener != null )
+		{
+			stopAnalysisPeriodRenameListener();
+		}
+		_analysisPeriodListener = new AnalysisPeriodRenameListener(prj);
+	}
+
 	/**
 	 * 
 	 */
