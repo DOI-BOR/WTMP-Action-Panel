@@ -70,7 +70,7 @@ public class RunExtractAction
 	public CompletableFuture<Void> extract(Window parent, MerlinTimeSeriesParameters tsParams, MerlinProfileParameters profileParams, List<Path> selectedFiles, String infoString, String url)
 	{
 		CompletableFuture<Void> retVal = new CompletableFuture<>();
-		ProgressListener progress = createProjectListener();
+		ProgressListener progress = createProgressListener();
 		if(progress == null)
 		{
 			return retVal;
@@ -232,7 +232,7 @@ public class RunExtractAction
 	/**
 	 * @return
 	 */
-	private ProgressListener createProjectListener()
+	private ProgressListener createProgressListener()
 	{
 		if ( _parent == null )
 		{

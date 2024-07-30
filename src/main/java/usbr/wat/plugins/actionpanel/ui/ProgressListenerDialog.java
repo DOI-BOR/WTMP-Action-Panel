@@ -14,6 +14,8 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Window;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -129,7 +131,7 @@ public class ProgressListenerDialog extends RmaJDialog
 		getContentPane().add(_cancelCloseBtn, gbc);
 		
 	}
-	
+
 	protected JPopupMenu buildPopupMenu()
 	{
 		JPopupMenu popupMenu = new JPopupMenu();
@@ -191,6 +193,17 @@ public class ProgressListenerDialog extends RmaJDialog
 	protected void addListeners()
 	{
 		_cancelCloseBtn.addActionListener(e->cancelCloseAction());
+		addWindowListener(new WindowAdapter()
+		{
+			public void windowClosing(WindowEvent e)
+			{
+				if ( CANCEL_TEXT.equals(_cancelCloseBtn.getText()))
+				{
+					cancelCloseAction();
+				}
+				EventQueue.invokeLater(()->cancelCloseAction());
+			}
+		});
 	}
 	/**
 	 * @return
