@@ -83,7 +83,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 	protected EditIterationSettingsDialog _parent;
 	private DSSBrowser _browser;
 	/**
-	 * @param editIterationSettingsDialog
+	 * @param parent
 	 */
 	public IterationBcPanel(EditIterationSettingsDialog parent)
 	{
@@ -118,6 +118,7 @@ public class IterationBcPanel extends AbstractEditorPanel
 		_bcTable.setAddRemoveEnabled(false);
 		_bcTable.setRowHeight(_bcTable.getRowHeight()+5);
 		_bcTable.setColumnWidths(75,220, 135, 260, 260);
+		_bcTable.deleteCells();
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -370,8 +371,12 @@ public class IterationBcPanel extends AbstractEditorPanel
 		String title = DEFAULT_BROWSER_TITLE;
 		if ( row > -1 )
 		{
-			DSSIdentifier dssId = (DSSIdentifier) _bcTable.getValueAt(row, MODEL_DSS_COL);
-			title = title + " for "+dssId.getDSSPath();
+			Object obj =  _bcTable.getValueAt(row, MODEL_DSS_COL);
+			if ( obj instanceof DSSIdentifier )
+			{
+				DSSIdentifier dssId = (DSSIdentifier)obj;
+				title = title + " for " + dssId.getDSSPath();
+			}
 		}
 		_browser.setTitle(title);
 	}
