@@ -48,9 +48,9 @@ public class CalibrationSimulationGroupPanel extends BaseSimulationGroupPanel
 
 
 	@Override
-	protected Action getDeleteSimGroupAction()
+	protected Action getDeleteSimGroupAction(BaseSimulationGroupPanel parent)
 	{
-		return new DeleteSimulationGroupAction();
+		return new DeleteSimulationGroupAction(parent);
 	}
 
 	@Override

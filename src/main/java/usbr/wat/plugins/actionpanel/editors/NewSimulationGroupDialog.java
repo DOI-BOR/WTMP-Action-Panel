@@ -137,7 +137,7 @@ public class NewSimulationGroupDialog extends RmaJDialog
 		getContentPane().add(_apCombo, gbc);
 		
 		_newApButton = new JButton("...");
-		_newApButton.setToolTipText("Create New Analaysis Period");
+		_newApButton.setToolTipText("Create New Analysis Period");
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;

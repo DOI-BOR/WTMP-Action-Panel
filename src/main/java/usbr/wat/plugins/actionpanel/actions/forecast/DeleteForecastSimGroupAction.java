@@ -21,6 +21,7 @@ import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
+import usbr.wat.plugins.actionpanel.ui.BaseSimulationGroupPanel;
 
 /**
  * @author mark
@@ -29,11 +30,13 @@ import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 public class DeleteForecastSimGroupAction extends AbstractAction
 {
 	private final ActionsWindow _parent;
+	private final BaseSimulationGroupPanel _parentPanel;
 
-	public DeleteForecastSimGroupAction(ActionsWindow parent)
+	public DeleteForecastSimGroupAction(BaseSimulationGroupPanel parentPanel, ActionsWindow parent)
 	{
 		super("Delete...");
 		_parent = parent;
+		_parentPanel = parentPanel;
 	}
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -52,7 +55,7 @@ public class DeleteForecastSimGroupAction extends AbstractAction
 			return;
 		}
 		Project prj = Project.getCurrentProject();
-		ManagerProxy proxy;
+		ManagerProxy proxy = null;
 		Manager manager;
 		for(int i = 0;i < objects.length; i++ )
 		{
@@ -67,6 +70,10 @@ public class DeleteForecastSimGroupAction extends AbstractAction
 					DeleteManagerFactory.deleteManager(sims.get(n));
 				}
 			}
+		}
+		if (_parentPanel != null )
+		{
+			_parentPanel.simulationGroupDeleted(proxy);
 		}
 		ActionPanelPlugin.getInstance().getActionsWindow().getForecastPanel().loadSimulationGroupCombo();
 

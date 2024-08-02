@@ -16,12 +16,16 @@ import javax.swing.JOptionPane;
 
 import com.rma.factories.DeleteManagerFactory;
 
+import com.rma.model.ManagerProxy;
+import com.rma.model.Project;
 import hec2.wat.model.WatSimulation;
 
 import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
 import usbr.wat.plugins.actionpanel.ActionsWindow;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
+import usbr.wat.plugins.actionpanel.ui.BaseSimulationGroupPanel;
 
 /**
  * @author Mark Ackerman
@@ -31,13 +35,16 @@ public class DeleteSimulationGroupAction extends AbstractAction
 {
 
 
+	private final BaseSimulationGroupPanel _parentPanel;
+
 	/**
-	 * @param parent
+	 * @param parentPanel
 	 */
-	public DeleteSimulationGroupAction()
+	public DeleteSimulationGroupAction(BaseSimulationGroupPanel parentPanel)
 	{
 		super("Delete");
 		setEnabled(false);
+		_parentPanel = parentPanel;
 	}
 
 	@Override
@@ -80,20 +87,13 @@ public class DeleteSimulationGroupAction extends AbstractAction
 			return false;
 		}
 		ActionPanelPlugin.getInstance().getActionsWindow().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		ManagerProxy proxy = Project.getCurrentProject().getManagerProxy(simGroup);
+		boolean rv = deleteManagers(simGroup);
 		try
 		{
-			List<WatSimulation> sims = simGroup.getSimulations();
-			WatSimulation sim;
-			boolean rv = true;
-			for(int i = 0; i < sims.size(); i++ )
-			{
-				sim = sims.get(i);
-				if (!DeleteManagerFactory.deleteManager(sim))
-				{
-					rv = false;
-				}
-			}
 			rv &= DeleteManagerFactory.deleteManager(simGroup);
+			cleanUI(proxy);
+
 			return rv;
 		}
 		finally
@@ -102,4 +102,52 @@ public class DeleteSimulationGroupAction extends AbstractAction
 		}
 	}
 
+	private void cleanUI(ManagerProxy proxy)
+	{
+		if ( proxy.getClassName().equals(ForecastSimGroup.class.getName()) )
+		{
+			ActionPanelPlugin.getInstance().getActionsWindow().getForecastPanel().simulationGroupDeleted(proxy);
+		}
+		else if ( proxy.getClassName().equals(SimulationGroup.class.getName()) )
+		{
+			ActionPanelPlugin.getInstance().getActionsWindow().getCalibrationPanel().getSimulationPanel().simulationGroupDeleted(proxy);
+		}
+	}
+
+	private boolean deleteManagers(AbstractSimulationGroup simGroup)
+	{
+		List<WatSimulation> sims = simGroup.getSimulations();
+		WatSimulation sim;
+		boolean rv = true;
+		for(int i = 0; i < sims.size(); i++ )
+		{
+			sim = sims.get(i);
+			if (!DeleteManagerFactory.deleteManager(sim))
+			{
+				rv = false;
+			}
+		}
+		return rv;
+	}
+
+	public boolean deleteSimulationGroup(ManagerProxy proxy)
+	{
+		if ( proxy == null )
+		{
+			return false;
+		}
+		ActionPanelPlugin.getInstance().getActionsWindow().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		boolean rv = deleteManagers((AbstractSimulationGroup) proxy.getManager());
+		try
+		{
+			rv &= DeleteManagerFactory.deleteManager(proxy.getManager());
+			cleanUI(proxy);
+
+			return rv;
+		}
+		finally
+		{
+			ActionPanelPlugin.getInstance().getActionsWindow().setCursor(Cursor.getDefaultCursor());
+		}
+	}
 }

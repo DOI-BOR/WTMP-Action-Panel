@@ -27,6 +27,7 @@ import com.rma.client.LookAndFeel;
 import com.rma.event.ProjectAdapter;
 import com.rma.event.ProjectEvent;
 import com.rma.event.ProjectManagerListener;
+import com.rma.factories.DeleteManagerFactory;
 import com.rma.factories.ProjectNodeFactory;
 import com.rma.model.ManagerProxy;
 import com.rma.model.Project;
@@ -38,13 +39,16 @@ import hec2.wat.model.WatSimulation;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJDialog;
 import usbr.wat.plugins.actionpanel.actions.DeleteSimulationGroupAction;
+import usbr.wat.plugins.actionpanel.actions.forecast.DeleteForecastSimGroupAction;
 import usbr.wat.plugins.actionpanel.gitIntegration.utils.GitRepoUtils;
 import usbr.wat.plugins.actionpanel.listener.AnalysisPeriodRenameListener;
 import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 import usbr.wat.plugins.actionpanel.model.MissingManagersChecker;
 import usbr.wat.plugins.actionpanel.model.ResultsData;
 import usbr.wat.plugins.actionpanel.model.SimulationGroup;
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 import usbr.wat.plugins.actionpanel.ui.ActionsProjectTab;
+import usbr.wat.plugins.actionpanel.ui.BaseSimulationGroupPanel;
 import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;
 import usbr.wat.plugins.actionpanel.ui.SimulationGroupNode;
 import usbr.wat.plugins.actionpanel.ui.forecast.ForecastPanel;
@@ -434,8 +438,8 @@ public class ActionsWindow extends RmaJDialog
 			if ( proxy.getManager()==getSimulationGroup() )
 			{
 				setSimulationGroup(null);
-				new DeleteSimulationGroupAction().deleteSimulationGroup(simGroup);
 			}
+			new DeleteSimulationGroupAction(null).deleteSimulationGroup(proxy);
 		}
 	}
 	public class ProjectSimulationListener implements ProjectManagerListener
@@ -487,7 +491,7 @@ public class ActionsWindow extends RmaJDialog
 						int opt = JOptionPane.showConfirmDialog(ActionsWindow.this, msg, title, JOptionPane.YES_NO_OPTION);
 						if ( opt == JOptionPane.YES_OPTION )
 						{
-							if ( new DeleteSimulationGroupAction().deleteSimulationGroup(simGroup))
+							if ( new DeleteSimulationGroupAction(null).deleteSimulationGroup(simGroup))
 							{
 								setSimulationGroup(null);
 							}

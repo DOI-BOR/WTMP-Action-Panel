@@ -110,7 +110,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		gbc.insets    = RmaInsets.INSETS5500;
 		add(_newButton, gbc);
 
-		_deleteButton = new JButton(getDeleteSimGroupAction());
+		_deleteButton = new JButton(getDeleteSimGroupAction(this));
 		_deleteButton.setEnabled(false);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
@@ -159,7 +159,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 
 	}
 
-	protected abstract Action getDeleteSimGroupAction();
+	protected abstract Action getDeleteSimGroupAction(BaseSimulationGroupPanel parent);
 
 	protected abstract Action getNewSimGroupAction();
 
@@ -284,4 +284,18 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 
 	}
 
+	public void simulationGroupDeleted(ManagerProxy proxy)
+	{
+		if (proxy == null )
+		{
+			return;
+		}
+		Object selectedProxy = _simulationGroupCombo.getSelectedItem();
+		_simulationGroupCombo.removeItem(proxy);
+		if ( selectedProxy == proxy )
+		{
+			setSimulationGroup(null);
+		}
+
+	}
 }

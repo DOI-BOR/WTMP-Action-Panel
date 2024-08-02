@@ -27,6 +27,7 @@ import javax.swing.tree.MutableTreeNode;
 
 import com.rma.client.Browser;
 import com.rma.event.ModifiableListener;
+import com.rma.model.ManagerProxy;
 import hec.gui.NameDescriptionPanel;
 
 import hec2.wat.client.WatFrame;
@@ -512,9 +513,15 @@ public class CalibrationPanel extends AbstractSimulationPanel
 		return simInfos;
 	}
 	
-	
-	
-	
+	public CalibrationSimulationGroupPanel getSimulationPanel()
+	{
+		return _simPanel;
+	}
+
+	public void simulationGroupDeleted(ManagerProxy proxy)
+	{
+		_simPanel.simulationGroupDeleted(proxy);
+	}
 	
 
 }

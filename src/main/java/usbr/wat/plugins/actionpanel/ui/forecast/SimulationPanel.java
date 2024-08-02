@@ -598,16 +598,22 @@ public class SimulationPanel extends AbstractSimulationPanel
 		return _recomputeAllChk.isSelected();
 	}
 
+	public void setSimulationGroup(AbstractSimulationGroup asg)
+	{
+		setSimulationGroup(asg, true);
+	}
 	/**
 	 * @param asg
 	 */
-	@Override
-	public void setSimulationGroup(AbstractSimulationGroup asg)
+	public void setSimulationGroup(AbstractSimulationGroup asg, boolean setParent)
 	{
 		if ( asg instanceof ForecastSimGroup )
 		{
 			ForecastSimGroup fsg = (ForecastSimGroup) asg;
-			_parentPanel.setSimulationGroup(fsg);
+			if ( setParent )
+			{
+				_parentPanel.setSimulationGroup(fsg);
+			}
 			WatSimulation simulation = getSelectedSimulation();
 			fillSimulationTable();
 			setEnsembleSets(fsg.getEnsembleSets(simulation));
@@ -617,7 +623,10 @@ public class SimulationPanel extends AbstractSimulationPanel
 		}
 		else
 		{
-			_parentPanel.setSimulationGroup(null);
+			if ( setParent )
+			{
+				_parentPanel.setSimulationGroup(null);
+			}
 			fillSimulationTable();
 			setEnsembleSets(null);
 			fillAnalysisWindow();

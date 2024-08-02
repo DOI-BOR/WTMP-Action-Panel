@@ -60,9 +60,9 @@ public class SimulationGroupPanel extends BaseSimulationGroupPanel
 	}
 
 	@Override
-	protected Action getDeleteSimGroupAction()
+	protected Action getDeleteSimGroupAction(BaseSimulationGroupPanel parent)
 	{
-		return new DeleteForecastSimGroupAction(ActionPanelPlugin.getInstance().getActionsWindow());
+		return new DeleteForecastSimGroupAction(parent, ActionPanelPlugin.getInstance().getActionsWindow());
 	}
 
 	@Override

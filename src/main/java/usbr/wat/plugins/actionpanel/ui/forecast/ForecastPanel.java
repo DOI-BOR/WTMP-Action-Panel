@@ -14,6 +14,7 @@ import java.util.List;
 
 import javax.swing.JTabbedPane;
 
+import com.rma.model.ManagerProxy;
 import hec2.wat.model.WatSimulation;
 import rma.swing.RmaInsets;
 import rma.swing.RmaJPanel;
@@ -178,6 +179,7 @@ public class ForecastPanel extends RmaJPanel
 		if(fsg != null)
 		{
 			_simGroupPanel.setSimulationGroup(fsg);
+			_simulationPanel.setSimulationGroup(fsg, false);
 			_initialConditionsPanel.setSimulationGroup(fsg);
 			_operationsPanel.setSimulationGroup(fsg);
 			_metPanel.setSimulationGroup(fsg);
@@ -226,6 +228,11 @@ public class ForecastPanel extends RmaJPanel
 	public SimulationPanel getSimulationPanel()
 	{
 		return _simulationPanel;
+	}
+
+	public void simulationGroupDeleted(ManagerProxy proxy)
+	{
+		_simGroupPanel.simulationGroupDeleted(proxy);
 	}
 
 	/**
