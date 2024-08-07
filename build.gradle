@@ -55,7 +55,7 @@ dependencies {
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
     implementation 'org.gitlab4j:gitlab4j-api:4.19.0'
     implementation 'mil.army.usace.hec.swingx:swingx-core:1.6.6'
-    implementation 'gov.usbr.wq:merlin-data-exchange:3.4.3'
+    implementation 'gov.usbr.wq:merlin-data-exchange:3.4.5'
     implementation('com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.11.0')
     runtimeOnly('com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.11.0')
     runtimeOnly 'org.codehaus.groovy:groovy:3.0.7'
