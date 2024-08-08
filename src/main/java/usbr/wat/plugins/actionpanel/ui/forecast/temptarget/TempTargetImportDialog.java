@@ -128,7 +128,6 @@ public final class TempTargetImportDialog extends RmaJDialog
     {
         _nameTextField.addKeyListener(getValidateKeyListener());
         _importFileChooserField.addKeyListener(getValidateKeyListener());
-        _numberTempTargetsField.addKeyListener(getNumberTempTargetsKeyListener());
         _importFileChooserField.addFocusListener(getImportFocusListener());
         _importFileChooserField.addFileSelectedListener(f -> dssFileSelected());
         ((JButton)_importFileChooserField.getComponents()[0]).addActionListener(e -> ellipsesPressed());
@@ -155,25 +154,6 @@ public final class TempTargetImportDialog extends RmaJDialog
         ((RmaTableModel)_temperatureSetsTable.getModel()).fireTableDataChanged();
     }
 
-    private KeyListener getNumberTempTargetsKeyListener()
-    {
-        return new KeyAdapter()
-        {
-            @Override
-            public void keyReleased(KeyEvent e)
-            {
-                int value = _numberTempTargetsField.getValue();
-                if(value < 1)
-                {
-                    _numberTempTargetsField.setValue(1);
-                }
-                else if(value > MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET)
-                {
-                    _numberTempTargetsField.setValue(MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET);
-                }
-            }
-        };
-    }
 
     private void ellipsesPressed()
     {
@@ -412,7 +392,7 @@ public final class TempTargetImportDialog extends RmaJDialog
     {
         deleteInvalidFiles(_invalidFilesToDelete);
         List<String> setNamesToImport = validateDuplicateNames();
-        if(!setNamesToImport.isEmpty())
+        if(!setNamesToImport.isEmpty() && riverLocationSelected())
         {
             try
             {
@@ -434,6 +414,20 @@ public final class TempTargetImportDialog extends RmaJDialog
                 setCursor(Cursor.getDefaultCursor());
             }
         }
+    }
+
+    private boolean riverLocationSelected()
+    {
+        if (_createNewRadioButton.isSelected())
+        {
+            if ( _riverLocationCombo.getSelectedIndex() == -1 )
+            {
+                JOptionPane.showMessageDialog(this, "Please Select a River Location to Create the Temperature Target Set for",
+                    "No River Location", JOptionPane.INFORMATION_MESSAGE);
+                return false;
+            }
+        }
+        return true;
     }
 
     private List<String> validateDuplicateNames()
@@ -675,7 +669,6 @@ public final class TempTargetImportDialog extends RmaJDialog
         _cardPanel.add(importPanel, IMPORT_PANEL_ID);
         _cardPanel.add(createPanel, CREATE_PANEL_ID);
 
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -710,47 +703,43 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.gridwidth = GridBagConstraints.RELATIVE;
         gbc.weightx   = 0.0;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
         nameDescPanel.add(new JLabel("Name:"), gbc);
 
         _nameTextField = new RmaJTextField();
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         nameDescPanel.add(_nameTextField, gbc);
 
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.RELATIVE;
         gbc.weightx   = 0.0;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
         nameDescPanel.add(new JLabel("Description:"), gbc);
 
         _descriptionField = new RmaJDescriptionField();
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
         gbc.weighty   = 0.001;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         nameDescPanel.add(_descriptionField, gbc);
 
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.RELATIVE;
@@ -761,7 +750,6 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.insets    = RmaInsets.INSETS5505;
         nameDescPanel.add(new JLabel("River Location:"), gbc);
 
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -772,7 +760,6 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.insets    = RmaInsets.INSETS5505;
         nameDescPanel.add(_riverLocationCombo, gbc);
 
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -783,26 +770,27 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.insets    = RmaInsets.INSETS0000;
         createPanel.add(nameDescPanel, gbc);
 
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.RELATIVE;
         gbc.weightx   = 0.0;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
         createPanel.add(new JLabel("Number of Temperature Targets (Max " + MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET + "):"), gbc);
 
         _numberTempTargetsField = new RmaJIntegerField();
         _numberTempTargetsField.setValue(1);
-        gbc = new GridBagConstraints();
+        _numberTempTargetsField.setMaxValue(MAX_NUM_USER_DEFINED_TEMP_TARGETS_IN_SET);
+        _numberTempTargetsField.setMinValue(1);
+        _numberTempTargetsField.setEmptyOk(false);
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         createPanel.add(_numberTempTargetsField, gbc);
@@ -812,7 +800,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.gridwidth = GridBagConstraints.RELATIVE;
         gbc.weightx   = 0.0;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
         createPanel.add(new JLabel("Units:"), gbc);
@@ -828,7 +816,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
         gbc.weighty   = 0.001;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         createPanel.add(_unitsComboBox, gbc);
@@ -845,7 +833,7 @@ public final class TempTargetImportDialog extends RmaJDialog
         gbc.gridwidth = GridBagConstraints.RELATIVE;
         gbc.weightx   = 0.0;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
         importPanel.add(new JLabel("Select file:"), gbc);
@@ -854,36 +842,33 @@ public final class TempTargetImportDialog extends RmaJDialog
         _importFileChooserField.setDefaultPath(Project.getCurrentProject().getWorkspacePath());
         _importFileChooserField.setSelectedFilter(new RMAFilenameFilter("dss", ".dss"));
         _importFileChooserField.setAcceptAllFileFilterUsed(false);
-        gbc = new GridBagConstraints();
         gbc.gridx     = 1;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         importPanel.add(_importFileChooserField, gbc);
 
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.RELATIVE;
         gbc.weightx   = 0.0;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.NONE;
         gbc.insets    = RmaInsets.INSETS5505;
         importPanel.add(new JLabel("Description:"), gbc);
 
         _descriptionFieldImport = new RmaJDescriptionField();
-        gbc = new GridBagConstraints();
         gbc.gridx     = 1;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx   = 0.001;
         gbc.weighty   = 0.0;
-        gbc.anchor    = GridBagConstraints.NORTHWEST;
+        gbc.anchor    = GridBagConstraints.WEST;
         gbc.fill      = GridBagConstraints.HORIZONTAL;
         gbc.insets    = RmaInsets.INSETS5505;
         importPanel.add(_descriptionFieldImport, gbc);
@@ -928,7 +913,6 @@ public final class TempTargetImportDialog extends RmaJDialog
         {
             _temperatureSetsTable.deleteRow(0);
         }
-        gbc = new GridBagConstraints();
         gbc.gridx     = GridBagConstraints.RELATIVE;
         gbc.gridy     = GridBagConstraints.RELATIVE;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
