@@ -220,6 +220,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		{
 			_simulationGroupCombo.setSelectedIndex(-1);
 			_descFld.setEnabled(false);
+			_descFld.setText("");
 			return;
 		}
 		_descFld.setEnabled(true);
@@ -292,6 +293,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		}
 		Object selectedProxy = _simulationGroupCombo.getSelectedItem();
 		_simulationGroupCombo.removeItem(proxy);
+
 		if ( selectedProxy == proxy )
 		{
 			setSimulationGroup(null);
