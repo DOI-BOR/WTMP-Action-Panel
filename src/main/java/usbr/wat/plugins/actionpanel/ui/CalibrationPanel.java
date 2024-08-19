@@ -354,6 +354,8 @@ public class CalibrationPanel extends AbstractSimulationPanel
 		_apLabel.setText("");
 		_apStartLabel.setText("");
 		_apEndLabel.setText("");
+		_nameDescPanel.setName("");
+		_nameDescPanel.setDescription("");
 		_simulationTable.setTreeTableModel(new SimulationTreeTableModel(null));
 		//_simulationTable.deleteCells();
 	}
@@ -375,6 +377,8 @@ public class CalibrationPanel extends AbstractSimulationPanel
 
 				_nameDescPanel.setName(sg.getName());
 				_nameDescPanel.setDescription(sg.getDescription());
+				_nameDescPanel.setPanelEditable(true);
+				_nameDescPanel.setPanelEnabled(true);
 				WatAnalysisPeriod ap = sg.getAnalysisPeriod();
 				fillAnalysisPeriodFields(ap);
 
@@ -521,6 +525,7 @@ public class CalibrationPanel extends AbstractSimulationPanel
 	public void simulationGroupDeleted(ManagerProxy proxy)
 	{
 		_simPanel.simulationGroupDeleted(proxy);
+		_nameDescPanel.setEnabled(false);
 	}
 	
 

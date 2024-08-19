@@ -142,7 +142,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		gbc.anchor    = GridBagConstraints.WEST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(label, gbc);
+		//add(label, gbc);
 
 		_descFld = new RmaJDescriptionField();
 		_descFld.setEditable(false);
@@ -155,7 +155,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		gbc.anchor    = GridBagConstraints.WEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(_descFld, gbc);
+		//add(_descFld, gbc);
 
 	}
 
@@ -224,6 +224,7 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 			return;
 		}
 		_descFld.setEnabled(true);
+		_descFld.setEditable(true);
 		RmaListModel model = (RmaListModel) _simulationGroupCombo.getModel();
 		ManagerProxy proxy = Project.getCurrentProject().getManagerProxy(fsg);
 		if ( proxy == null )
