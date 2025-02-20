@@ -7,24 +7,45 @@
  */
 package usbr.wat.plugins.actionpanel.ui.forecast;
 
+import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import com.rma.io.FileManagerImpl;
 import com.rma.io.RmaFile;
 import com.rma.model.Project;
 
+import hec.data.ParamDouble;
+import hec.data.Parameter;
+import hec.io.DSSIdentifier;
+import hec.io.Identifier;
 import hec.util.NumericComparator;
 import rma.swing.ButtonCmdPanel;
 import rma.swing.ButtonCmdPanelListener;
@@ -33,9 +54,16 @@ import rma.swing.RmaJComboBox;
 import rma.swing.RmaJDescriptionField;
 import rma.swing.RmaJTable;
 import rma.swing.RmaJTextField;
+import rma.swing.list.RmaListModel;
+import rma.swing.table.RmaTableModel;
+import rma.swing.table.ToolTipHeader;
+import rma.util.RMAConst;
+import rma.util.RMAFilenameFilter;
 import rma.util.RMAIO;
+import usbr.wat.plugins.actionpanel.io.forecast.MetConfigFileReader;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastConfigFiles;
 import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
+import usbr.wat.plugins.actionpanel.model.forecast.MetDataDssValidator;
 import usbr.wat.plugins.actionpanel.model.forecast.MetDataType;
 import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;
 
@@ -48,9 +76,10 @@ public class ImportMetDataWindow extends ImportForecastWindow
 	private static final String AVE_TEMP_FILE = ForecastConfigFiles.getRelativeYearlyTempDataFile();
 	private RmaJTextField _nameFld;
 	private RmaJDescriptionField _descFld;
-	private RmaJComboBox _importTypeCombo;
+	private RmaJComboBox<Identifier> _importTypeCombo;
 	private RmaJTable _metTable;
 	private ButtonCmdPanel _cmdPanel;
+	private Map<String, MetTableModel> _metTables = new HashMap<>();
 
 	public ImportMetDataWindow(Window parent)
 	{
@@ -59,7 +88,7 @@ public class ImportMetDataWindow extends ImportForecastWindow
 		addListeners();
 		pack();
 		setLocationRelativeTo(getParent());
-		fillAveTempData();
+		//fillAveTempData();
 	}
 
 	
@@ -129,35 +158,67 @@ public class ImportMetDataWindow extends ImportForecastWindow
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(label, gbc);
 
-		MetDataType[] types = MetDataType.values();
-		_importTypeCombo = new RmaJComboBox<>(types);
+
+		_importTypeCombo = new RmaJComboBox<>();
 		label.setLabelFor(_importTypeCombo);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx   = 1.0;
+		gbc.weightx   = 0.5;
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.WEST;
-		gbc.fill      = GridBagConstraints.NONE;
+		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
 		getContentPane().add(_importTypeCombo, gbc);
 		
-		String[] headers = getHeadersFromConfigFile();
+		String[] headers = new String[]{"Selected", "Year", "Spring Ave|Air Temp",
+			"Summer Ave|Air Temp", "Fall Ave|Air Temp"};
 		_metTable = new RmaJTable(this, headers)
 		{
 			@Override
-			public boolean isCellEditable(int row, int col)
+			public String getToolTipText(MouseEvent e)
 			{
-				return col == 0;
+				TableModel model = getModel();
+				if ( !(model instanceof MetTableModel))
+				{
+					return super.getToolTipText(e);
+				}
+				Point p = e.getPoint();
+				int row = rowAtPoint(p);
+				if ( row == -1 )
+				{
+					return super.getToolTipText(e);
+				}
+				int col = columnAtPoint(p);
+				if ( col == -1 )
+				{
+					return super.getToolTipText(e);
+				}
+				MetTableModel metModel = (MetTableModel) model;
+				if ( !metModel.isCellEditable(row,0))
+				{
+					List<String> missingRecords = metModel.getMissingRecordsForRow(row);
+					if ( missingRecords != null && !missingRecords.isEmpty())
+					{
+						StringBuilder sb = new StringBuilder();
+						sb.append("<html>The Following DSS Records are missing data for the year ");
+						sb.append(getValueAt(row,1));
+						sb.append("<br>");
+						for(int i =0;i < missingRecords.size();i++)
+						{
+							sb.append(missingRecords.get(i));
+							sb.append("<br>");
+						}
+						return sb.toString();
+					}
+				}
+				return super.getToolTipText(e);
 			}
 		};
-		_metTable.setCheckBoxCellEditor(0);
-		int cols = _metTable.getColumnCount();
-		for (int i = 1;i < cols; i++ )
-		{
-			_metTable.setDoubleCellEditor(i);
-		}
+		setTableEditors();
+		_metTable.deleteCells();
 		_metTable.setRowHeight(_metTable.getRowHeight()+5);
+		_metTable.removePopupMenuSumOptions();
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -183,6 +244,17 @@ public class ImportMetDataWindow extends ImportForecastWindow
 		
 	}
 
+
+	private void setTableEditors()
+	{
+		_metTable.setCheckBoxCellEditor(0);
+		int cols = _metTable.getColumnCount();
+		for (int i = 1;i < cols; i++ )
+		{
+			_metTable.setDoubleCellEditor(i);
+		}
+		_metTable.setMlHeaderRenderer().setSeparatorToken("|");
+	}
 	/**
 	 * @return
 	 */
@@ -316,6 +388,7 @@ public class ImportMetDataWindow extends ImportForecastWindow
 	 */
 	private void addListeners()
 	{
+		_importTypeCombo.addItemListener(e->metComboChanged(e));
 		_cmdPanel.addCmdPanelListener(new ButtonCmdPanelListener()
 		{
 			public void buttonCmdActionPerformed(ActionEvent e)
@@ -340,6 +413,133 @@ public class ImportMetDataWindow extends ImportForecastWindow
 		
 	}
 
+	private void metComboChanged(ItemEvent e)
+	{
+		if ( ItemEvent.DESELECTED == e.getStateChange())
+		{
+			return;
+		}
+		Identifier id = (Identifier) _importTypeCombo.getSelectedItem();
+		MetTableModel table = _metTables.get(id.getPath());
+		if ( table == null )
+		{
+			table = readMetConfigFile();
+			_metTables.put(id.getPath(), table);
+		}
+		_metTable.setModel(table);
+		_importTypeCombo.setToolTipText("<html><b>Config File:</b> "+id.getPath()+
+				"<br><b>Temperature Values from:</b> "+table.getDssRecord());
+		JTableHeader tableHeader = _metTable.getTableHeader();
+		if (tableHeader instanceof ToolTipHeader )
+		{
+			ToolTipHeader ttheader = (ToolTipHeader) tableHeader;
+			ttheader.setToolTipStrings(new String[]{"Select the Year", "The Year", "Mar, Apr, May", "Jun, Jul, Aug", "Sept, Oct, Nov"});
+		}
+		setTableEditors();
+	}
+
+	private MetTableModel readMetConfigFile()
+	{
+		Identifier id = (Identifier) _importTypeCombo.getSelectedItem();
+		MetConfigFileReader reader = new MetConfigFileReader(id.getPath());
+		if ( reader.readDssPathsFile())
+		{
+			List<DSSIdentifier> srcDssEntries = reader.getSourceDssIdentifiers();
+			fixupDssFilePaths(srcDssEntries);
+			MetDataDssValidator validator = new MetDataDssValidator(srcDssEntries);
+			List<Integer> years = validator.getYears();
+			Map<Integer, List<String>> invalidYears = validator.getInvalidYears();
+			Map<Integer, Double> springAverages = validator.getSpringAverages();
+			Map<Integer, Double> summerAverages = validator.getSummerAverages();
+			Map<Integer, Double> fallAverages = validator.getFallAverages();
+			String units = validator.getDssUnits();
+
+			List<String> errors = validator.getErrors();
+			if ( !errors.isEmpty())
+			{
+				EventQueue.invokeLater(()->displayErrors(id, errors));
+
+
+			}
+
+			MetTableModel newModel = new MetTableModel(years, invalidYears, springAverages, summerAverages, fallAverages, units);
+			newModel.setDssRecord(srcDssEntries.get(0));
+			return newModel;
+		}
+		return new MetTableModel(null, null, null, null, null, "");
+	}
+
+	private void displayErrors(Identifier id, List<String> errors)
+	{
+		int opt = JOptionPane.showConfirmDialog(this, "<html>There were errors with processing the Time Series Records specified in the config file.<br>Do you want to see the errors?",
+				"Errors Occurred", JOptionPane.YES_NO_OPTION);
+		if ( JOptionPane.YES_OPTION == opt )
+		{
+			final JEditorPane txtArea = new JEditorPane()
+			{
+				public Dimension getPreferredScrollableViewportSize()
+				{
+					Dimension d = super.getPreferredScrollableViewportSize();
+					d.width = 400;
+					d.height = 300;
+					return d;
+				}
+			};
+			JPopupMenu popup = new JPopupMenu();
+
+			Action action = new AbstractAction("Copy to Clipboard")
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					txtArea.copy();
+				}
+			};
+			popup.add(action);
+			action = new AbstractAction("Select All")
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					txtArea.selectAll();
+				}
+			};
+			popup.add(action);
+			txtArea.setComponentPopupMenu(popup);
+			StringBuffer sb = new StringBuffer();
+			sb.append("<html><b>The Following Errors Occurred during the Processing of the Time Series Records");
+			sb.append("<br>File:</b>"+id.getPath());
+			sb.append("<br><b>Import Issues:</b>");
+			for (int e = 0;e < errors.size();e++)
+			{
+				sb.append("<br>");
+				sb.append(errors.get(e));
+			}
+			sb.append("</html>");
+			txtArea.setContentType("text/html");
+			txtArea.setText(sb.toString());
+			JScrollPane sp = new JScrollPane(txtArea);
+			sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+			txtArea.setCaretPosition(0);
+			JOptionPane.showMessageDialog(null, sp, "Import Issues", JOptionPane.INFORMATION_MESSAGE);
+		}
+
+	}
+
+	private void fixupDssFilePaths(List<DSSIdentifier> srcDssEntries)
+	{
+		DSSIdentifier dssId;
+		String fullPath;
+		for (int i = 0; i < srcDssEntries.size(); i++)
+		{
+			dssId = srcDssEntries.get(i);
+			if ( !RMAIO.isFullPath(dssId.getFileName()))
+			{
+				fullPath = Project.getCurrentProject().getAbsolutePath(dssId.getFileName());
+				dssId.setFileName(fullPath);
+			}
+		}
+	}
 
 
 	/**
@@ -392,7 +592,7 @@ public class ImportMetDataWindow extends ImportForecastWindow
 			MeteorlogicData metData = new MeteorlogicData();
 			metData.setName(_nameFld.getText().trim()+"-"+year);
 			metData.setDescription(_descFld.getText().trim());
-			metData.setMetDataType((MetDataType) _importTypeCombo.getSelectedItem());
+			metData.setMetConfigFile(Project.getCurrentProject().getRelativePath(getSelectedMetConfigFile()));
 
 			metData.setYear(year);
 			metDataSets.add(metData);
@@ -422,8 +622,8 @@ public class ImportMetDataWindow extends ImportForecastWindow
 			obj = _metTable.getValueAt(r, 0);
 			if ( Boolean.TRUE == obj || "true".equalsIgnoreCase(obj.toString()))
 			{
-				String year = (String) _metTable.getValueAt(r, 1);
-				selectedYears.add(RMAIO.parseInt(year));
+				Integer year = (Integer) _metTable.getValueAt(r, 1);
+				selectedYears.add(year);
 			}
 		}
 		return selectedYears;
@@ -436,9 +636,63 @@ public class ImportMetDataWindow extends ImportForecastWindow
 	 */
 	public void fillForm(ForecastSimGroup fsg)
 	{
+		fillMetDataCombo();
 		_canceled = true;
 	}
 
+	/**
+	 *
+	 */
+	private void fillMetDataCombo()
+	{
+		String dir = ForecastConfigFiles.getMetConfigFilesFolder();
+		RMAFilenameFilter filter = new RMAFilenameFilter("config");
+		List<String> configFiles = FileManagerImpl.getFileManager().list(dir, filter);
+		if ( configFiles == null || configFiles.isEmpty())
+		{
+			String msg;
+			if ( !FileManagerImpl.getFileManager().fileExists(dir))
+			{
+				msg = "Missing the following folder "+dir;
+			}
+			else
+			{
+				msg ="No Met Config Files found in "+dir ;
+			}
+
+			EventQueue.invokeLater(()->JOptionPane.showMessageDialog(this, msg, "No Met Config Files",
+					JOptionPane.INFORMATION_MESSAGE));
+			return;
+		}
+		List<Identifier>ids = getConfigFileEntries(configFiles);
+		RmaListModel<Identifier> newModel = new RmaListModel<>(true, ids);
+		_importTypeCombo.setModel(newModel);
+	}
+
+	/**
+	 *
+	 * @param configFiles
+	 * @return
+	 */
+	private List<Identifier> getConfigFileEntries(List<String> configFiles)
+	{
+		List<Identifier>ids = new ArrayList<>();
+		if ( configFiles == null || configFiles.isEmpty() )
+		{
+			return ids;
+		}
+		String file, path;
+		Identifier id;
+		for(int i = 0;i < configFiles.size();i++)
+		{
+			path = configFiles.get(i);
+			id = new Identifier(path);
+			id.setName(RMAIO.getFileNameNoExtension(path));
+			ids.add(id);
+		}
+
+		return ids;
+	}
 
 
 	/**
@@ -448,6 +702,182 @@ public class ImportMetDataWindow extends ImportForecastWindow
 	public boolean isCanceled()
 	{
 		return _canceled;
+	}
+
+	/**
+	 * get the selected file for the met config file
+	 * @return
+	 */
+	public String getSelectedMetConfigFile()
+	{
+		Identifier id = (Identifier) _importTypeCombo.getSelectedItem();
+		return id.getPath();
+	}
+	/**
+	 * table model for the met data
+	 */
+	public class MetTableModel extends RmaTableModel
+	{
+		private static final int SELECTION_COL = 0;
+		private static final int YEAR_COL = 1;
+		private static final int SPRING_AVE_COL = 2;
+		private static final int SUMMER_AVE_COL = 3;
+		private static final int FALL_AVE_COL = 4;
+
+		private final List<Integer> _years;
+		private final Map<Integer, List<String>> _invalidYears;
+		private final ParamDouble _paramDouble;
+		private Map<Integer, Double> _springAverages;
+		private Map<Integer, Double> _summerAverages;
+		private Map<Integer, Double> _fallAverages;
+		private Map<Integer, Boolean> _selected = new HashMap<>();
+		private DSSIdentifier _dssId;
+
+		public MetTableModel(List<Integer> years, Map<Integer, List<String>>invalidYears, Map<Integer, Double> springAverages,
+							 Map<Integer, Double> summerAverages, Map<Integer, Double> fallAverages, String units)
+		{
+			super(new String[] {"Selected", "Year", "Spring Ave|Air Temp (%s)".replace("%s", units),
+					"Summer Ave|Air Temp (%s)".replace("%s",units), "Fall Ave|Air Temp (%s)".replace("%s",units)});
+			_years = years;
+			_invalidYears =  invalidYears;
+			_springAverages = springAverages;
+			_summerAverages = summerAverages;
+			_fallAverages = fallAverages;
+			_paramDouble = new ParamDouble(0, Parameter.PARAMID_TEMP, Project.getCurrentProject().getUnitSystem(), 1);
+		}
+		public int getRowCount()
+		{
+			if ( _years != null )
+			{
+				return _years.size();
+			}
+			return 0;
+		}
+
+	
+
+		public boolean isCellEditable(int row, int col)
+		{
+			if ( _years == null )
+			{
+				return false;
+			}
+			if ( col == 0)
+			{
+				int obj = _years.get(row);
+				if ( _invalidYears.get(obj) == null)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public Object getValueAt(final int row, final int col)
+		{
+			if ( _years == null )
+			{
+				return null;
+			}
+			int year = _years.get(row);
+			double val;
+			switch ( col )
+			{
+				case SELECTION_COL: // selected
+					Boolean selected = _selected.get(row);
+					if ( selected == null )
+					{
+						return Boolean.FALSE;
+					}
+					return selected;
+				case YEAR_COL:
+					return year;
+				case SPRING_AVE_COL:
+					val = RMAConst.UNDEF_DOUBLE ;
+					if ( _springAverages != null )
+					{
+						Double value = _springAverages.get(year);
+						if ( value != null )
+						{
+							val = value;
+						}
+					}
+					_paramDouble.setValue(val);
+					_paramDouble.setPrecision(1);
+					try
+					{
+						return _paramDouble.clone();
+					} catch (CloneNotSupportedException e)
+					{
+						return val;
+					}
+
+				case SUMMER_AVE_COL:
+					val = RMAConst.UNDEF_DOUBLE ;
+					if ( _summerAverages != null )
+					{
+						Double value = _summerAverages.get(year);
+						if ( value != null )
+						{
+							val = value;
+						}
+					}
+					_paramDouble.setValue(val);
+					_paramDouble.setPrecision(1);
+					try
+					{
+						return _paramDouble.clone();
+					} catch (CloneNotSupportedException e)
+					{
+						return val;
+					}
+				case FALL_AVE_COL:
+					val = RMAConst.UNDEF_DOUBLE ;
+					if ( _summerAverages != null )
+					{
+						Double value = _fallAverages.get(year);
+						if ( value != null )
+						{
+							val = value;
+						}
+					}
+					_paramDouble.setValue(val);
+					_paramDouble.setPrecision(1);
+					try
+					{
+						return _paramDouble.clone();
+					}
+					catch (CloneNotSupportedException e)
+					{
+						return val;
+					}
+			}
+			return null;
+		}
+
+		public void setValueAt(Object obj, final int row, final int col)
+		{
+			if ( col == SELECTION_COL )
+			{
+				_selected.put(row, Boolean.parseBoolean(obj.toString()));
+				fireTableCellUpdated(row, col);
+			}
+		}
+
+		public List<String> getMissingRecordsForRow(int row)
+		{
+			Object year = getValueAt(row, YEAR_COL);
+			return _invalidYears.get(year);
+		}
+
+		public void setDssRecord(DSSIdentifier dssId)
+		{
+			_dssId = dssId;
+		}
+		public DSSIdentifier getDssRecord()
+		{
+			return _dssId;
+		}
 	}
 
 }

@@ -48,13 +48,13 @@ public class DssPathMap
 		RmaFile file = FileManagerImpl.getFileManager().getFile(_configFile);
 		if ( !file.exists())
 		{
-			_sim.addErrorMessage("DSS Paths Map file "+file.getAbsolutePath()+" doesn't exist.");
+			addErrorMessage("DSS Paths Map file "+file.getAbsolutePath()+" doesn't exist.");
 			return false;
 		}
 		BufferedReader reader = file.getBufferedReader();
 		if ( reader == null )
 		{
-			_sim.addErrorMessage("Failed to get reader for DSS Paths map file "+file.getAbsolutePath());
+			addErrorMessage("Failed to get reader for DSS Paths map file "+file.getAbsolutePath());
 			return false;
 		}
 		String line;
@@ -100,6 +100,18 @@ public class DssPathMap
 			{ }
 		}
 
+	}
+
+	private void addErrorMessage(String s)
+	{
+		if ( _sim != null )
+		{
+			_sim.addErrorMessage(s);
+		}
+		else
+		{
+			LOGGER.atSevere().log(s);
+		}
 	}
 
 	public DSSIdentifier getDSSIdentifierFor(DataLocation dataLoc)
@@ -233,5 +245,26 @@ public class DssPathMap
 			}
 		}
 		return destDssIds;
+	}
+
+	/**
+	 * get all the source DSSIdentifiers
+	 */
+	public List<DSSIdentifier> getSourceDssIdentifiers()
+	{
+		List<DSSIdentifier>srcDssIds = new ArrayList<>();
+
+		DssPathMapItem dssItem;
+		DSSIdentifier destDssId;
+		String srcDssItemPath, srcDssItemFile;
+		for (int i = 0;i < _dssPathMapList.size(); i++ )
+		{
+			dssItem = _dssPathMapList.get(i);
+			srcDssItemFile = dssItem.getSrcDssFile();
+			srcDssItemPath = dssItem.getSrcDssPath();
+			srcDssIds.add(new DSSIdentifier(srcDssItemFile, srcDssItemPath));
+
+		}
+		return srcDssIds;
 	}
 }
