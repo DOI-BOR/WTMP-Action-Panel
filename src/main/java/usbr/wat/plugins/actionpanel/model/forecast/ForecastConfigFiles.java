@@ -11,6 +11,7 @@
 package usbr.wat.plugins.actionpanel.model.forecast;
 
 import com.rma.model.Project;
+import rma.util.RMAIO;
 
 /**
  * class to get the various paths to the config and csv files used for the forecast compute
@@ -32,6 +33,8 @@ public class ForecastConfigFiles
 	public static final String IC_RESERVOIRS_FILENAME = "icReservoirs.csv";
 
 	public static final String MET_EDITOR_FILENAME = "met_editor.config";
+	private static final String MET_CONFIG_FILES_FOLDER = "met";
+
 	private ForecastConfigFiles()
 	{ }
 
@@ -207,5 +210,17 @@ public class ForecastConfigFiles
 	{
 		String file = getRelativeMetEditorFile();
 		return makeAbsolute(file);
+	}
+
+	public static String getMetConfigFilesFolder()
+	{
+		String dir = getRelativeMetConfigFilesFolder();
+		return makeAbsolute(dir);
+	}
+
+	private static String getRelativeMetConfigFilesFolder()
+	{
+		String dir =  RMAIO.concatPath(BASE_FOLDER, MET_CONFIG_FILES_FOLDER);
+		return dir;
 	}
 }

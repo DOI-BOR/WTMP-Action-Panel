@@ -19,6 +19,8 @@ public class MeteorlogicData extends NamedType
 {
 	private int _year;
 	private MetDataType _metDataType = MetDataType.Historic;
+	private String _metConfigFile;
+
 	public MeteorlogicData()
 	{
 		super();
@@ -45,6 +47,19 @@ public class MeteorlogicData extends NamedType
 		return _year;
 	}
 
+	public void setMetConfigFile(String metConfigFile)
+	{
+		_metConfigFile = metConfigFile;
+	}
+	public String getMetConfigFile()
+	{
+		if ( _metConfigFile == null )
+		{ // for backwards compatibility
+			return ForecastConfigFiles.getRelativeHistoricalMetFile();
+		}
+		return _metConfigFile;
+	}
+
 
 	public void saveData(Element parentElem)
 	{
@@ -57,6 +72,11 @@ public class MeteorlogicData extends NamedType
 		myElem.addContent(dataTypeElem);
 		Element yearElem = new Element("Year");
 		yearElem.setText(String.valueOf(_year));
+		if ( _metConfigFile != null )
+		{
+			Element configFileElem = new Element("MetConfigFile");
+			configFileElem.setText(getMetConfigFile());
+		}
 		myElem.addContent(yearElem);
 	}
 
@@ -71,6 +91,8 @@ public class MeteorlogicData extends NamedType
 		}
 		Element yearElem = myElem.getChild("Year");
 		_year = XMLUtilities.getContentAsInt(yearElem, 0);
+		_metConfigFile = XMLUtilities.getChildElementAsString(myElem,"MetConfigFile", null);
+
 		return true;
 	}
 }

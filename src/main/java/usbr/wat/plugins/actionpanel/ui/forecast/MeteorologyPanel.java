@@ -165,6 +165,7 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 			return;
 		}
 		List<MeteorlogicData> metData = importMetDataWindow.getMetData();
+		String configFile = importMetDataWindow.getSelectedMetConfigFile();
 		for (int i = 0;i <metData.size(); i++ )
 		{
 			boolean imported = importData(_fsg, _metTable, importMetDataWindow, _fsg.getMeteorlogyData(), metData.get(i));
@@ -301,7 +302,7 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 				MeteorlogicData metData = (MeteorlogicData) _metTable.getValueAt(selRow, 0);
 				Vector row = new Vector();
 				row.add(metData.getName());
-				row.add(metData.getMetDataType());
+				row.add(getMetConfigFileName(metData.getMetConfigFile()));
 				row.add(metData.getDescription());
 
 				_metInfoTable.appendRow(row);
@@ -317,6 +318,15 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 			}
 			_plotPanel.fillPlotPanel();
 		}
+	}
+
+	private Object getMetConfigFileName(String metConfigFile)
+	{
+		if (metConfigFile == null)
+		{
+			metConfigFile = ForecastConfigFiles.getRelativeHistoricalMetFile();
+		}
+		return RMAIO.getFileNameNoExtension(metConfigFile);
 	}
 
 	@Override
