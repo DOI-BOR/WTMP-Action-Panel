@@ -13,6 +13,7 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ItemEvent;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JLabel;
@@ -111,7 +112,18 @@ public class MetPlotPanel extends EnabledJPanel
 		add(_label, gbc);
 
 
-		_dssRecordCombo = new RmaJComboBox<>();
+		_dssRecordCombo = new RmaJComboBox<DssLocation>()
+		{
+			public String getToolTipText(MouseEvent e)
+			{
+				DssLocation location = (DssLocation) _dssRecordCombo.getSelectedItem();
+				if ( location == null )
+				{
+					return super.getToolTipText(e);
+				}
+				return "<html><b>DSS File:</b>"+location.getDssFile()+"<br><b>DSS Path:</b>"+location.getDssPath()+"</html>";
+			}
+		};
 		gbc.gridx = GridBagConstraints.RELATIVE;
 		gbc.gridy = GridBagConstraints.RELATIVE;
 		gbc.gridwidth = 1;
