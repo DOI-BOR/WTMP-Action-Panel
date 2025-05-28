@@ -32,7 +32,7 @@ public class ForecastConfigFiles
 
 	public static final String IC_RESERVOIRS_FILENAME = "icReservoirs.csv";
 
-	public static final String MET_EDITOR_FILENAME = "met_editor.config";
+	public static final String MET_EDITOR_FILENAME = "historic.config";
 	private static final String MET_CONFIG_FILES_FOLDER = "met";
 
 	private ForecastConfigFiles()
@@ -118,7 +118,7 @@ public class ForecastConfigFiles
 	 */
 	public static String getRelativeHistoricalMetFile()
 	{
-		String file = System.getProperty("WTMP.historicalMetPathsMapFile", BASE_FOLDER+"/met/"+HISTORICAL_MET_FILENAME);
+		String file = System.getProperty("WTMP.historicalMetPathsMapFile", BASE_FOLDER+"/"+MET_CONFIG_FILES_FOLDER+"/"+HISTORICAL_MET_FILENAME);
 		return file;
 	}
 
@@ -198,7 +198,7 @@ public class ForecastConfigFiles
 	 */
 	public static String getRelativeMetEditorFile()
 	{
-		String file = System.getProperty("WTMP.MetEditorFile", BASE_FOLDER+"/"+MET_EDITOR_FILENAME);
+		String file = System.getProperty("WTMP.MetEditorFile", BASE_FOLDER+"/"+MET_CONFIG_FILES_FOLDER+"/"+MET_EDITOR_FILENAME);
 		return file;
 	}
 
