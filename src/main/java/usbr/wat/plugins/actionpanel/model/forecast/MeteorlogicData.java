@@ -76,6 +76,7 @@ public class MeteorlogicData extends NamedType
 		{
 			Element configFileElem = new Element("MetConfigFile");
 			configFileElem.setText(getMetConfigFile());
+			myElem.addContent(configFileElem);
 		}
 		myElem.addContent(yearElem);
 	}

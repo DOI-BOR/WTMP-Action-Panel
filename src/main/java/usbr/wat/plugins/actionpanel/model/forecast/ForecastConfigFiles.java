@@ -25,7 +25,7 @@ public class ForecastConfigFiles
 	public static final String TEMP_TARGETS_FILENAME = "target_temp.config";
 	public static final String TEMP_TARGETS_CONTROL_LOCS_FILENAME = "temp_target_control_locs.config";
 
-	public static final String HISTORICAL_MET_FILENAME = "historical_met.config";
+	public static final String HISTORICAL_MET_FILENAME = "historic.config";
 	public static final String FLOW_PATTERN_FILENAME = "flow_pattern.config";
 
 	public static final String YEARLY_TEMP_FILENAME = "yearly_temperature_data.csv";
@@ -118,7 +118,7 @@ public class ForecastConfigFiles
 	 */
 	public static String getRelativeHistoricalMetFile()
 	{
-		String file = System.getProperty("WTMP.historicalMetPathsMapFile", BASE_FOLDER+"/"+HISTORICAL_MET_FILENAME);
+		String file = System.getProperty("WTMP.historicalMetPathsMapFile", BASE_FOLDER+"/met/"+HISTORICAL_MET_FILENAME);
 		return file;
 	}
 

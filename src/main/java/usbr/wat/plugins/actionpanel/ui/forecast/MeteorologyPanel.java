@@ -19,6 +19,7 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 
 import com.google.common.flogger.FluentLogger;
 import com.rma.io.FileManagerImpl;
@@ -232,17 +233,44 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 		_plotPanel.setLocationList(null);
 		Project prj = Project.getCurrentProject();
 
-		String prjDir = prj.getProjectDirectory();
-		String configPath = RMAIO.concatPath(prjDir, CONFIG_FILE);
-		RmaFile configFile = FileManagerImpl.getFileManager().getFile(configPath);
-		if ( configFile == null )
+		int row = _metTable.getSelectedRow();
+		Object tableObj = _metTable.getValueAt(row,0);
+		String metConfigFile = null;
+		String configPath = null;
+		if ( tableObj instanceof MeteorlogicData )
 		{
+			MeteorlogicData	 metData = (MeteorlogicData) tableObj;
+			metConfigFile = metData.getMetConfigFile();
+		}
+		String prjDir = prj.getProjectDirectory();
+		if ( metConfigFile == null )
+		{
+			configPath = RMAIO.concatPath(prjDir, CONFIG_FILE);
+		}
+		else
+		{
+			if ( !RMAIO.isFullPath(metConfigFile))
+			{
+				configPath = RMAIO.concatPath(prjDir, metConfigFile);
+			}
+			else
+			{
+				configPath = metConfigFile;
+			}
+		}
+		RmaFile configFile = FileManagerImpl.getFileManager().getFile(configPath);
+		if ( configFile == null || !configFile.exists())
+		{
+			LOGGER.atWarning().log("Failed to find met config file file "+configPath);
+			JOptionPane.showMessageDialog(this, "<html>The met config file <br>"+configPath+"<br>does not exist.", "Missing File", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		BufferedReader reader = configFile.getBufferedReader();
 
 		if ( reader == null )
 		{
+			LOGGER.atWarning().log("Failed to get reader for  met config file file "+configPath);
+			JOptionPane.showMessageDialog(this, "<html>Failed to get reader for the  met config file <br>"+configPath,"Read Failed", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		String line;
@@ -306,6 +334,7 @@ public class MeteorologyPanel extends AbstractForecastPanel<MeteorlogicData>
 				row.add(metData.getDescription());
 
 				_metInfoTable.appendRow(row);
+				fillNavPanel();
 				_plotPanel.setYear(metData.getYear());
 				_plotPanel.setEnabled(true);
 				_metTable.setRowSelectionInterval(selRow, selRow, false);
