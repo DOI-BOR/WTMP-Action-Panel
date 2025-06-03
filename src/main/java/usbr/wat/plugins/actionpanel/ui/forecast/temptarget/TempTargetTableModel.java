@@ -24,6 +24,7 @@ import java.util.List;
 final class TempTargetTableModel extends RmaTableModel
 {
     static final int DATE_COL_INDEX = 0;
+    private static final int YEAR_DATE_MONTH_STYLE = -13;
     private final List<TempTargetRowData> _rowDataList = new ArrayList<>();
     HecTime _hecTime = new HecTime();
 
@@ -50,9 +51,7 @@ final class TempTargetTableModel extends RmaTableModel
         TempTargetRowData rowData = _rowDataList.get(row);
         if(col == DATE_COL_INDEX)
         {
-            _hecTime.set(rowData.getTime());
-            LocalDate date = _hecTime.getLocalDateTime().toLocalDate();
-            retVal = date.toString();
+            retVal = getNormalizedDisplayDateForTime(rowData.getTime());
         }
         else
         {
@@ -64,6 +63,12 @@ final class TempTargetTableModel extends RmaTableModel
             }
         }
         return retVal;
+    }
+
+    private String getNormalizedDisplayDateForTime(int time)
+    {
+        _hecTime.set(time);
+        return _hecTime.date(YEAR_DATE_MONTH_STYLE);
     }
 
     private double roundToNDigits(double input, int n)
