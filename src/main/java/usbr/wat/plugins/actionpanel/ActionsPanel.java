@@ -83,7 +83,10 @@ public class ActionsPanel extends JPanel
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		add(button, gbc);
+		if ( Boolean.getBoolean(UpdateDataAction.DASH_D_FLAG))
+		{
+			add(button, gbc);
+		}
 	
 		_reviewDataAction = new ReviewDataAction();
 		button = new JButton(_reviewDataAction);
