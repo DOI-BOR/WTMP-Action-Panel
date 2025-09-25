@@ -687,7 +687,10 @@ public class InitialConditionsPanel extends AbstractForecastPanel<InitialConditi
 		gbc.anchor    = GridBagConstraints.NORTHWEST;
 		gbc.fill      = GridBagConstraints.HORIZONTAL;
 		gbc.insets    = RmaInsets.INSETS5505;
-		buttonPanel.add(button, gbc);
+		if ( Boolean.getBoolean(UpdateDataAction.DASH_D_FLAG))
+		{
+			buttonPanel.add(button, gbc);
+		}
 	
 		_reviewDataAction = new ReviewDataAction();
 		button = new JButton(_reviewDataAction);

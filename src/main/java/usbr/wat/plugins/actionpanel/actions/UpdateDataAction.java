@@ -23,6 +23,8 @@ import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
 @SuppressWarnings("serial")
 public class UpdateDataAction extends AbstractAction
 {
+	public static final String DASH_D_FLAG = "WTMP.HasUpdateData";
+
 	private final Runnable _postUpdateAction;
 
 	public UpdateDataAction()
