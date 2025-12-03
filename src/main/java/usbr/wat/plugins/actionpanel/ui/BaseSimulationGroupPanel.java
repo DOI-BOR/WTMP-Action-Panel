@@ -39,6 +39,8 @@ import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
 
 public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 {
+	public static final String GIT_DASH_D_FLAG = "WTMP.HasGit";
+
 	protected AbstractSimulationPanel _parent;
 	protected RmaJComboBox<ManagerProxy> _simulationGroupCombo;
 	protected JButton _editButton;
@@ -110,11 +112,13 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		gbc.insets    = RmaInsets.INSETS5500;
 		add(_newButton, gbc);
 
+		boolean hasGitButton = Boolean.getBoolean(GIT_DASH_D_FLAG);
+
 		_deleteButton = new JButton(getDeleteSimGroupAction(this));
 		_deleteButton.setEnabled(false);
 		gbc.gridx     = GridBagConstraints.RELATIVE;
 		gbc.gridy     = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1;
+		gbc.gridwidth = (hasGitButton?1:GridBagConstraints.REMAINDER);
 		gbc.weightx   = 0.0;
 		gbc.weighty   = 0.0;
 		gbc.anchor    = GridBagConstraints.WEST;
@@ -131,7 +135,10 @@ public abstract class BaseSimulationGroupPanel extends EnabledJPanel
 		gbc.anchor    = GridBagConstraints.EAST;
 		gbc.fill      = GridBagConstraints.NONE;
 		gbc.insets    = RmaInsets.insets(5,10,0,5);
-		add(_updateModelsBtn, gbc);
+		if ( hasGitButton )
+		{
+			add(_updateModelsBtn, gbc);
+		}
 
 		JLabel label = new JLabel("Description:");
 		gbc.gridx     = GridBagConstraints.RELATIVE;

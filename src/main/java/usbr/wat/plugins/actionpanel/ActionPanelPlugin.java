@@ -20,6 +20,7 @@ import usbr.git.GitlabConfigurator;
 import usbr.git.XMLParseException;
 import usbr.git.cli.GitCLIUnavailableException;
 import usbr.wat.plugins.actionpanel.actions.ActionWindowAction;
+import usbr.wat.plugins.actionpanel.ui.BaseSimulationGroupPanel;
 
 /**
  * @author Mark Ackerman
@@ -36,7 +37,10 @@ public class ActionPanelPlugin
 	{
 		super();
 		_instance = this;
-		configureGitConfiguration();
+		if ( Boolean.getBoolean(BaseSimulationGroupPanel.GIT_DASH_D_FLAG))
+		{
+			configureGitConfiguration();
+		}
 		addToToolsMenu();
 		EventQueue.invokeLater(()->displayActionsWindow());
 	}
