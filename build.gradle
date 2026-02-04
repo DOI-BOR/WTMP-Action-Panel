@@ -1,71 +1,44 @@
 plugins {
-    id "java-library"
-    id "maven-publish"
+    id "wtmp.deps-conventions"
+    id "wtmp.java-conventions"
+    id 'wtmp.publishing-conventions'
+    id 'wtmp.versioning-conventions'
+}
+
+allprojects {
+    group = 'usbr.wat.plugins'
+    version = versionConventions.getConventionVersion()
 }
 
 dependencies {
-    def rootProject = project(":");
     // API Dependencies
-    api "mil.army.usace.hec.wat:hec-wat:${rootProject.wat_version}!!"
+    api libs.hec.wat
+    implementation libs.wat.cequalw2.plugin
+    implementation(libs.merlin.data.exchange) {
+        exclude group: 'mil.army.usace.hec'
+    }
 
-    // JasperReports
-    api ('net.sf.jasperreports:jasperreports:6.17.0') {
-        exclude group: 'com.fasterxml.jackson.core'
-        exclude group: 'com.fasterxml.jackson.datatype'
-    }
-    api ('net.sf.jasperreports:jasperreports-chart-themes:6.17.0') {
+    api (libs.bundles.jasperreports) {
         exclude group: 'net.sf.jasperreports', module: 'jasperreports'
         exclude group: 'com.fasterxml.jackson.core'
         exclude group: 'com.fasterxml.jackson.datatype'
     }
-    implementation ('net.sf.jasperreports:jasperreports-chart-customizers:6.17.0') {
-        exclude group: 'net.sf.jasperreports', module: 'jasperreports'
-        exclude group: 'com.fasterxml.jackson.core'
-        exclude group: 'com.fasterxml.jackson.datatype'
 
-    }
-    implementation ('net.sf.jasperreports:jasperreports-fonts:6.17.0') {
-        exclude group: 'com.fasterxml.jackson.core'
-        exclude group: 'com.fasterxml.jackson.datatype'
-    }
-    implementation ('net.sf.jasperreports:jasperreports-custom-visualization:6.17.0') {
-        exclude group: 'net.sf.jasperreports', module: 'jasperreports'
-        exclude group: 'com.fasterxml.jackson.core'
-        exclude group: 'com.fasterxml.jackson.datatype'
-    }
-    implementation ('net.sf.jasperreports:jasperreports-functions:6.17.0') {
-        exclude group: 'net.sf.jasperreports', module: 'jasperreports'
-        exclude group: 'com.fasterxml.jackson.core'
-        exclude group: 'com.fasterxml.jackson.datatype'
-    }
-    implementation ('net.sf.jasperreports:jasperreports-annotation-processors:6.17.0') {
-        exclude group: 'com.fasterxml.jackson.core'
-        exclude group: 'com.fasterxml.jackson.datatype'
-    }
-    implementation ('net.sf.jasperreports:jasperreports-metadata:6.17.0') {
-        exclude group: 'com.fasterxml.jackson.core'
-        exclude group: 'com.fasterxml.jackson.datatype'
-    }
-	implementation 'org.apache.poi:poi:3.8'
-	implementation 'org.apache.poi:poi-ooxml:3.8'
+	implementation libs.poi
+	implementation libs.poi.ooxml
 
-    // Implementation/Runtime Dependencies
-    implementation project(":usbr-git-library")
-    implementation 'mil.army.usace.hec.wat:wat-cequalw2-plugin:v1.1-2.0.0.1149-20210903.004433-1'
-    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
-    implementation 'org.gitlab4j:gitlab4j-api:4.19.0'
-    implementation 'mil.army.usace.hec.swingx:swingx-core:1.6.6'
-    implementation 'gov.usbr.wq:merlin-data-exchange:3.4.7'
-    implementation('com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.11.0')
-    runtimeOnly('com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.11.0')
-    runtimeOnly 'org.codehaus.groovy:groovy:3.0.7'
-    runtimeOnly 'jaxen:jaxen:1.1.6'
-    runtimeOnly 'org.springframework:spring-beans:5.3.12'
-    runtimeOnly 'org.springframework:spring-core:5.3.12'
-    runtimeOnly 'org.springframework:spring-jcl:5.3.12'
+    implementation "usbr.wat.plugins:usbr-git-library"
+    implementation libs.jgit
+    implementation libs.gitlab4j
+    implementation libs.swingx.core
+    implementation libs.jackson.csv
+    runtimeOnly libs.jackson.xml
+    runtimeOnly libs.groovy
+    runtimeOnly libs.jaxen
+    runtimeOnly libs.spring.beans
+    runtimeOnly libs.spring.core
+    runtimeOnly libs.spring.jcl
 }
-
-
 
 jar {
     manifest {
@@ -80,9 +53,4 @@ publishing {
             from components.java
         }
     }
-}
-
-compileJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
 }
