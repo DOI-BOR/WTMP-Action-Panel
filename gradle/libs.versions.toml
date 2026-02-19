@@ -1,0 +1,61 @@
+[versions]
+wtmp-git-library = "addversion"
+
+hec-wat = "1.1.0.15-beta"
+wat-cequalw2 = "v1.1-2.0.0.1149-20210903.004433-1"
+merlin-data-exchange = "3.4.7"
+
+jasper-version = "6.17.0"
+poi = "3.8"
+jgit = "5.13.0.202109080827-r"
+gitlab4j = "4.19.0"
+swingx = "1.6.6"
+jackson = "2.11.0"
+groovy = "3.0.7"
+jaxen = "1.1.6"
+spring = "5.3.12"
+
+junit-version = "5.14.2"
+
+[libraries]
+hec-wat = { module = "mil.army.usace.hec.wat:hec-wat", version.ref = "hec-wat" }
+wat-cequalw2-plugin = { module = "mil.army.usace.hec.wat:wat-cequalw2-plugin", version.ref = "wat-cequalw2" }
+swingx-core = { module = "mil.army.usace.hec.swingx:swingx-core", version.ref = "swingx" }
+
+merlin-data-exchange = { module = "gov.usbr.wq:merlin-data-exchange", version.ref = "merlin-data-exchange" }
+
+poi = { module = "org.apache.poi:poi", version.ref = "poi" }
+poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
+
+jgit = { module = "org.eclipse.jgit:org.eclipse.jgit", version.ref = "jgit" }
+gitlab4j = { module = "org.gitlab4j:gitlab4j-api", version.ref = "gitlab4j" }
+
+jackson-csv = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-csv", version.ref = "jackson" }
+jackson-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
+groovy = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
+jaxen = { module = "jaxen:jaxen", version.ref = "jaxen" }
+
+spring-beans = { module = "org.springframework:spring-beans", version.ref = "spring" }
+spring-core = { module = "org.springframework:spring-core", version.ref = "spring" }
+spring-jcl = { module = "org.springframework:spring-jcl", version.ref = "spring" }
+
+jasper-core = { module = "net.sf.jasperreports:jasperreports", version.ref = "jasper-version" }
+jasper-chart-themes = { module = "net.sf.jasperreports:jasperreports-chart-themes", version.ref = "jasper-version" }
+jasper-chart-customizers = { module = "net.sf.jasperreports:jasperreports-chart-customizers", version.ref = "jasper-version" }
+jasper-fonts = { module = "net.sf.jasperreports:jasperreports-fonts", version.ref = "jasper-version" }
+jasper-custom-visualization = { module = "net.sf.jasperreports:jasperreports-custom-visualization", version.ref = "jasper-version" }
+jasper-functions = { module = "net.sf.jasperreports:jasperreports-functions", version.ref = "jasper-version" }
+jasper-annotation-processors = { module = "net.sf.jasperreports:jasperreports-annotation-processors", version.ref = "jasper-version" }
+jasper-metadata = { module = "net.sf.jasperreports:jasperreports-metadata", version.ref = "jasper-version" }
+
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-version" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[bundles]
+jasperreports = ["jasper-core", "jasper-chart-customizers", "jasper-annotation-processors", "jasper-chart-themes",
+"jasper-custom-visualization", "jasper-fonts", "jasper-functions", "jasper-metadata"]
+
+junit-api = ["junit-jupiter-api"]
+junit-runtime = ["junit-launcher", "junit-jupiter-engine"]
