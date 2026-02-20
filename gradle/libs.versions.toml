@@ -1,9 +1,9 @@
 [versions]
-wtmp-git-library = "addversion"
+wtmp-git-library = "main-SNAPSHOT"
 
 hec-wat = "1.1.0.15-beta"
 wat-cequalw2 = "v1.1-2.0.0.1149-20210903.004433-1"
-merlin-data-exchange = "3.4.7"
+merlin-data-exchange = "main-SNAPSHOT"
 
 jasper-version = "6.17.0"
 poi = "3.8"
