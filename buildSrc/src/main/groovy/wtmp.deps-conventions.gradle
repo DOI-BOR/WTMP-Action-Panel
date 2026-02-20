@@ -17,11 +17,11 @@ repositories {
     }
     maven {
         url 'https://www.hec.usace.army.mil/nexus/repository/hec-internal'
-        credentials {
-            checkForNexusCredentials()
-            username "$nexusUser"
-            password "$nexusPassword"
-        }
+//         credentials {
+//             checkForNexusCredentials()
+//             username "$nexusUser"
+//             password "$nexusPassword"
+//         }
     }
     mavenCentral()
     maven {
