@@ -20,7 +20,7 @@ dependencyResolutionManagement {
                     }
                 }
             }
-            filter { includeGroup('gov.usbr.wq') }
+            filter { includeModule('gov.usbr.wq', 'merlin-data-exchange') }
         }
         // Route only gov.usbr.wq artifacts to GitHub Packages
         exclusiveContent {
@@ -34,18 +34,23 @@ dependencyResolutionManagement {
                     }
                 }
             }
-            filter { includeGroup('gov.usbr.wq') }
+            filter { includeModule('gov.usbr.wq', 'usbr-git-library') }
         }
-
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'HEC_WAT_Releases'
+                    url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
+                    credentials {
+                        username = System.getenv("NEXUS_USER")
+                        password = System.getenv("NEXUS_PASSWORD")
+                    }
+                }
+            }
+            filter { includeModule('mil.army.usace.hec.wat', 'hec-wat') }
+        }
         maven {
             url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
-        }
-        maven {
-            url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
-            credentials {
-                username = System.getenv("NEXUS_USER")
-                password = System.getenv("NEXUS_PASSWORD")
-            }
         }
         maven {
             url 'https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/'
