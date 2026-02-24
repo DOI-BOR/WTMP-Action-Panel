@@ -3,11 +3,11 @@ plugins {
 }
 
 def checkForNexusCredentials() {
-    if(!project.hasProperty('nexusUser')) {
-        println ('Please set the nexusUser property in the GRADLE_USER_HOME ($userHome/.gradle/gradle.properties) file or via -PnexusUser= .')
+    if(!System.getenv("NEXUS_USER")) {
+        println ('Please set the NEXUS_USER property in the GitHub Secrets.')
     }
-    if(!project.hasProperty('nexusPassword')) {
-        println ('Please set the nexusPassword property in the GRADLE_USER_HOME ($userHome/.gradle/gradle.properties) file or via -PnexusPassword= .')
+    if(!System.getenv("NEXUS_PASSWORD")) {
+        println ('Please set the NEXUS_PASSWORD property in the GitHub Secrets.')
     }
 }
 

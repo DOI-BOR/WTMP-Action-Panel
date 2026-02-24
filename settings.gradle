@@ -51,7 +51,12 @@ dependencyResolutionManagement {
             }
         }
         maven {
-            url 'https://www.hec.usace.army.mil/nexus/repository/hec-internal'
+            url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
+            credentials {
+                checkForNexusCredentials()
+                username = System.getenv("NEXUS_USER")
+                password = System.getenv("NEXUS_PASSWORD")
+            }
         }
         maven {
             url 'https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/'
