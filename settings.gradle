@@ -34,7 +34,7 @@ dependencyResolutionManagement {
                     }
                 }
             }
-            filter { includeModule('gov.usbr.wq', 'usbr-git-library') }
+            filter { includeModule('usbr.wat.plugins', 'usbr-git-library') }
         }
         exclusiveContent {
             forRepository {
