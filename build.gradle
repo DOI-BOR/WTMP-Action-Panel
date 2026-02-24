@@ -27,7 +27,7 @@ dependencies {
 	implementation libs.poi
 	implementation libs.poi.ooxml
 
-    implementation "usbr.wat.plugins:usbr-git-library"
+    implementation libs.usbr.git.library
     implementation libs.jgit
     implementation libs.gitlab4j
     implementation libs.swingx.core
