@@ -1,7 +1,7 @@
 [versions]
 usbr-git-library = "main-SNAPSHOT"
 
-hec-wat = "1.1.0.15-beta"
+hec-wat = "1.1.0.34-beta"
 wat-cequalw2 = "v1.1-2.0.0.1149-20210903.004433-1"
 merlin-data-exchange = "main-SNAPSHOT"
 
