@@ -53,7 +53,6 @@ dependencyResolutionManagement {
         maven {
             url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
             credentials {
-                checkForNexusCredentials()
                 username = System.getenv("NEXUS_USER")
                 password = System.getenv("NEXUS_PASSWORD")
             }
