@@ -37,18 +37,8 @@ dependencyResolutionManagement {
             filter { includeGroup('gov.usbr.wq') }
         }
 
-        // Route HEC/Nexus artifacts to HEC’s public repository
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = 'HEC_Nexus'
-                    url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
-                }
-            }
-            filter {
-                includeGroup('mil.army.usace.hec')
-                includeGroup('com.rmanet')
-            }
+        maven {
+            url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
         }
         maven {
             url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
