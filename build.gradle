@@ -27,9 +27,7 @@ dependencies {
 	implementation libs.poi
 	implementation libs.poi.ooxml
 
-    implementation(libs.usbr.git.library) {
-        exclude group: 'mil.army.usace.hec'
-    }
+    implementation "usbr.wat.plugins:usbr-git-library"
     implementation libs.jgit
     implementation libs.gitlab4j
     implementation libs.swingx.core
