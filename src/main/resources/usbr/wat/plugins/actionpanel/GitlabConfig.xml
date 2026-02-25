@@ -1,8 +1,8 @@
 <WTMPGitConfig>
     <UseSChannel>true</UseSChannel>
     <GitlabConfiguration>
-        <URL>https://gitlab.rmanet.app</URL>
-        <ApplicationKey>cbc19462b254be8aed4eeeebb9229c47954b1b268fc5a423afc37e22549e8e5c</ApplicationKey>
-        <ApplicationSecret>79901248f5a8d8e32d07ab6c3b51c138ba3ca4f5984cbfda2df11fab21b43e0f</ApplicationSecret>
+        <URL> </URL>
+        <ApplicationKey> </ApplicationKey>
+        <ApplicationSecret> </ApplicationSecret>
     </GitlabConfiguration>
 </WTMPGitConfig>
