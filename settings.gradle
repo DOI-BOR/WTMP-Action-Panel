@@ -36,15 +36,6 @@ dependencyResolutionManagement {
             }
             filter { includeModule('usbr.wat.plugins', 'usbr-git-library') }
         }
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = 'OSGeo'
-                    url = uri('https://repo.osgeo.org/repository/release/')
-                }
-            }
-            filter { includeGroup "org.geotools" }
-        }
         maven {
             name = 'HEC_WAT_Releases'
             url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
@@ -59,5 +50,10 @@ dependencyResolutionManagement {
         maven {
             url 'https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/'
         }
+        maven {
+            /* GeoTools */
+            url 'https://repo.osgeo.org/repository/release/'
+        }
+
     }
 }
