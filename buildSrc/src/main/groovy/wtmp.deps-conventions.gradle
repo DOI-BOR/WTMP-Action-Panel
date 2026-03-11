@@ -17,6 +17,9 @@ configurations.configureEach {
     // the classpath results in script failures. Exclude Jython, in favor of WAT's jython-standalone which
     // contains a superset of jython.
     exclude group: 'org.python', module: 'jython'
+
+    // exclude this dependency because we dont need it
+    exclude group: 'mil.army.usace.hec', module: 'hec-security'
 }
 
 tasks.register("generateDependenciesReport", DependencyReportTask) { depReport ->
