@@ -36,18 +36,13 @@ dependencyResolutionManagement {
             }
             filter { includeModule('usbr.wat.plugins', 'usbr-git-library') }
         }
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = 'HEC_WAT_Releases'
-                    url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
-                    credentials {
-                        username = System.getenv("NEXUS_USER")
-                        password = System.getenv("NEXUS_PASSWORD")
-                    }
-                }
+        maven {
+            name = 'HEC_WAT_Releases'
+            url 'https://www.hec.usace.army.mil/nexus/repository/wat-releases'
+            credentials {
+                username = System.getenv("NEXUS_USER")
+                password = System.getenv("NEXUS_PASSWORD")
             }
-            filter { includeModule('mil.army.usace.hec.wat', 'hec-wat') }
         }
         maven {
             url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
@@ -55,10 +50,10 @@ dependencyResolutionManagement {
         maven {
             url 'https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/'
         }
-        maven {
-            /* GeoTools */
-            url 'https://repo.osgeo.org/repository/release/'
-        }
+//         maven {
+//             /* GeoTools */
+//             url 'https://repo.osgeo.org/repository/release/'
+//         }
 
     }
 }
