@@ -18,8 +18,12 @@ configurations.configureEach {
     // contains a superset of jython.
     exclude group: 'org.python', module: 'jython'
 
-    // exclude this dependency because we dont need it
+    // exclude these dependency because we dont need them
     exclude group: 'mil.army.usace.hec', module: 'hec-security'
+    exclude group: 'mil.army.usace.hec', module: 'hec-client-server'
+    exclude group: 'mil.army.usace.hec', module: 'hec-admin'
+    exclude group: 'mil.army.usace.hec', module: 'hec-rmi'
+    exclude group: 'mil.army.usace.hec', module: 'hec-data-ui'
 }
 
 tasks.register("generateDependenciesReport", DependencyReportTask) { depReport ->
