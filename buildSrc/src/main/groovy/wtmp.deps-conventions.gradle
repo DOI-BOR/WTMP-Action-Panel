@@ -3,33 +3,11 @@ plugins {
 }
 
 def checkForNexusCredentials() {
-    if(!project.hasProperty('nexusUser')) {
-        println ('Please set the nexusUser property in the GRADLE_USER_HOME ($userHome/.gradle/gradle.properties) file or via -PnexusUser= .')
+    if(!System.getenv("NEXUS_USER")) {
+        println ('Please set the NEXUS_USER property in the GitHub Secrets.')
     }
-    if(!project.hasProperty('nexusPassword')) {
-        println ('Please set the nexusPassword property in the GRADLE_USER_HOME ($userHome/.gradle/gradle.properties) file or via -PnexusPassword= .')
-    }
-}
-
-repositories {
-    maven {
-        url 'https://www.hec.usace.army.mil/nexus/repository/maven-public'
-    }
-    maven {
-        url 'https://www.hec.usace.army.mil/nexus/repository/hec-internal'
-        credentials {
-            checkForNexusCredentials()
-            username "$nexusUser"
-            password "$nexusPassword"
-        }
-    }
-    mavenCentral()
-    maven {
-        url 'https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/'
-    }
-    maven {
-        /* GeoTools */
-        url 'https://repo.osgeo.org/repository/release/'
+    if(!System.getenv("NEXUS_PASSWORD")) {
+        println ('Please set the NEXUS_PASSWORD property in the GitHub Secrets.')
     }
 }
 
@@ -39,6 +17,13 @@ configurations.configureEach {
     // the classpath results in script failures. Exclude Jython, in favor of WAT's jython-standalone which
     // contains a superset of jython.
     exclude group: 'org.python', module: 'jython'
+
+    // exclude these dependency because we dont need them
+    exclude group: 'mil.army.usace.hec', module: 'hec-security'
+    exclude group: 'mil.army.usace.hec', module: 'hec-client-server'
+    exclude group: 'mil.army.usace.hec', module: 'hec-admin'
+    exclude group: 'mil.army.usace.hec', module: 'hec-rmi'
+    exclude group: 'mil.army.usace.hec', module: 'hec-data-ui'
 }
 
 tasks.register("generateDependenciesReport", DependencyReportTask) { depReport ->

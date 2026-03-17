@@ -1,9 +1,9 @@
 [versions]
-wtmp-git-library = "addversion"
+usbr-git-library = "main-SNAPSHOT"
 
 hec-wat = "1.1.0.15-beta"
 wat-cequalw2 = "v1.1-2.0.0.1149-20210903.004433-1"
-merlin-data-exchange = "3.4.7"
+merlin-data-exchange = "main-SNAPSHOT"
 
 jasper-version = "6.17.0"
 poi = "3.8"
@@ -23,6 +23,7 @@ wat-cequalw2-plugin = { module = "mil.army.usace.hec.wat:wat-cequalw2-plugin", v
 swingx-core = { module = "mil.army.usace.hec.swingx:swingx-core", version.ref = "swingx" }
 
 merlin-data-exchange = { module = "gov.usbr.wq:merlin-data-exchange", version.ref = "merlin-data-exchange" }
+usbr-git-library = { module = "usbr.wat.plugins:usbr-git-library", version.ref = "usbr-git-library" }
 
 poi = { module = "org.apache.poi:poi", version.ref = "poi" }
 poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
