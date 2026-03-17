@@ -6,7 +6,6 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
 
     repositories {
-        mavenCentral()
 
         // Route only gov.usbr.wq artifacts to GitHub Packages
         exclusiveContent {
@@ -54,6 +53,6 @@ dependencyResolutionManagement {
             /* GeoTools */
             url 'https://repo.osgeo.org/repository/release/'
         }
-
+        mavenCentral()
     }
 }
