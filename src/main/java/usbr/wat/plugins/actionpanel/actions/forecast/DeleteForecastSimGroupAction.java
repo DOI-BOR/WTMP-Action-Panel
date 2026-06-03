@@ -1,82 +1,132 @@
-/*
- * Copyright 2023 United States Bureau of Reclamation (USBR).
- * United States Department of the Interior
- * All Rights Reserved. USBR PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval
- * from USBR
- */
 package usbr.wat.plugins.actionpanel.actions.forecast;
 
-import java.awt.event.ActionEvent;
-import java.util.List;
+import java.awt.event.ActionEvent;                                              // Event type delivered when a user triggers a bound action (for example, a button press)
 
-import javax.swing.AbstractAction;
-import com.rma.client.ObjectChooser;
-import com.rma.factories.DeleteManagerFactory;
-import com.rma.model.Manager;
-import com.rma.model.ManagerProxy;
-import com.rma.model.Project;
-import hec2.wat.model.WatSimulation;
-import usbr.wat.plugins.actionpanel.ActionPanelPlugin;
-import usbr.wat.plugins.actionpanel.ActionsWindow;
-import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;
-import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;
-import usbr.wat.plugins.actionpanel.ui.BaseSimulationGroupPanel;
+import java.util.List;                                                          // Collections interface used for lists of manager proxies and simulations
+import javax.swing.AbstractAction;                                              // Swing base class for encapsulating an action that can be attached to UI components
+
+import com.rma.client.ObjectChooser;                                            // Dialog utility that presents objects for selection or deletion
+import com.rma.factories.DeleteManagerFactory;                                  // Factory providing deletion operations for managers and their proxies
+import com.rma.model.Manager;                                                   // Base manager type representing a managed model object
+import com.rma.model.ManagerProxy;                                              // Proxy wrapper that exposes manager instances and metadata
+import com.rma.model.Project;                                                   // Accessor for the current project and project-level operations
+
+import hec2.wat.model.WatSimulation;                                            // WAT model type representing a single simulation scenario or run
+
+import usbr.wat.plugins.actionpanel.ActionPanelPlugin;                          // Plugin entry point used to obtain the Actions window and global context
+import usbr.wat.plugins.actionpanel.ActionsWindow;                              // Main actions window used as the UI parent for dialogs and status updates
+import usbr.wat.plugins.actionpanel.model.AbstractSimulationGroup;              // Base type representing a simulation group used by the actions
+import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;            // Forecast-specific simulation group type used by the forecast panel
+import usbr.wat.plugins.actionpanel.ui.BaseSimulationGroupPanel;                // Panel exposing common simulation-group functionality and flags
 
 /**
- * @author mark
+ * Action that deletes one or more forecast simulation groups selected by the user.
  *
+ * Presents an object chooser dialog filtered to {@link ForecastSimGroup} proxies,
+ * performs deletion of the selected group managers and their simulations, and
+ * notifies the UI to refresh.
  */
-public class DeleteForecastSimGroupAction extends AbstractAction
-{
+public class DeleteForecastSimGroupAction extends AbstractAction {
+	/**
+	 * Owning actions window used as the dialog parent and context source.
+	 */
 	private final ActionsWindow _parent;
+
+	/**
+	 * Panel that hosts forecast simulation groups and receives deletion notifications.
+	 */
 	private final BaseSimulationGroupPanel _parentPanel;
 
-	public DeleteForecastSimGroupAction(BaseSimulationGroupPanel parentPanel, ActionsWindow parent)
-	{
+	/**
+	 * Creates the delete-forecast-simulation-group action with a user-visible name.
+	 *
+	 * @param parentPanel the panel that will be notified when groups are deleted
+	 * @param parent      the actions window used as the dialog parent
+	 */
+	public DeleteForecastSimGroupAction(BaseSimulationGroupPanel parentPanel, ActionsWindow parent) {
+		// Initialize the action with its display label
 		super("Delete...");
+
+		// Store the parent window reference
 		_parent = parent;
+
+		// Store the parent panel reference
 		_parentPanel = parentPanel;
 	}
+
+	/**
+	 * Handles the user-triggered event to delete selected forecast simulation groups.
+	 * <p>
+	 * Shows an {@code ObjectChooser} in delete mode for {@link ForecastSimGroup} entries,
+	 * deletes each selected group and its simulations, notifies the parent panel, and
+	 * refreshes the forecast panel's group list.
+	 *
+	 * @param e the action event initiating the deletion request
+	 */
 	@Override
-	public void actionPerformed(ActionEvent e)
-	{
+	public void actionPerformed(ActionEvent e) {
+		// Retrieve all manager proxies for ForecastSimGroup from the current project
 		List<ManagerProxy> simGroups = Project.getCurrentProject().getManagerProxyListForType(ForecastSimGroup.class);
+
+		// Create the chooser dialog in delete mode with the available proxies
 		ObjectChooser chooser = new ObjectChooser(ActionPanelPlugin.getInstance().getActionsWindow(), true, simGroups, ObjectChooser.DELETE);
+
+		// Title the chooser appropriately for deletion
 		chooser.setTitle("Delete Simulation Groups");
+
+		// Display the chooser dialog
 		chooser.setVisible(true);
-		if ( chooser.isCanceled())
-		{
+
+		// Abort if the user cancels the dialog
+		if (chooser.isCanceled()) {
 			return;
 		}
+
+		// Retrieve the selected objects to delete
 		Object[] objects = chooser.getSelectedObjects();
-		if (objects == null )
-		{
+
+		// If nothing was selected, do nothing
+		if (objects == null) {
 			return;
 		}
+
+		// Access the current project (not used below, but retained from original logic)
 		Project prj = Project.getCurrentProject();
+
+		// Loop variables for proxy and manager operations
 		ManagerProxy proxy = null;
 		Manager manager;
-		for(int i = 0;i < objects.length; i++ )
-		{
+
+		// Iterate over each selected proxy and perform deletion
+		for (int i = 0; i < objects.length; i++) {
+			// Cast the selected object to a manager proxy
 			proxy = (ManagerProxy) objects[i];
+
+			// Load the concrete manager from the proxy
 			manager = proxy.loadManager();
-			if ( manager instanceof AbstractSimulationGroup)
-			{
+
+			// Only operate on simulation groups
+			if (manager instanceof AbstractSimulationGroup) {
+				// Collect simulations before deleting the group
 				List<WatSimulation> sims = ((AbstractSimulationGroup) manager).getSimulations();
+
+				// Delete the group manager first
 				DeleteManagerFactory.deleteManager(manager);
-				for(int n = sims.size()-1; n >= 0; n--)
-				{
+
+				// Delete each simulation manager (iterate backward to avoid index shifting)
+				for (int n = sims.size() - 1; n >= 0; n--) {
 					DeleteManagerFactory.deleteManager(sims.get(n));
 				}
 			}
 		}
-		if (_parentPanel != null )
-		{
+
+		// Notify the parent panel of the deletion, if available
+		if (_parentPanel != null) {
 			_parentPanel.simulationGroupDeleted(proxy);
 		}
+
+		// Refresh the forecast panel's simulation group combo/list
 		ActionPanelPlugin.getInstance().getActionsWindow().getForecastPanel().loadSimulationGroupCombo();
 
 	}
-
 }
