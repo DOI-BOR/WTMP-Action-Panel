@@ -29,7 +29,6 @@ import usbr.wat.plugins.actionpanel.SimGroupContainerNode;          // Provides 
  * about the missing {@code serialVersionUID} field; this class is not intended for
  * Java object serialization.
  *
- * @author mark
  * @see WtmpTree
  * @see SimGroupContainerNode
  * @see ProjectTreeNode

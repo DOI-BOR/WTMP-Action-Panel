@@ -64,7 +64,6 @@ import rma.swing.RmaJDialog;    // RMA base dialog class providing common dialog
  * Closing the dialog via the title-bar X while the operation is running is
  * treated the same as clicking Cancel.
  *
- * @author mark
  */
 @SuppressWarnings("serial")
 public class ProgressListenerDialog extends RmaJDialog

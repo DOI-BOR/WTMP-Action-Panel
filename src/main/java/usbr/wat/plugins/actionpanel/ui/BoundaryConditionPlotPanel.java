@@ -63,7 +63,6 @@ import usbr.wat.plugins.actionpanel.ui.forecast.BoundaryConditionLocationPair;  
  *   the time range stays consistent across locations. When the same location is
  *   reselected both X and Y axis zoom levels are preserved.
  *
- * @author mark
  */
 public class BoundaryConditionPlotPanel extends EnabledJPanel {
 	/**

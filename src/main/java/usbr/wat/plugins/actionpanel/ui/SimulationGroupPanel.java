@@ -35,7 +35,6 @@ import usbr.wat.plugins.actionpanel.model.forecast.ForecastSimGroup;            
  * event with a non-null proxy explicitly clears the parent panel by calling fillForm
  * with null before the new selection is processed.
  *
- * @author mark
  */
 public class SimulationGroupPanel extends BaseSimulationGroupPanel {
 	/**

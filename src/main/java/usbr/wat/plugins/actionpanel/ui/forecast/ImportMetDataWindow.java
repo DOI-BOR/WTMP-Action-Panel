@@ -86,7 +86,6 @@ import usbr.wat.plugins.actionpanel.model.forecast.MeteorlogicData;     // Provi
  * {@link MetTableModel} instances are cached per config file path in {@code _metTables}
  * to avoid re-reading DSS data when the user switches between config files.
  *
- * @author mark
  * @see MeteorlogicData
  * @see MetTableModel
  * @see MetDataDssValidator

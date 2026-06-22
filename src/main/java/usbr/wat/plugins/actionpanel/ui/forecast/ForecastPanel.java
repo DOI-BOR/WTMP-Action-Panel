@@ -41,7 +41,6 @@ import usbr.wat.plugins.actionpanel.ui.forecast.temptarget.TempTargetPanel;     
  * When a new {@link ForecastSimGroup} is set, all sub-panels are populated with its
  * data. Setting the group to {@code null} clears all panels.
  *
- * @author mark
  * @see AbstractForecastPanel
  * @see SimulationGroupPanel
  * @see ForecastSimGroup

@@ -13,7 +13,6 @@ import javax.swing.tree.TreePath;       // Provides TreePath for identifying a n
  * (such as simulation group nodes and simulation nodes) to allow the tree-table
  * to delegate node-specific behaviour without coupling to concrete node types.
  *
- * @author mark
  * @see SimulationTreeTable
  */
 public interface ActionsTreeTableNode {
