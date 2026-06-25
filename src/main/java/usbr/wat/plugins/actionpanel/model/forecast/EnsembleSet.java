@@ -35,7 +35,7 @@ public class EnsembleSet extends NamedType {
 	private IntVector _computedMembers = new IntVector(); // Stores indices of processed ensemble members
 
 	// String field storing the configuration property identifying which member set to process next
-	private String _membersToCompute; // Configuration string for controlling compute sequence
+	private String _membersToCompute = ""; // Configuration string for controlling compute sequence
 
 	public EnsembleSet() {
 		super(); // Invoke superclass default constructor

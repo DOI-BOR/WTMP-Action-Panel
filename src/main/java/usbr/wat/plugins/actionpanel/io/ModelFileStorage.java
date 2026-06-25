@@ -220,6 +220,32 @@ public class ModelFileStorage {
 		return rv;
 	}
 
+	/**
+	 * Restores a file from a saved backup by copying the saved file over the original.
+	 * If the copy operation fails due to an IOException, the error is logged at INFO
+	 * level and false is returned. Returns true if the restore completed successfully.
+	 *
+	 * @param origFile  the destination file to be overwritten with the saved content
+	 * @param savedFile the backup file to copy from
+	 * @return          true if the file was restored successfully; false if an IOException
+	 *                  occurred during the copy
+	 */
+	private static boolean restoreFile(File origFile, File savedFile) {
+		try {
+			// Overwrite the original file with the contents of the saved backup
+			Files.copy(savedFile, origFile);
+		} catch (IOException ioe) {
+			// Log the restore failure at INFO level with the source, destination, and error details
+			Logger.getLogger("ModelFileStorage").info("Failed to restore file " + savedFile.getAbsolutePath() + " to " + origFile.getAbsolutePath() + " error:" + ioe);
+
+			// Return false to signal that the restore operation did not complete successfully
+			return false;
+		}
+
+		// Restore completed without error; return true to signal success
+		return true;
+	}
+
 
 	/**
 	 * Restores a single file from the saved storage back to its original location.

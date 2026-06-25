@@ -117,24 +117,29 @@ public class ModelAltIterationSettings extends NamedType {
 	}
 
 	/**
-	 * Returns the DSSIdentifier currently associated with the given DataLocation in the
-	 * settings table. Returns null when dataLoc is null or when no entry exists in the
-	 * settings table for the given location (i.e. it was not registered via fillSettingsTable).
+	 * Associates a DSSIdentifier with the given DataLocation in the settings map.
+	 * If dssId is null, the existing entry for the DataLocation is removed, effectively
+	 * clearing the DSS mapping for that location. If dataLoc is null, the method returns
+	 * immediately without modifying the map.
 	 *
-	 * @param dataLoc the DataLocation whose associated DSSIdentifier is requested;
-	 *                may be null
-	 * @return the DSSIdentifier mapped to the given DataLocation, or null if the location
-	 *         is null or not found in the settings table
+	 * @param dataLoc the DataLocation key to associate or clear in the settings map;
+	 *                no action is taken if null
+	 * @param dssId   the DSSIdentifier to associate with the DataLocation, or null to
+	 *                remove the existing mapping for that location
 	 */
-	public DSSIdentifier getDSSIdentifierFor(DataLocation dataLoc) {
-		// Return null immediately when no location was provided
+	public void setDssIdentifierFor(DataLocation dataLoc, DSSIdentifier dssId) {
+		// Guard against a null DataLocation; there is no valid key to update
 		if (dataLoc == null) {
-			return null;
+			return;
 		}
 
-		// Look up and return the DSS identifier associated with this data location
-		DSSIdentifier dssId = _dataLocationSettings.get(dataLoc);
-		return dssId;
+		if (dssId == null) {
+			// A null identifier signals that the mapping should be cleared for this location
+			_dataLocationSettings.remove(dataLoc);
+		} else {
+			// Associate the provided DSS identifier with the given data location
+			_dataLocationSettings.put(dataLoc, dssId);
+		}
 	}
 
 	/**

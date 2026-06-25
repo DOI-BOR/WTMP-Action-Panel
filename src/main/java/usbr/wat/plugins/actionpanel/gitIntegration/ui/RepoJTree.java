@@ -455,7 +455,7 @@ public class RepoJTree extends EnabledJPanel {
 				Project gitPrj;
 
 				// Re-initialize the root node before rebuilding the tree
-				_root = new FolderNode("root", "", null, "");
+				_root = new FolderNode("WAT Studies", "wat-studies", null, null);
 
 				for (int i = 0; i < projects.size(); i++) {
 					gitPrj = projects.get(i);

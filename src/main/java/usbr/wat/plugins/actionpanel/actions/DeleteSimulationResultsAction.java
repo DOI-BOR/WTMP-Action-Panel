@@ -74,16 +74,16 @@ public class DeleteSimulationResultsAction extends AbstractAction {
 		}
 
 		// Build a confirmation message listing the selected results
-		String msg = "&lt;html&gt;Do you want to delete the following results:&lt;br&gt;";
+		String msg = "<html>Do you want to delete the following results:<br>";
 
 		for(int i = 0;i < results.size();i++ ) {
 			// Append each result's display name to the message
 			msg = msg.concat(results.get(i).getName());
 
-			msg = msg.concat("&lt;br&gt;");
+			msg = msg.concat("<br>");
 		}
 
-		msg = msg.concat("&lt;/html&gt;");
+		msg = msg.concat("</html>");
 
 		// Prompt the user to confirm deletions
 		String title = "Confirm Deletions";

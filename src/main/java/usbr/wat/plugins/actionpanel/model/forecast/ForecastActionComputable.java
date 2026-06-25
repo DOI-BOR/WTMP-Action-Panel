@@ -120,7 +120,7 @@ public class ForecastActionComputable implements UsbrComputable, RealizationComp
 	public static final String ITERATION_DSS_FILE = "iterationResults.dss"; // Constant filename definition
 
 	// Text label displayed in reports identifying which DSS file stores simulation data
-	public static final String DSSFILE = "DSS File"; // Report XML label constant
+	private static final String DSSFILE = "DSS File"; // Report XML label constant
 
 	// Expected method signature string that Python scripts must implement for compatibility with WAT compute options
 	public static final String METHOD_SIGNATURE = "runIteration(modelAlternative, currentIteration, maxIteration)"; // Required method name
@@ -979,7 +979,7 @@ public class ForecastActionComputable implements UsbrComputable, RealizationComp
 				Logger.getLogger(ForecastActionComputable.class.getName()).info("runScript:initialization script is:"); // Prepare log for source code display
 				Logger.getLogger(ForecastActionComputable.class.getName()).info(_currentScriptText); // Log the source text associated with failure
 
-				_sim.addErrorMessage("Error running script " + getName() + 's. Error' + e); // Add high-level error message to simulation queue
+				_sim.addErrorMessage("Error running script " + getName() + "'s. Error" + e); // Add high-level error message to simulation queue
 				_sim.addErrorMessage("Check ComputeLog for details"); // Prompt user to check detailed logs
 				_sim.addLogMessage(e.toString()); // Add stack trace string to log component
 

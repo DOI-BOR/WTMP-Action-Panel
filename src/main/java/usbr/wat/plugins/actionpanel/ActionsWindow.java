@@ -260,8 +260,8 @@ public class ActionsWindow extends RmaJDialog {
 					// Log the exception and show a friendly message to the user
 					e.printStackTrace();
 
-					JOptionPane.showMessageDialog(this, "<;html>;Error displaying the report at "
-							+ rptFile +"<;br>; Error:"+e.getMessage(), "Error", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(this, "<html>Error displaying the report at "
+							+ rptFile +"<br> Error:"+e.getMessage(), "Error", JOptionPane.INFORMATION_MESSAGE);
 				}
 			} else {
 				// Inform the user the report has not been generated yet

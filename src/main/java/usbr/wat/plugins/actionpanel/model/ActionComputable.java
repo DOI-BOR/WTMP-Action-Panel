@@ -830,7 +830,7 @@ public class ActionComputable implements UsbrComputable {
 					Logger.getLogger(ActionComputable.class.getName()).info("runScript:initialization script is:"); // Prepare log for source code display
 					Logger.getLogger(ActionComputable.class.getName()).info(_currentScriptText); // Log the source text associated with failure
 
-					_sim.addErrorMessage("Error running script " + getName() + 's. Error' + e); // Add high-level error message to simulation queue
+					_sim.addErrorMessage("Error running script " + getName() + "'s. Error" + e); // Add high-level error message to simulation queue
 					_sim.addErrorMessage("Check ComputeLog for details"); // Prompt user to check detailed logs
 
 					_sim.addLogMessage(e.toString()); // Add stack trace string to log component

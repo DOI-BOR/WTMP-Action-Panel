@@ -35,6 +35,7 @@ public enum OutputType {
 
 					// Set the filled print as input for export process
 					exporter.setExporterInput(new SimpleExporterInput(jp));
+					exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(filename));
 
 					// Return configured PDF exporter instance
 					return exporter;
