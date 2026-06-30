@@ -139,219 +139,220 @@ public class DssPathMap {
 			} catch (IOException e) {
 			} // Suppress secondary error since primary file access is already handled by outer catch block
 		}
+	}
 
-		// Private helper method adds messages to simulation model or logs them if sim is null
-		private void addErrorMessage (String s) {
-			// Check if simulation reference exists and can receive errors
-			if (_sim != null) {
-				_sim.addErrorMessage(s); // Send message directly to simulation model component
+	// Private helper method adds messages to simulation model or logs them if sim is null
+	private void addErrorMessage (String s) {
+		// Check if simulation reference exists and can receive errors
+		if (_sim != null) {
+			_sim.addErrorMessage(s); // Send message directly to simulation model component
 
-			} else {
-				LOGGER.atSevere().log(s); // Log message at severe level when sim reference not available
+		} else {
+			LOGGER.atSevere().log(s); // Log message at severe level when sim reference not available
+		}
+	}
+
+	/**
+	 * Retrieves a source DSS identifier for a given destination data location.
+	 * Checks if the linked-to location is a valid DssDataLocation and searches the path map list.
+	 * Returns null if destination mapping cannot be found or invalid link type detected.
+	 *
+	 * @param dataLoc The DataLocation object whose target source DSS should be found
+	 * @return DSSIdentifier representing the source record to use for this destination, or null if not found
+	 */
+	public DSSIdentifier getDSSIdentifierFor (DataLocation dataLoc) {
+		// Check if provided data location parameter is missing
+		if (dataLoc == null) {
+			return null; // Return null immediately for null input
+		}
+
+		// Verify linked location is actual DSS type
+		if (!(dataLoc.getLinkedToLocation() instanceof DssDataLocation)) {
+			return null; // Return null if link is not to a concrete DSS data location object
+		}
+
+		DssDataLocation linkedToLoc = (DssDataLocation) dataLoc.getLinkedToLocation(); // Cast and retrieve actual DSS location reference
+		String dssPath = linkedToLoc.getDssPath(); // Extract directory path portion of record identifier
+		String dssFile = linkedToLoc.get_dssFile(); // Extract filename portion from destination location object
+		DSSIdentifier srcDssId = getSourceDssIdentifierFor(dssFile, dssPath); // Delegate to private method for lookup logic
+
+		return srcDssId; // Return found source identifier or null from helper call
+	}
+
+	/**
+	 * Searches the DSS path map list to find a source DSS identifier that matches the given destination file and path.
+	 * Iterates through all mapping items checking if their destination entries match the provided criteria.
+	 *
+	 * @param dssFile The base filename for the destination DSS record (used for matching)
+	 * @param dssPath The directory path component for the destination DSS record
+	 * @return DSSIdentifier representing a source record that maps to this destination, or null if not found
+	 */
+	private DSSIdentifier getSourceDssIdentifierFor (String dssFile, String dssPath) {
+		DssPathMapItem dssMapItem; // Declare loop variable for mapping item access
+
+		// Iterate through all loaded map items in list
+		for (int i = 0; i < _dssPathMapList.size(); i++) {
+			dssMapItem = _dssPathMapList.get(i); // Get current mapping item from collection
+			DSSIdentifier dssId = dssMapItem.hasDestLocation(dssFile, dssPath); // Check if this item has matching dest
+
+			// If a matching source was found for these destination criteria
+			if (dssId != null) {
+				return dssId; // Return the matched source identifier immediately
 			}
 		}
 
-		/**
-		 * Retrieves a source DSS identifier for a given destination data location.
-		 * Checks if the linked-to location is a valid DssDataLocation and searches the path map list.
-		 * Returns null if destination mapping cannot be found or invalid link type detected.
-		 *
-		 * @param dataLoc The DataLocation object whose target source DSS should be found
-		 * @return DSSIdentifier representing the source record to use for this destination, or null if not found
-		 */
-		public DSSIdentifier getDSSIdentifierFor (DataLocation dataLoc) {
-			// Check if provided data location parameter is missing
-			if (dataLoc == null) {
-				return null; // Return null immediately for null input
+		return null; // Return null after iterating through all items without finding a match
+	}
+
+	/**
+	 * Builds a map associating each destination DSS identifier with its corresponding source identifier.
+	 * This map is used during compute operations to track which source data should be copied to which destinations.
+	 * The mapping includes both file and path components for complete record identification.
+	 */
+	public Map<DSSIdentifier, DSSIdentifier> getDssCopyMap () {
+		DssPathMapItem dssItem; // Declare loop variable for map item access
+		Map<DSSIdentifier, DSSIdentifier> dssCopyMap = new HashMap<>(); // Initialize empty map to store source-destination pairs
+		Map<DSSIdentifier, DSSIdentifier> dssIdMap; // Placeholder for additional mapping operation (unused but preserved)
+
+		int numDests; // Variable to hold count of destination records from a single source item
+		String dssFile, dssPath; // Variables to hold file and path string components for creating identifiers
+		DSSIdentifier srcDssId, destDssId; // Declare identifier objects for source and destination entries
+
+		// Iterate through each mapping rule in the parsed list
+		for (int i = 0; i < _dssPathMapList.size(); i++) {
+			dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
+			srcDssId = new DSSIdentifier(dssItem.getSrcDssFile(), dssItem.getSrcDssPath()); // Create source identifier with name and path
+			numDests = dssItem.getNumberOfDests(); // Get count of destination records defined for this source
+
+			// Loop through each destination record associated with this source
+			for (int d = 0; d < numDests; d++) {
+				dssFile = dssItem.getDestDssFile(d); // Get base filename string for current destination
+				dssPath = dssItem.getDestDssPath(d); // Get directory path string for current destination
+				destDssId = new DSSIdentifier(dssFile, dssPath); // Create destination identifier combining name and path
+				dssCopyMap.put(destDssId, srcDssId); // Map destination key to source value in output collection
+			}
+		}
+
+		return dssCopyMap; // Return populated map with all destination-to-source mappings
+	}
+
+	/**
+	 * Builds a complete DSS copy map where each destination identifier is mapped to its source identifier.
+	 * Uses direct field access to build the entire mapping from all defined paths in the configuration file.
+	 */
+	public Map<DSSIdentifier, DSSIdentifier> getAllDssMap () {
+		DssPathMapItem dssItem; // Declare loop variable for map item access
+		Map<DSSIdentifier, DSSIdentifier> dssCopyMap = new HashMap<>(); // Initialize empty map to store source-destination pairs
+		String srcDssFile, srcDssPath; // Variables for storing source file and path information
+		String destDssFile, destDssPath; // Variables for storing destination file and path information
+		DSSIdentifier srcDssId, destDssId; // Declare identifier objects for source and destination entries
+
+		// Iterate through each mapping rule in the parsed list
+		for (int i = 0; i < _dssPathMapList.size(); i++) {
+			dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
+			srcDssFile = dssItem.getSrcDssFile(); // Extract source file name string from item configuration
+			srcDssPath = dssItem.getSrcDssPath(); // Extract source path string from item configuration
+			srcDssId = new DSSIdentifier(srcDssFile, srcDssPath); // Create source identifier using name and path
+
+			// Loop through each destination record defined
+			for (int d = 0; d < dssItem.getNumberOfDests(); d++) {
+				destDssFile = dssItem.getDestDssFile(d); // Get base filename string for current destination
+				destDssPath = dssItem.getDestDssPath(d); // Get directory path string for current destination
+				destDssId = new DSSIdentifier(destDssFile, destDssPath); // Create destination identifier combining name and path
+				dssCopyMap.put(destDssId, srcDssId); // Map destination key to source value in output collection
+			}
+		}
+
+		return dssCopyMap; // Return populated map with all destination-to-source mappings
+	}
+
+	/**
+	 * Sets the source DSS file path that will be used as the origin for copy operations.
+	 */
+	public void setSourceDssFile (String sourceDssFile) {
+		_sourceDssFile = sourceDssFile; // Assign parameter value to instance variable
+	}
+
+	/**
+	 * Sets the functional part string for the source DSS file used in record path construction.
+	 * Functional parts allow multiple datasets to coexist within a single DSS file.
+	 */
+	public void setSourceFPart (String sourceDssFPart) {
+		_sourceDssFPart = sourceDssFPart; // Assign parameter value to instance variable
+	}
+
+	/**
+	 * Retrieves all destination DSS identifiers for a given source path.
+	 */
+	public List<DSSIdentifier> getDestDssIdentifiersFor (String srcDssPath) {
+		return getDestDssIdentifiersFor(srcDssPath, null); // Delegate to overloaded version with null override parameter
+	}
+
+	/**
+	 * Retrieves all destination DSS identifiers that map from a given source path.
+	 * Optionally accepts a time step override for filtering by ePart (time component) when matching records.
+	 */
+	public List<DSSIdentifier> getDestDssIdentifiersFor (String srcDssPath, String overrideTimeStep) {
+		List<DSSIdentifier> destDssIds = new ArrayList<>(); // Initialize empty list for collecting results
+
+		// Check if source path parameter is missing or invalid
+		if (srcDssPath == null) {
+			return destDssIds; // Return empty list immediately without processing
+		}
+
+		DssPathMapItem dssItem; // Declare loop variable for map item access
+		DSSIdentifier destDssId; // Declare identifier variable for matching results
+		String srcDssItemPath; // Variable to hold path string from mapping item configuration
+
+		// Iterate through each mapping rule in the parsed list
+		for (int i = 0; i < _dssPathMapList.size(); i++) {
+			dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
+			srcDssItemPath = dssItem.getSrcDssPath(); // Extract source path string from item configuration
+			DSSPathname srcDssPathname = new DSSPathname(srcDssItemPath); // Create pathname object for manipulation with time step component
+
+			// Check if optional time step override parameter is provided
+			if (overrideTimeStep != null) {
+				srcDssPathname.setEPart(overrideTimeStep); // Set the time step (ePart) on pathname object using provided value
 			}
 
-			// Verify linked location is actual DSS type
-			if (!(dataLoc.getLinkedToLocation() instanceof DssDataLocation)) {
-				return null; // Return null if link is not to a concrete DSS data location object
-			}
+			srcDssItemPath = srcDssPathname.getPathname(); // Reconstruct full path string with modified ePart component
 
-			DssDataLocation linkedToLoc = (DssDataLocation) dataLoc.getLinkedToLocation(); // Cast and retrieve actual DSS location reference
-			String dssPath = linkedToLoc.getDssPath(); // Extract directory path portion of record identifier
-			String dssFile = linkedToLoc.get_dssFile(); // Extract filename portion from destination location object
-			DSSIdentifier srcDssId = getSourceDssIdentifierFor(dssFile, dssPath); // Delegate to private method for lookup logic
+			// Check if item path matches input path after normalization
+			if (DssPathMapItem.dssPathsEqual(srcDssItemPath, srcDssPath)) {
+				// Loop through all destinations for this matching source
+				for (int j = 0; j < dssItem.getNumberOfDests(); j++) {
+					destDssId = new DSSIdentifier(dssItem.getDestDssFile(j), dssItem.getDestDssPath(j)); // Create destination identifier with name and path
 
-			return srcDssId; // Return found source identifier or null from helper call
-		}
-
-		/**
-		 * Searches the DSS path map list to find a source DSS identifier that matches the given destination file and path.
-		 * Iterates through all mapping items checking if their destination entries match the provided criteria.
-		 *
-		 * @param dssFile The base filename for the destination DSS record (used for matching)
-		 * @param dssPath The directory path component for the destination DSS record
-		 * @return DSSIdentifier representing a source record that maps to this destination, or null if not found
-		 */
-		private DSSIdentifier getSourceDssIdentifierFor (String dssFile, String dssPath) {
-			DssPathMapItem dssMapItem; // Declare loop variable for mapping item access
-
-			// Iterate through all loaded map items in list
-			for (int i = 0; i < _dssPathMapList.size(); i++) {
-				dssMapItem = _dssPathMapList.get(i); // Get current mapping item from collection
-				DSSIdentifier dssId = dssMapItem.hasDestLocation(dssFile, dssPath); // Check if this item has matching dest
-
-				// If a matching source was found for these destination criteria
-				if (dssId != null) {
-					return dssId; // Return the matched source identifier immediately
-				}
-			}
-
-			return null; // Return null after iterating through all items without finding a match
-		}
-
-		/**
-		 * Builds a map associating each destination DSS identifier with its corresponding source identifier.
-		 * This map is used during compute operations to track which source data should be copied to which destinations.
-		 * The mapping includes both file and path components for complete record identification.
-		 */
-		public Map<DSSIdentifier, DSSIdentifier> getDssCopyMap () {
-			DssPathMapItem dssItem; // Declare loop variable for map item access
-			Map<DSSIdentifier, DSSIdentifier> dssCopyMap = new HashMap<>(); // Initialize empty map to store source-destination pairs
-			Map<DSSIdentifier, DSSIdentifier> dssIdMap; // Placeholder for additional mapping operation (unused but preserved)
-
-			int numDests; // Variable to hold count of destination records from a single source item
-			String dssFile, dssPath; // Variables to hold file and path string components for creating identifiers
-			DSSIdentifier srcDssId, destDssId; // Declare identifier objects for source and destination entries
-
-			// Iterate through each mapping rule in the parsed list
-			for (int i = 0; i < _dssPathMapList.size(); i++) {
-				dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
-				srcDssId = new DSSIdentifier(dssItem.getSrcDssFile(), dssItem.getSrcDssPath()); // Create source identifier with name and path
-				numDests = dssItem.getNumberOfDests(); // Get count of destination records defined for this source
-
-				// Loop through each destination record associated with this source
-				for (int d = 0; d < numDests; d++) {
-					dssFile = dssItem.getDestDssFile(d); // Get base filename string for current destination
-					dssPath = dssItem.getDestDssPath(d); // Get directory path string for current destination
-					destDssId = new DSSIdentifier(dssFile, dssPath); // Create destination identifier combining name and path
-					dssCopyMap.put(destDssId, srcDssId); // Map destination key to source value in output collection
-				}
-			}
-
-			return dssCopyMap; // Return populated map with all destination-to-source mappings
-		}
-
-		/**
-		 * Builds a complete DSS copy map where each destination identifier is mapped to its source identifier.
-		 * Uses direct field access to build the entire mapping from all defined paths in the configuration file.
-		 */
-		public Map<DSSIdentifier, DSSIdentifier> getAllDssMap () {
-			DssPathMapItem dssItem; // Declare loop variable for map item access
-			Map<DSSIdentifier, DSSIdentifier> dssCopyMap = new HashMap<>(); // Initialize empty map to store source-destination pairs
-			String srcDssFile, srcDssPath; // Variables for storing source file and path information
-			String destDssFile, destDssPath; // Variables for storing destination file and path information
-			DSSIdentifier srcDssId, destDssId; // Declare identifier objects for source and destination entries
-
-			// Iterate through each mapping rule in the parsed list
-			for (int i = 0; i < _dssPathMapList.size(); i++) {
-				dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
-				srcDssFile = dssItem.getSrcDssFile(); // Extract source file name string from item configuration
-				srcDssPath = dssItem.getSrcDssPath(); // Extract source path string from item configuration
-				srcDssId = new DSSIdentifier(srcDssFile, srcDssPath); // Create source identifier using name and path
-
-				// Loop through each destination record defined
-				for (int d = 0; d < dssItem.getNumberOfDests(); d++) {
-					destDssFile = dssItem.getDestDssFile(d); // Get base filename string for current destination
-					destDssPath = dssItem.getDestDssPath(d); // Get directory path string for current destination
-					destDssId = new DSSIdentifier(destDssFile, destDssPath); // Create destination identifier combining name and path
-					dssCopyMap.put(destDssId, srcDssId); // Map destination key to source value in output collection
-				}
-			}
-
-			return dssCopyMap; // Return populated map with all destination-to-source mappings
-		}
-
-		/**
-		 * Sets the source DSS file path that will be used as the origin for copy operations.
-		 */
-		public void setSourceDssFile (String sourceDssFile) {
-			_sourceDssFile = sourceDssFile; // Assign parameter value to instance variable
-		}
-
-		/**
-		 * Sets the functional part string for the source DSS file used in record path construction.
-		 * Functional parts allow multiple datasets to coexist within a single DSS file.
-		 */
-		public void setSourceFPart (String sourceDssFPart) {
-			_sourceDssFPart = sourceDssFPart; // Assign parameter value to instance variable
-		}
-
-		/**
-		 * Retrieves all destination DSS identifiers for a given source path.
-		 */
-		public List<DSSIdentifier> getDestDssIdentifiersFor (String srcDssPath) {
-			return getDestDssIdentifiersFor(srcDssPath, null); // Delegate to overloaded version with null override parameter
-		}
-
-		/**
-		 * Retrieves all destination DSS identifiers that map from a given source path.
-		 * Optionally accepts a time step override for filtering by ePart (time component) when matching records.
-		 */
-		public List<DSSIdentifier> getDestDssIdentifiersFor (String srcDssPath, String overrideTimeStep) {
-			List<DSSIdentifier> destDssIds = new ArrayList<>(); // Initialize empty list for collecting results
-
-			// Check if source path parameter is missing or invalid
-			if (srcDssPath == null) {
-				return destDssIds; // Return empty list immediately without processing
-			}
-
-			DssPathMapItem dssItem; // Declare loop variable for map item access
-			DSSIdentifier destDssId; // Declare identifier variable for matching results
-			String srcDssItemPath; // Variable to hold path string from mapping item configuration
-
-			// Iterate through each mapping rule in the parsed list
-			for (int i = 0; i < _dssPathMapList.size(); i++) {
-				dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
-				srcDssItemPath = dssItem.getSrcDssPath(); // Extract source path string from item configuration
-				DSSPathname srcDssPathname = new DSSPathname(srcDssItemPath); // Create pathname object for manipulation with time step component
-
-				// Check if optional time step override parameter is provided
-				if (overrideTimeStep != null) {
-					srcDssPathname.setEPart(overrideTimeStep); // Set the time step (ePart) on pathname object using provided value
-				}
-
-				srcDssItemPath = srcDssPathname.getPathname(); // Reconstruct full path string with modified ePart component
-
-				// Check if item path matches input path after normalization
-				if (DssPathMapItem.dssPathsEqual(srcDssItemPath, srcDssPath)) {
-					// Loop through all destinations for this matching source
-					for (int j = 0; j < dssItem.getNumberOfDests(); j++) {
-						destDssId = new DSSIdentifier(dssItem.getDestDssFile(j), dssItem.getDestDssPath(j)); // Create destination identifier with name and path
-
-						// Check if this destination is not already in the result list
-						if (!destDssIds.contains(destDssId)) {
-							destDssIds.add(destDssId); // Add to results only once to avoid duplicate entries
-						}
+					// Check if this destination is not already in the result list
+					if (!destDssIds.contains(destDssId)) {
+						destDssIds.add(destDssId); // Add to results only once to avoid duplicate entries
 					}
 				}
 			}
-
-			return destDssIds; // Return populated list of matching destination identifiers
 		}
 
-		/**
-		 * Retrieves all source DSS identifiers that are defined in the configuration file.
-		 * This is useful for discovering what input data sources will be read during a copy operation.
-		 */
-		public List<DSSIdentifier> getSourceDssIdentifiers () {
-			List<DSSIdentifier> srcDssIds = new ArrayList<>(); // Initialize empty list for collecting results
-			DssPathMapItem dssItem; // Declare loop variable for map item access
-			DSSIdentifier destDssId; // Placeholder identifier (unused but declared in original code)
-			String srcDssItemPath, srcDssItemFile; // Variables to hold path and file name from mapping configuration
+		return destDssIds; // Return populated list of matching destination identifiers
+	}
 
-			// Iterate through each mapping rule in the parsed list
-			for (int i = 0; i < _dssPathMapList.size(); i++) {
-				dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
-				srcDssItemFile = dssItem.getSrcDssFile(); // Extract source file name string from item configuration
-				srcDssItemPath = dssItem.getSrcDssPath(); // Extract source path string from item configuration
-				srcDssIds.add(new DSSIdentifier(srcDssItemFile, srcDssItemPath)); // Add identifier to results collection using name and path
-			}
+	/**
+	 * Retrieves all source DSS identifiers that are defined in the configuration file.
+	 * This is useful for discovering what input data sources will be read during a copy operation.
+	 */
+	public List<DSSIdentifier> getSourceDssIdentifiers () {
+		List<DSSIdentifier> srcDssIds = new ArrayList<>(); // Initialize empty list for collecting results
+		DssPathMapItem dssItem; // Declare loop variable for map item access
+		DSSIdentifier destDssId; // Placeholder identifier (unused but declared in original code)
+		String srcDssItemPath, srcDssItemFile; // Variables to hold path and file name from mapping configuration
 
-			return srcDssIds; // Return populated list of all unique source identifiers
+		// Iterate through each mapping rule in the parsed list
+		for (int i = 0; i < _dssPathMapList.size(); i++) {
+			dssItem = _dssPathMapList.get(i); // Get current mapping item from collection
+			srcDssItemFile = dssItem.getSrcDssFile(); // Extract source file name string from item configuration
+			srcDssItemPath = dssItem.getSrcDssPath(); // Extract source path string from item configuration
+			srcDssIds.add(new DSSIdentifier(srcDssItemFile, srcDssItemPath)); // Add identifier to results collection using name and path
 		}
+
+		return srcDssIds; // Return populated list of all unique source identifiers
 	}
 }
+

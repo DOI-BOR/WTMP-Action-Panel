@@ -247,7 +247,7 @@ public class ForecastActionComputable implements UsbrComputable, RealizationComp
 
 	// Interface method - removes registered progress listener
 	public void removeComputeProgressListener(ComputeProgressListener listener) {
-
+		_sim.removeComputeProgressListener(listener);
 	}
 
 	// Main computation entry point for forecast ensemble simulations

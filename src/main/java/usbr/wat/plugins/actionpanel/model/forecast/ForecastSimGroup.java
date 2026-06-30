@@ -381,8 +381,7 @@ public class ForecastSimGroup extends AbstractSimulationGroup {
 	 *
 	 * @param root The JDOM element containing serialized initial conditions configuration
 	 */
-	@Override
-	protected void loadInitialConditions(Element root) {
+	private void loadInitialConditions(Element root) {
 		Element icElem = root.getChild("InitialConditions"); // Find the InitialConditions container element
 
 		// Check if InitialConditions element exists in XML hierarchy

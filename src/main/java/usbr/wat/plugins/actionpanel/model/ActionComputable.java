@@ -173,7 +173,7 @@ public class ActionComputable implements UsbrComputable {
 	 */
 	@Override
 	public void removeComputeProgressListener(ComputeProgressListener listener) {
-
+		_sim.removeComputeProgressListener(listener);
 	}
 
 	/**
