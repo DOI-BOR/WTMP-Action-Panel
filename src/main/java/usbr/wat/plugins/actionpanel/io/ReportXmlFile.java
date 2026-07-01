@@ -1,355 +1,381 @@
-/*
- * Copyright 2021  Hydrologic Engineering Center (HEC).
- * United States Army Corps of Engineers
- * All Rights Reserved.  HEC PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval
- * from HEC
- */
 package usbr.wat.plugins.actionpanel.io;
 
-import java.util.Date;
-import java.util.List;
+import java.util.Date; // Import standard Date class for handling timestamps in simulation reports
+import java.util.List; // Import List interface for collections of SimulationReportInfo objects
 
-import com.google.common.flogger.FluentLogger;
-import com.rma.model.Project;
-import org.jdom.Document;
-import org.jdom.Element;
+import com.google.common.flogger.FluentLogger; // Import FluentLogger from Guava Flogger for logging warnings and exceptions
+import com.rma.model.Project; // Import Project model to access current project metadata
+import org.jdom.Document; // Import Document class as the root element for JDOM XML tree structure
+import org.jdom.Element; // Import Element class for creating child nodes in JDOM XML tree
 
-import com.rma.io.FileManagerImpl;
-import com.rma.io.RmaFile;
-import com.rma.util.XMLUtilities;
+import com.rma.io.FileManagerImpl; // Import FileManagerImpl utility to manage file operations
+import com.rma.io.RmaFile; // Import RmaFile wrapper object used with the FileManager implementation
+import com.rma.util.XMLUtilities; // Import XMLUtilities helper class for adding content to JDOM elements
 
-import hec.heclib.util.HecTime;
-import hec.model.RunTimeWindow;
+import hec.heclib.util.HecTime; // Import HecTime utility for formatting HEW simulation dates/times
+import hec.model.RunTimeWindow; // Import RunTimeWindow model object containing simulation start and end times
 
-import hec2.plugin.model.ModelAlternative;
-import hec2.wat.model.ComputeOptions;
-import hec2.wat.model.WatSimulation;
-import hec2.wat.plugin.SimpleWatPlugin;
-import hec2.wat.plugin.WatPlugin;
-import hec2.wat.plugin.WatPluginManager;
-import hec2.wat.plugin.ceQualW2.CeQualW2Plugin;
-import hec2.wat.plugin.ceQualW2.model.CeQualW2Alt;
+import hec2.plugin.model.ModelAlternative; // Import ModelAlternative model representing alternative runs
+import hec2.wat.model.ComputeOptions; // Import ComputeOptions for configuring computation paths
+import hec2.wat.model.WatSimulation; // Import WatSimulation base class for simulation data
+import hec2.wat.plugin.SimpleWatPlugin; // Import SimpleWatPlugin interface for plugin interaction
+import hec2.wat.plugin.WatPlugin; // Import generic WatPlugin interface for type checking plugins
+import hec2.wat.plugin.WatPluginManager; // Import Manager to retrieve specific plugin instances by program name
+import hec2.wat.plugin.ceQualW2.CeQualW2Plugin; // Import specific CeQual-W2 plugin class
+import hec2.wat.plugin.ceQualW2.model.CeQualW2Alt; // Import Model alternative specific to CeQual-W2
 
-import rma.util.RMAIO;
-import usbr.wat.plugins.actionpanel.actions.AbstractReportAction;
-import usbr.wat.plugins.actionpanel.model.SimulationReportInfo;
+import rma.util.RMAIO; // Import RMA utility class for path manipulation and string operations
+import usbr.wat.plugins.actionpanel.actions.AbstractReportAction; // Import Abstract base action to access common report constants
+import usbr.wat.plugins.actionpanel.model.SimulationReportInfo; // Import SimulationReportInfo model for data transfer
 
 /**
- * @author Mark Ackerman
+ * ReportXmlFile is a utility class responsible for generating XML structures containing simulation report information.
+ * It utilizes JDOM to construct an XML Document representing the simulation group, project details, and individual simulations.
+ * The structure supports both single report generation and comparison reports based on the number of simulations provided.
  *
- *
-  <SimulationReport>
-	<ReportType>single</ReportType>
-	<Study>
-		<Directory>J:/studies/study1</Directory>
-		<ObservedData>j:/studies/study1/shared</ObservedData>
-	</Study>
-	<SimulationGroup>
-		<Name>sgroup1</Name>
-		<Description>some description</Description>
-	</SimulationGroup>
-	<Simulations>
-		<Simulation>
-			<Name>sim1-group1</Name>
-			<Description>some description</Description>
-			<BaseName>sim1</BaseName>
-			<Directory>j:/studies/study1/runs/al1/ap1</Directory>
-			<DSSFile>j:/studies/study1/runs/al1/ap1/sim1.dss</DSSFile>
-			<WatAlternative>
-				<Name>ap1</Name>
-				<Description>some description</Description>
-			</WatAlternative>
-			<AnalysisPeriod>
-				<Name>ap1</Name>
-				<Description>some description</Description>
-			</AnalysisPeriod>
-			<StartTime>01jan2000 1500</StartTime>
-			<EndTime>31jan2000 1500</StartTime>
-			<LastComputed>7Jul2021 1400</LastComputed>
-			<ModelAlternatives>
-				<ModelAlternative>
-					<Name>alt1</Name>
-					<Description>some description</Description>
-					<Program>CE-QUAl-W2</Program>
-					<FPart>some fpart</FPart>
-					<Directory>path to simulation compute folder for the model</Directory>
-				</ModelAlternative>
-				<ModelAlternative>
-					<Name>alt2</Name>
-					<Description>some description</Description>
-					<Program>ResSim</Program>
-					<FPart>some fpart</FPart>
-					<Directory>path to simulation compute folder for the model</Directory>
-				</ModelAlternative>
-			</ModelAlternatives>
-		</Simulation>
-	</Simulations>
-</SimulationReport>
+ * Example XML Structure generated by this class:
+ * <SimulationReport>
+ * 	<ReportType>single</ReportType>
+ * 	<Study>
+ * 		<Directory>J:/studies/study1</Directory>
+ * 		<ObservedData>j:/studies/study1/shared</ObservedData>
+ * 	</Study>
+ * 	<SimulationGroup>
+ * 		<Name>sgroup1</Name>
+ * 		<Description>some description</Description>
+ * 	</SimulationGroup>
+ * 	<Simulations>
+ * 		<Simulation>
+ * 			<Name>sim1-group1</Name>
+ * 			<Description>some description</Description>
+ * 			<BaseName>sim1</BaseName>
+ * 			<Directory>j:/studies/study1/runs/al1/ap1</Directory>
+ * 			<DSSFile>j:/studies/study1/runs/al1/ap1/sim1.dss</DSSFile>
+ * 			<WatAlternative>
+ * 				<Name>ap1</Name>
+ * 				<Description>some description</Description>
+ * 			</WatAlternative>
+ * 			<AnalysisPeriod>
+ * 				<Name>ap1</Name>
+ * 				<Description>some description</Description>
+ * 			</AnalysisPeriod>
+ * 			<StartTime>01jan2000 1500</StartTime>
+ * 			<EndTime>31jan2000 1500</StartTime>
+ * 			<LastComputed>7Jul2021 1400</LastComputed>
+ * 			<ModelAlternatives>
+ * 				<ModelAlternative>
+ * 					<Name>alt1</Name>
+ * 					<Description>some description</Description>
+ * 					<Program>CE-QUAl-W2</Program>
+ * 					<FPart>some fpart</FPart>
+ * 					<Directory>path to simulation compute folder for the model</Directory>
+ * 				</ModelAlternative>
+ * 				<ModelAlternative>
+ * 					<Name>alt2</Name>
+ * 					<Description>some description</Description>
+ * 					<Program>ResSim</Program>
+ * 					<FPart>some fpart</FPart>
+ * 					<Directory>path to simulation compute folder for the model</Directory>
+ * 				</ModelAlternative>
+ * 			</ModelAlternatives>
+ * 		</Simulation>
+ * 	</Simulations>
+ * </SimulationReport>
  */
-public class ReportXmlFile
-{
-	// XML elements
-	private static final String SIM_REPORT_ELEM = "SimulationReport";
-	private static final String REPORT_TYPE_ELEM = "ReportType";
-	
-	private static final String STUDY_ELEM = "Study";
-	private static final String PRJ_DIR_ELEM = "Directory";
-	private static final String OBS_DIR_ELEM = "ObservedData";
-	
-	private static final String SIMS_ELEM = "Simulations";
-	private static final String SIM_ELEM = "Simulation";
-	private static final String NAME_ELEM = "Name";
-	private static final String DESC_ELEM = "Description";
-	private static final String ID_ELEM = "ID";
-	private static final String BASE_SIM_NAME_ELEM = "BaseName";
-	private static final String SIM_DIR_ELEM = "Directory";
-	private static final String SIM_DSS_FILE_ELEM = "DSSFile";
-	private static final String SIM_START_TIME_ELEM = "StartTime";
-	private static final String SIM_END_TIME_ELEM = "EndTime";
-	private static final String SIM_LAST_COMPUTED_ELEM = "LastComputed";
 
-	private static final String SIM_REPORT_CSV_FILE = "CsvFile";
-	
-	private static final String MODEL_ALTS_ELEM = "ModelAlternatives";
-	private static final String MODEL_ALT_ELEM = "ModelAlternative";
-	private static final String MODEL_ALT_NAME_ELEM = "Name";
-	private static final String MODEL_ALT_PROGRAM_ELEM = "Program";
-	private static final String MODEL_ALT_FPART_ELEM = "FPart";
-	private static final String MODEL_ALT_FOLDER_ELEM = "Directory";
-	
-	
-	// report types
-	private static final String SINGLE_TYPE = "single";
-	private static final String COMPARISON_TYPE = "alternativecomparison";
+public class ReportXmlFile {
+	// XML elements - Constants defining JDOM tags used in the report structure
+	private static final String SIM_REPORT_ELEM = "SimulationReport"; // Root element tag for the report document
+	private static final String REPORT_TYPE_ELEM = "ReportType"; // Element specifying single vs comparison report type
 
-	// ID types
-	private static final String BASE_ALT = "base";
-	private static final String ALT_NUM = "alt_";
-	private static final String INSTALL_DIR_ELEM = "InstallDirectory";
-	private static final String WRITE_DIR_ELEM = "WriteDirectory";
-	private static final String SIM_GROUP_ELEM = "SimulationGroup";
-	private static final String WAT_ALT_ELEM = "WatAlternative";
-	private static final String ANALYSIS_PERIOD_ELEM = "AnalysisPeriod";
+	private static final String STUDY_ELEM = "Study"; // Top-level Study container element
+	private static final String PRJ_DIR_ELEM = "Directory"; // Directory path within the Study element
+	private static final String OBS_DIR_ELEM = "ObservedData"; // Path to observed data directory
 
+	private static final String SIMS_ELEM = "Simulations"; // Container for all individual simulations
+	private static final String SIM_ELEM = "Simulation"; // Individual simulation entry element
+	private static final String NAME_ELEM = "Name"; // Name tag used in various contexts (e.g., Study name, Simulation name)
+	private static final String DESC_ELEM = "Description"; // Description tag providing context info
 
-	private String _fileName;
-	private String _prjDir;
-	private String _obsDir;
-	private List<SimulationReportInfo> _simulationInfos;
-	private String _simGroupName;
+	private static final String ID_ELEM = "ID"; // Element to identify specific simulation entries
+	private static final String BASE_SIM_NAME_ELEM = "BaseName"; // Base simulation filename without group suffix
+	private static final String SIM_DIR_ELEM = "Directory"; // Directory where simulation files are stored
+	private static final String SIM_DSS_FILE_ELEM = "DSSFile"; // Path to the DSS data file for the simulation
+	private static final String SIM_START_TIME_ELEM = "StartTime"; // Start time of the simulation run
+	private static final String SIM_END_TIME_ELEM = "EndTime"; // End time of the simulation run
+	private static final String SIM_LAST_COMPUTED_ELEM = "LastComputed"; // Timestamp of last successful computation
 
-	public ReportXmlFile(String fileName)
-	{
+	private static final String SIM_REPORT_CSV_FILE = "CsvFile"; // Element for CSV report file path if available
+
+	private static final String MODEL_ALTS_ELEM = "ModelAlternatives"; // Container for alternative model configurations
+	private static final String MODEL_ALT_ELEM = "ModelAlternative"; // Individual model alternative element
+	private static final String MODEL_ALT_NAME_ELEM = "Name"; // Name of the specific model alternative
+	private static final String MODEL_ALT_PROGRAM_ELEM = "Program"; // Program type (e.g., CE-QUAl-W2, ResSim)
+	private static final String MODEL_ALT_FPART_ELEM = "FPart"; // Functional Part identifier for the model
+	private static final String MODEL_ALT_FOLDER_ELEM = "Directory"; // Directory specific to the alternative folder
+
+	// report types - Constants defining valid string values for ReportType element
+	private static final String SINGLE_TYPE = "single"; // Constant value indicating a single simulation report
+	private static final String COMPARISON_TYPE = "alternativecomparison"; // Constant value for comparing multiple alternatives
+
+	// ID types - Constants for constructing unique identifiers within XML
+	private static final String BASE_ALT = "base"; // Identifier type for the base alternative (first item)
+	private static final String ALT_NUM = "alt_"; // Prefix used for numbered alternative items
+	private static final String INSTALL_DIR_ELEM = "InstallDirectory"; // JDOM tag for system installation directory
+	private static final String WRITE_DIR_ELEM = "WriteDirectory"; // JDOM tag for output write directory
+
+	private static final String SIM_GROUP_ELEM = "SimulationGroup"; // Element for defining the simulation group context
+	private static final String WAT_ALT_ELEM = "WatAlternative"; // Element describing WAT Alternative (Analysis Period) details
+	private static final String ANALYSIS_PERIOD_ELEM = "AnalysisPeriod"; // Element for Analysis Period metadata
+
+	// Fields storing instance-specific data required for XML construction
+	private String _fileName; // Filename where the resulting XML report will be saved
+	private String _prjDir; // Project directory path set during initialization
+	private String _obsDir; // Path to observed data directory
+	private List<SimulationReportInfo> _simulationInfos; // List containing data objects for all simulations to process
+	private String _simGroupName; // Name of the simulation group associated with this report
+
+	public ReportXmlFile(String fileName) {
 		super();
-		_fileName = fileName;
-	}
-	
-	public void setStudyInfo(String studyDir, String obsDir)
-	{
-		_prjDir = studyDir;
-		_obsDir = obsDir;
-	}
-	
-	public void setSimulationInfo(String simGroupName, List<SimulationReportInfo> infos)
-	{
-		_simGroupName = simGroupName;
-		_simulationInfos = infos;
-	}
-	
-	public boolean createXMLFile()
-	{
-		Element root = new Element(SIM_REPORT_ELEM);
-		Document doc = new Document(root);
-
-		
-		String rptType = getReportType();
-
-
-		XMLUtilities.addChildContent(root, REPORT_TYPE_ELEM, rptType);
-		SimulationReportInfo baseSimulation = _simulationInfos.get(0);
-		addProjectInfo(root, baseSimulation.getSimFolder());
-		Element sgElem = new Element(SIM_GROUP_ELEM);
-		root.addContent(sgElem);
-		XMLUtilities.addChildContent(sgElem, NAME_ELEM, baseSimulation.getSimulationGroup().getName());
-		XMLUtilities.addChildContent(sgElem, DESC_ELEM, baseSimulation.getSimulationGroup().getDescription());
-
-		Element simsElem  = new Element(SIMS_ELEM);
-		root.addContent(simsElem);
-		for (int i = 0;i < _simulationInfos.size(); i++ )
-		{
-			addSimulationInfo(simsElem, _simulationInfos.get(i), i);
-		}
-		
-		RmaFile file = FileManagerImpl.getFileManager().getFile(_fileName);
-		return XMLUtilities.saveDocument(doc, file);
-					
+		_fileName = fileName; // Initialize filename field from constructor argument
 	}
 
-	protected String getReportType()
-	{
-		String rptType = SINGLE_TYPE;
-		if ( _simulationInfos.size() > 1 )
-		{
-			rptType = COMPARISON_TYPE;
-		}
-		return rptType;
+	public void setStudyInfo(String studyDir, String obsDir) {
+		_prjDir = studyDir; // Set project directory path for report generation context
+		_obsDir = obsDir; // Set observed data directory path
+	}
+
+	public void setSimulationInfo(String simGroupName, List<SimulationReportInfo> infos) {
+		_simGroupName = simGroupName; // Set simulation group name identifier
+		_simulationInfos = infos; // Assign list of simulation info objects for processing
 	}
 
 	/**
-	 * @param parent
-	 * @param info
+	 * Creates the XML file content and saves it to the designated file path.
+	 * The method constructs a JDOM Document representing the simulation report,
+	 * populates it with project info, simulation group details, and iteration through simulations,
+	 * then writes the document to disk using the configured file manager.
+	 *
+	 * @return Boolean indicating success of the save operation. True if saved successfully.
 	 */
-	private void addSimulationInfo(Element parent, SimulationReportInfo info, int simNumber)
-	{
-		Element simElem = new Element(SIM_ELEM);
-		parent.addContent(simElem);
-		XMLUtilities.addChildContent(simElem, NAME_ELEM, info.getShortName());
-		XMLUtilities.addChildContent(simElem, ID_ELEM, (simNumber==0?BASE_ALT:ALT_NUM+simNumber));
-		XMLUtilities.addChildContent(simElem, DESC_ELEM, info.getSimulation().getDescription());
-		
-		XMLUtilities.addChildContent(simElem, BASE_SIM_NAME_ELEM, getBaseSimulationName(info.getSimulation().getName()));
-		XMLUtilities.addChildContent(simElem, SIM_DIR_ELEM, info.getSimFolder());
-		XMLUtilities.addChildContent(simElem, SIM_DSS_FILE_ELEM, info.getSimDssFile());
+	public boolean createXMLFile() {
+		Element root = new Element(SIM_REPORT_ELEM); // Create root XML element for the report structure
+		Document doc = new Document(root); // Initialize JDOM document containing the root element
 
-		if ( info.getSimulation().getContainerParent().getAlternative() != null )
-		{
-			Element altElem = new Element(WAT_ALT_ELEM);
-			simElem.addContent(altElem);
-			XMLUtilities.addChildContent(altElem, NAME_ELEM, info.getSimulation().getContainerParent().getAlternativeName());
-			XMLUtilities.addChildContent(altElem, DESC_ELEM, info.getSimulation().getContainerParent().getAlternative().getDescription());
-		}
-		if ( info.getSimulation().getContainerParent().getAnalysisPeriod() != null )
-		{
-			Element apElem = new Element(ANALYSIS_PERIOD_ELEM);
-			simElem.addContent(apElem);
-			XMLUtilities.addChildContent(apElem, NAME_ELEM, info.getSimulation().getContainerParent().getAnalysisPeriodName());
-			XMLUtilities.addChildContent(apElem, DESC_ELEM, info.getSimulation().getContainerParent().getAnalysisPeriod().getDescription());
+		String rptType = getReportType(); // Retrieve appropriate report type based on simulation list size
+
+		XMLUtilities.addChildContent(root, REPORT_TYPE_ELEM, rptType); // Add Report Type element to root
+		SimulationReportInfo baseSimulation = _simulationInfos.get(0); // Access the first simulation info object as the base case
+		addProjectInfo(root, baseSimulation.getSimFolder()); // Initialize project info using base simulation directory path
+		Element sgElem = new Element(SIM_GROUP_ELEM); // Create element for Simulation Group metadata
+		root.addContent(sgElem); // Add Simulation Group element to root
+
+		XMLUtilities.addChildContent(sgElem, NAME_ELEM, baseSimulation.getSimulationGroup().getName()); // Add group name
+		XMLUtilities.addChildContent(sgElem, DESC_ELEM, baseSimulation.getSimulationGroup().getDescription()); // Add group description
+
+		Element simsElem = new Element(SIMS_ELEM); // Create parent element to hold all simulation entries
+		root.addContent(simsElem); // Add Simulations container to root
+
+		// Iterate through each configured simulation in the list
+		for (int i = 0; i < _simulationInfos.size(); i++) {
+			addSimulationInfo(simsElem, _simulationInfos.get(i), i); // Delegate creation of individual simulation element
 		}
 
-
-		RunTimeWindow rtw = info.getSimulation().getRunTimeWindow();
-		XMLUtilities.addChildContent(simElem, SIM_START_TIME_ELEM, rtw.getStartTime().toString());
-		XMLUtilities.addChildContent(simElem, SIM_END_TIME_ELEM, rtw.getEndTime().toString());
-		
-		Date date = new Date(info.getLastComputedDate());
-		HecTime computedDate = new HecTime(date, 0);
-		XMLUtilities.addChildContent(simElem, SIM_LAST_COMPUTED_ELEM, computedDate.toString());
-		
-		if ( info.getReportCsvFile() != null )
-		{
-			XMLUtilities.addChildContent(simElem, SIM_REPORT_CSV_FILE, info.getReportCsvFile());
-		}
-		
-		List<ModelAlternative> modelAlts = info.getSimulation().getAllModelAlternativeList();
-		Element modelAltsElem = new Element(MODEL_ALTS_ELEM);
-		simElem.addContent(modelAltsElem);
-		for(int i = 0;i < modelAlts.size();i++ )
-		{
-			addModelAltInfo(modelAltsElem, modelAlts.get(i), info.getSimulation());
-		}
-		addAdditionalInfoForSim(simElem, info);
+		RmaFile file = FileManagerImpl.getFileManager().getFile(_fileName); // Retrieve or manage file object for output path
+		return XMLUtilities.saveDocument(doc, file); // Save the constructed document to the target RMAFile location and return result
 	}
 
-	protected void addAdditionalInfoForSim(Element simElem, SimulationReportInfo info)
-	{
+	/**
+	 * Determines the appropriate report type string based on the number of simulations provided.
+	 * A single simulation uses the "single" type, while multiple simulations imply an "alternativecomparison".
+	 *
+	 * @return String value representing the Report Type ("single" or "alternativecomparison").
+	 */
+	protected String getReportType() {
+		// Default to single report type initialization
+		String rptType = SINGLE_TYPE;
+
+		// Check if more than one simulation info object is present
+		if (_simulationInfos.size() > 1) {
+			// Update report type for multiple simulations comparison
+			rptType = COMPARISON_TYPE;
+		}
+		return rptType; // Return the determined report type string
+	}
+
+	/**
+	 * @param parent Parent Element to append the Simulation data to
+	 * @param info   SimulationReportInfo object containing all necessary simulation data
+	 */
+	private void addSimulationInfo(Element parent, SimulationReportInfo info, int simNumber) {
+		Element simElem = new Element(SIM_ELEM); // Create new element for this specific simulation
+		parent.addContent(simElem); // Append the new simulation element to its parent container
+
+		XMLUtilities.addChildContent(simElem, NAME_ELEM, info.getShortName()); // Add short name of the simulation
+		XMLUtilities.addChildContent(simElem, ID_ELEM, (simNumber == 0 ? BASE_ALT : ALT_NUM + simNumber)); // Add ID (Base or Alt_N) based on loop index
+		XMLUtilities.addChildContent(simElem, DESC_ELEM, info.getSimulation().getDescription()); // Add simulation description
+
+		XMLUtilities.addChildContent(simElem, BASE_SIM_NAME_ELEM, getBaseSimulationName(info.getSimulation().getName())); // Add base name with helper logic
+		XMLUtilities.addChildContent(simElem, SIM_DIR_ELEM, info.getSimFolder()); // Add directory path for simulation files
+		XMLUtilities.addChildContent(simElem, SIM_DSS_FILE_ELEM, info.getSimDssFile()); // Add DSS file path
+
+		// Check if WAT Alternative data exists in container
+		if (info.getSimulation().getContainerParent().getAlternative() != null) {
+			Element altElem = new Element(WAT_ALT_ELEM); // Create child element for WAT Alternative
+			simElem.addContent(altElem); // Append alternative element to simulation
+
+			XMLUtilities.addChildContent(altElem, NAME_ELEM, info.getSimulation().getContainerParent().getAlternativeName()); // Add alternative name
+			XMLUtilities.addChildContent(altElem, DESC_ELEM, info.getSimulation().getContainerParent().getAlternative().getDescription()); // Add alternative description
+		}
+
+		// Check if Analysis Period data exists in container
+		if (info.getSimulation().getContainerParent().getAnalysisPeriod() != null) {
+			Element apElem = new Element(ANALYSIS_PERIOD_ELEM); // Create child element for Analysis Period
+			simElem.addContent(apElem); // Append analysis period element to simulation
+
+			XMLUtilities.addChildContent(apElem, NAME_ELEM, info.getSimulation().getContainerParent().getAnalysisPeriodName()); // Add analysis period name
+			XMLUtilities.addChildContent(apElem, DESC_ELEM, info.getSimulation().getContainerParent().getAnalysisPeriod().getDescription()); // Add analysis period description
+		}
+
+		RunTimeWindow rtw = info.getSimulation().getRunTimeWindow(); // Retrieve Run Time Window object from simulation data
+
+		XMLUtilities.addChildContent(simElem, SIM_START_TIME_ELEM, rtw.getStartTime().toString()); // Add start time as string to XML element
+		XMLUtilities.addChildContent(simElem, SIM_END_TIME_ELEM, rtw.getEndTime().toString()); // Add end time as string to XML element
+
+		Date date = new Date(info.getLastComputedDate()); // Create a standard Java Date object for timestamp conversion
+		HecTime computedDate = new HecTime(date, 0); // Wrap Date in HecTime using zero offset for proper formatting
+		XMLUtilities.addChildContent(simElem, SIM_LAST_COMPUTED_ELEM, computedDate.toString()); // Add formatted last computed date string
+
+		// Check if a CSV file path is provided in the simulation info
+		if (info.getReportCsvFile() != null) {
+			XMLUtilities.addChildContent(simElem, SIM_REPORT_CSV_FILE, info.getReportCsvFile()); // Add CSV file path if present
+		}
+
+		List<ModelAlternative> modelAlts = info.getSimulation().getAllModelAlternativeList(); // Retrieve list of all model alternatives associated with simulation
+		Element modelAltsElem = new Element(MODEL_ALTS_ELEM); // Create container element for Model Alternatives
+		simElem.addContent(modelAltsElem); // Append alternatives container to simulation
+
+		// Iterate through each model alternative in the list
+		for (int i = 0; i < modelAlts.size(); i++) {
+			addModelAltInfo(modelAltsElem, modelAlts.get(i), info.getSimulation()); // Delegate creation of individual alternative element
+		}
+
+		addAdditionalInfoForSim(simElem, info); // Call method to add any additional optional information required for simulation
+	}
+
+	/**
+	 * Placeholder method for subclasses or extensions to add extra data points to simulation XML elements.
+	 * Currently empty but preserved for future extensibility of report generation logic.
+	 */
+	protected void addAdditionalInfoForSim(Element simElem, SimulationReportInfo info) {
 		// method for other reports to add additional info
 	}
 
 	/**
-	 * @param parent
-	 * @param modelAlt
+	 * Static private method handles adding model alternative XML nodes
+	 *
+	 * @param parent   Parent Element to append the ModelAlternative data to
+	 * @param modelAlt The ModelAlternative object containing program and folder details
+	 * @param sim      WatSimulation object used to resolve file path parts (FPart)
 	 */
-	private static void addModelAltInfo(Element parent,
-			ModelAlternative modelAlt, WatSimulation sim)
-	{
-		if ( modelAlt == null ) 
-		{
-			return;
+	private static void addModelAltInfo(Element parent, ModelAlternative modelAlt, WatSimulation sim) {
+		// Check if the model alternative object is null before processing
+		if (modelAlt == null) {
+			return; // Exit early if no data is available
 		}
-		Element modelAltElem = new Element(MODEL_ALT_ELEM);
-		parent.addContent(modelAltElem);
-		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_NAME_ELEM, modelAlt.getName());
-		XMLUtilities.addChildContent(modelAltElem, DESC_ELEM, modelAlt.getDescription());
-		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_PROGRAM_ELEM, modelAlt.getProgram());
-		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_FPART_ELEM, sim.getFPart(modelAlt));
-		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_FOLDER_ELEM, getModelFolder(modelAlt, sim));
+
+		Element modelAltElem = new Element(MODEL_ALT_ELEM); // Create element for the specific model alternative
+		parent.addContent(modelAltElem); // Append the new element to its parent
+
+		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_NAME_ELEM, modelAlt.getName()); // Add Name property from alternative
+		XMLUtilities.addChildContent(modelAltElem, DESC_ELEM, modelAlt.getDescription()); // Add Description property from alternative
+		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_PROGRAM_ELEM, modelAlt.getProgram()); // Add Program type string (e.g. CE-QUAl-W2)
+		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_FPART_ELEM, sim.getFPart(modelAlt)); // Add Functional Part string for the specific alternative
+
+		XMLUtilities.addChildContent(modelAltElem, MODEL_ALT_FOLDER_ELEM, getModelFolder(modelAlt, sim)); // Add directory path resolving from logic below
 	}
 
 	/**
-	 * @param modelAlt
-	 * @param sim
-	 * @return
+	 * @param modelAlt The ModelAlternative object defining the run configuration
+	 * @param sim      The WatSimulation object used for file path context resolution
+	 * @return String Path representing the computed folder location for the simulation
 	 */
-	private static String getModelFolder(ModelAlternative modelAlt, WatSimulation sim)
-	{
-		String program = modelAlt.getProgram();
-		String runDir = sim.getRunDirectory();
-		
-		SimpleWatPlugin plugin = WatPluginManager.getPlugin(program);
-		if ( plugin instanceof WatPlugin )
-		{
-			WatPlugin wPlugin = (WatPlugin) plugin;
-			String dir = wPlugin.getDirectory();
-			if ( RMAIO.isFullPath(dir))
-			{
-				dir = RMAIO.getFileFromPath(dir);
+	private static String getModelFolder(ModelAlternative modelAlt, WatSimulation sim) {
+		String program = modelAlt.getProgram(); // Retrieve program identifier from alternative object
+
+		String runDir = sim.getRunDirectory(); // Get base run directory from simulation wrapper
+
+		SimpleWatPlugin plugin = WatPluginManager.getPlugin(program); // Fetch plugin instance manager for the specific program name
+
+		// Check if the plugin is a WatPlugin subtype to cast safely
+		if (plugin instanceof WatPlugin) {
+			WatPlugin wPlugin = (WatPlugin) plugin; // Safe cast to generic WatPlugin interface
+			String dir = wPlugin.getDirectory(); // Get directory setting from the plugin configuration object
+
+			// Verify if the returned directory is an absolute full path
+			if (RMAIO.isFullPath(dir)) {
+				dir = RMAIO.getFileFromPath(dir); // Strip file name to keep only the directory path portion
 			}
-			runDir = RMAIO.concatPath(runDir, dir);
+
+			runDir = RMAIO.concatPath(runDir, dir); // Concatenate simulation run dir with plugin directory logic if needed
 		}
-		try
-		{
-			if (plugin instanceof CeQualW2Plugin)
-			{
-				CeQualW2Plugin w2Plugin = (CeQualW2Plugin) plugin;
-				CeQualW2Alt w2Alt = w2Plugin.getAlt(modelAlt);
-				if (w2Alt != null)
-				{
-					ComputeOptions co = new ComputeOptions();
-					co.setRunDirectory(runDir);
-					return w2Alt.getCeQualW2RunPath(co);
+
+		try {
+			// Specifically check for CeQual-W2 plugin inheritance
+			if (plugin instanceof CeQualW2Plugin) {
+				CeQualW2Plugin w2Plugin = (CeQualW2Plugin) plugin; // Cast to specific plugin type safely
+				CeQualW2Alt w2Alt = w2Plugin.getAlt(modelAlt); // Retrieve model alternative configuration from the W2 Plugin
+
+				// Ensure the alternative configuration exists before accessing run path
+				if (w2Alt != null) {
+					ComputeOptions co = new ComputeOptions(); // Initialize ComputeOptions to set context for CeQual-W2
+					co.setRunDirectory(runDir); // Set the current calculated run directory on options object
+
+					return w2Alt.getCeQualW2RunPath(co); // Delegate to plugin specific method to get the W2 run path
 				}
 			}
+		} catch (NoClassDefFoundError err) {
+			FluentLogger.forEnclosingClass().atWarning().log("Failed to find CeQualW2 plugin"); // Log warning using Guava Flogger
 		}
-		catch (NoClassDefFoundError err)
-		{
-			FluentLogger.forEnclosingClass().atWarning().log("Failed to find CeQualW2 plugin");
-		}
-		return runDir;
+		return runDir; // Return the base run directory if specific plugin logic was skipped or failed
 	}
 
 	/**
-	 * @param simName
-	 * @return
+	 * @param simName The full name of the simulation including group suffix
+	 * @return String Returns the base simulation name with the group suffix removed
 	 */
-	private String getBaseSimulationName(String simName)
-	{
-		return RMAIO.replace(simName, "-"+_simGroupName, "");
+	private String getBaseSimulationName(String simName) {
+		return RMAIO.replace(simName, "-" + _simGroupName, ""); // Use RMA utility to strip group suffix from name string
 	}
 
 	/**
-	 * @param parent
+	 * @param parent Parent Element to append the Project info to populate project metadata at XML root level
 	 */
-	private void addProjectInfo(Element parent, String baseSimDir)
-	{
-		Element prjInfoElem = new Element(STUDY_ELEM);
-		XMLUtilities.addChildContent(prjInfoElem, NAME_ELEM, Project.getCurrentProject().getName());
-		XMLUtilities.addChildContent(prjInfoElem, DESC_ELEM, Project.getCurrentProject().getDescription());
-		parent.addContent(prjInfoElem);
-		if ( _prjDir != null )
-		{
-			XMLUtilities.addChildContent(prjInfoElem, PRJ_DIR_ELEM, _prjDir);
+	private void addProjectInfo(Element parent, String baseSimDir) {
+		Element prjInfoElem = new Element(STUDY_ELEM); // Create Study element container for project information
+
+		XMLUtilities.addChildContent(prjInfoElem, NAME_ELEM, Project.getCurrentProject().getName()); // Add current project name from RMA model
+		XMLUtilities.addChildContent(prjInfoElem, DESC_ELEM, Project.getCurrentProject().getDescription()); // Add current project description from RMA model
+
+		parent.addContent(prjInfoElem); // Append Study element to root document
+
+		// Only add directory if it has been explicitly set
+		if (_prjDir != null) {
+			XMLUtilities.addChildContent(prjInfoElem, PRJ_DIR_ELEM, _prjDir); // Add Project Directory field to XML structure
 		}
-		if ( _obsDir != null )
-		{
-			XMLUtilities.addChildContent(prjInfoElem, OBS_DIR_ELEM, _obsDir);
+
+		// Only add observation data path if available
+		if (_obsDir != null) {
+			XMLUtilities.addChildContent(prjInfoElem, OBS_DIR_ELEM, _obsDir); // Add Observed Data Directory field to XML structure
 		}
-		String installDir = System.getProperty("user.dir");
-		installDir= RMAIO.getDirectoryFromPath(installDir);
-		
-		XMLUtilities.addChildContent(prjInfoElem, INSTALL_DIR_ELEM, installDir);
-		String simReportsDir = RMAIO.concatPath(baseSimDir, AbstractReportAction.REPORT_DIR);
-		XMLUtilities.addChildContent(prjInfoElem, WRITE_DIR_ELEM, simReportsDir);
+
+		String installDir = System.getProperty("user.dir"); // Retrieve current system working directory from Java system properties
+
+		installDir = RMAIO.getDirectoryFromPath(installDir); // Normalize installation path by extracting parent directory
+
+		XMLUtilities.addChildContent(prjInfoElem, INSTALL_DIR_ELEM, installDir); // Add Installation Directory field to XML structure
+		String simReportsDir = RMAIO.concatPath(baseSimDir, AbstractReportAction.REPORT_DIR); // Calculate full output path for report files
+
+		XMLUtilities.addChildContent(prjInfoElem, WRITE_DIR_ELEM, simReportsDir); // Add Write Directory field pointing to simulation reports location
 	}
-	
 }

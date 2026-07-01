@@ -1,49 +1,50 @@
-/*
- * Copyright 2022 United States Bureau of Reclamation (USBR).
- * United States Department of the Interior
- * All Rights Reserved. USBR PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval
- * from USBR
- */
 package usbr.wat.plugins.actionpanel.io;
 
 /**
- * options that are sent to the report when creating one
- * @author mark
+ * ReportOptions is a configuration class that holds options passed to Jasper Reports when creating a report.
+ * Controls output format (PDF, DOCX, HTML) and whether headers/footers should be included in the report.
  *
  */
-public class ReportOptions
-{
-	private OutputType _outputType = OutputType.PDF;
-	private boolean _printHeadersAndFooters;
 
-	public ReportOptions()
-	{
+public class ReportOptions {
+	// Default output type is PDF unless otherwise specified
+	private OutputType _outputType = OutputType.PDF; // Current export format setting (PDF, DOCX, or HTML)
+
+	// Flag controlling inclusion of document headers and footers in exported reports
+	private boolean _printHeadersAndFooters; // Boolean flag for whether to include headers and footers in output
+
+	public ReportOptions() {
 		super();
 	}
 
 	/**
-	 * @param selectedItem
+	 * Sets the desired output format type for report generation.
+	 * Available types: PDF, Word Document (DOCX), or HTML.
+	 *
+	 * @param outputType Enum value specifying the export format
 	 */
-	public void setOutputType(OutputType outputType)
-	{
-		_outputType = outputType;
+	public void setOutputType(OutputType outputType) {
+		_outputType = outputType; // Assign new export type to instance variable
 	}
-	public OutputType getOutputType()
-	{
-		return _outputType;
+
+	// Method to retrieve current output type setting
+	public OutputType getOutputType() {
+		return _outputType; // Return currently configured output format
 	}
 
 	/**
-	 * @param selected
+	 * Sets whether the exported report should include headers and footers.
+	 * Headers typically contain report title, page numbers, or company branding.
+	 * Footers may contain document properties, date/time stamps, or contact information.
+	 *
+	 * @param printHeadersFooters Boolean value indicating whether to print headers and footers
 	 */
-	public void setPrintHeadersFooters(boolean printHeadersFooters)
-	{
-		_printHeadersAndFooters = printHeadersFooters;
+	public void setPrintHeadersFooters(boolean printHeadersFooters) {
+		_printHeadersAndFooters = printHeadersFooters; // Update the headers/footers flag
 	}
-	
-	public boolean shouldPrintHeadersFooters()
-	{
-		return _printHeadersAndFooters;
+
+	// Helper method for checking if headers/footers are enabled
+	public boolean shouldPrintHeadersFooters() {
+		return _printHeadersAndFooters; // Return current setting of the headers/footers flag
 	}
 }
