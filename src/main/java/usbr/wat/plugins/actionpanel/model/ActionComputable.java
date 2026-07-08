@@ -1824,5 +1824,5 @@ public class ActionComputable implements UsbrComputable {
 		public void setProgressDialog (UsgsComputeSelectorDialog computeDlg) {
 			_computeDialog = computeDlg; // Assign incoming dialog object to instance variable
 		}
-	}
+
 }
