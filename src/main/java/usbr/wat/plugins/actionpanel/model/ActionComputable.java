@@ -1167,7 +1167,7 @@ public class ActionComputable implements UsbrComputable {
 		 * @param member The index number of the ensemble member to process (0-based)
 		 * @return True if all members copied successfully, false if any failed or file write error occurred
 		 */
-		private boolean copyDssMembersForTimeWindow ( int member, BaseComputeSettings computeSettings) {
+		private boolean copyDssMembersForTimeWindow (int member, BaseComputeSettings computeSettings) {
 			List<ModelAlternative> modelAlts = _sim.getAllModelAlternativeList(); // Get collection of all configured alternatives
 			ModelAlternative modelAlt; // Declare variable for iteration
 			ModelAltIterationSettings maSettings; // Variable to hold settings for specific alternative
@@ -1707,7 +1707,7 @@ public class ActionComputable implements UsbrComputable {
 			// Check if search returned empty or failed
 			if (srcPaths == null) {
 				// nothing to copy
-				_sim.addComputeMessage("No Output DSS records found for " + +modelAlt.getProgram() + " model " + modelAlt + " FPart=" + fPart); // Log why operation skipped
+				_sim.addComputeMessage("No Output DSS records found for " + modelAlt.getProgram() + " model " + modelAlt + " FPart=" + fPart); // Log why operation skipped
 
 				return true; // Return success even if no data existed to save (skipped by design)
 			}
@@ -1736,7 +1736,7 @@ public class ActionComputable implements UsbrComputable {
 			// Check if operation reported partial or full failure
 			boolean success = rv == srcPaths.size(); // Verify return code matches number of records processed
 			if (!success) {
-				_sim.addErrorMessage("Failed to update iteration DSS file with " + +modelAlt.getProgram() + " model " + modelAlt + "'s results"); // Log error message
+				_sim.addErrorMessage("Failed to update iteration DSS file with " + modelAlt.getProgram() + " model " + modelAlt + "'s results"); // Log error message
 			}
 
 			return success; // Return final status of bulk copy operation
