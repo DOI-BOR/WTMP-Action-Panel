@@ -534,6 +534,8 @@ public class ActionComputable implements UsbrComputable {
 
 				// Main loop iteration completes
 
+			}
+
 			} catch(Exception e ) {
 				_sim.addErrorMessage("Exception during iterative compute " + e); // Log error to simulation message queue
 				Logger.getLogger(ActionComputable.class.getName()).warning("Exception during iterative compute " + e); // Log warning with class name
