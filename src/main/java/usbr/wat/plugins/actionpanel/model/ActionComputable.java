@@ -41,6 +41,7 @@ import hec.hecmath.HecMathException; // Import exception class for mathematical 
 import hec.hecmath.TimeSeriesMath; // Import math utility container for shifting or manipulating time series data
 import hec.io.DSSIdentifier; // Import identifier class for specifying DSS file and path names
 import hec.io.TimeSeriesContainer; // Import container class holding the actual time series data points
+import hec.model.RunTimeWindow; // Import the run time window
 
 import hec2.model.DataLocation; // Import model alternative data location setting definition
 import hec2.model.DssDataLocation; // Import specific implementation for DataLocations associated with DSS files
