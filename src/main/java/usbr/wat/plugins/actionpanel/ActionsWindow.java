@@ -49,6 +49,7 @@ import usbr.wat.plugins.actionpanel.ui.BaseSimulationGroupPanel;                
 import usbr.wat.plugins.actionpanel.ui.CalibrationPanel;                                // Panel for prescribed conditions workflows including data review and simulation editing
 import usbr.wat.plugins.actionpanel.ui.SimulationGroupNode;                             // Node type used in the project tree to represent a simulation group
 import usbr.wat.plugins.actionpanel.ui.forecast.ForecastPanel;                          // Panel for forecast conditions workflows including forecast-specific simulations
+import usbr.wat.plugins.actionpanel.ui.planning.PlanningPanel;                          // Panel for the Planning workflow, hosting the Set/Simulation Group pairing and its six sub-tabs
 
 /**
  * Main window for the WTMP Actions plugin.
@@ -92,6 +93,9 @@ public class ActionsWindow extends RmaJDialog {
 
 	// Panel for forecast conditions workflows
 	private ForecastPanel _forecastPanel;
+
+	// Panel for the Planning workflow
+	private PlanningPanel _planningPanel;
 
 	// Listener that handles renames of analysis periods within the project
 	private AnalysisPeriodRenameListener _analysisPeriodListener;
@@ -164,13 +168,15 @@ public class ActionsWindow extends RmaJDialog {
 
 		// Create and add the prescribed conditions panel
 		_calibrationPanel = new CalibrationPanel(this);
-
 		_tabbedPane.addTab("Prescribed Conditions", _calibrationPanel);
 
 		// Create and add the forecast conditions panel
 		_forecastPanel = new ForecastPanel(this);
-
 		_tabbedPane.addTab("Forecast Conditions", _forecastPanel);
+
+		// Create and add the planning workflow panel
+		_planningPanel = new PlanningPanel(this);
+		_tabbedPane.addTab("Planning", _planningPanel);
 	}
 
 	/**
@@ -191,6 +197,16 @@ public class ActionsWindow extends RmaJDialog {
 	public ForecastPanel getForecastPanel()
 	{
 		return _forecastPanel;
+	}
+
+	/**
+	 * Returns the planning panel used for the Planning workflow.
+	 *
+	 * @return the planning panel
+	 */
+	public PlanningPanel getPlanningPanel()
+	{
+		return _planningPanel;
 	}
 
 	/**
