@@ -1,29 +1,12 @@
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-
-plugins {
-    id "com.palantir.git-version"
-    id "org.ajoberstar.grgit"
-}
-
 def dateVersion() {
     def fmt = DateTimeFormatter.ofPattern("yyyy.MM.dd") // format: YYYY.MM.DD
     return LocalDate.now().format(fmt)
 }
 
 version = dateVersion()
-
-tasks.register("showGit") {
-    doFirst {
-        def gitInfo = versionDetails()
-        println( "Used:    " + getVersion() ) // The select version (the project.version field)
-        println( "Tag:     " + gitInfo.lastTag) // actual tag or commit hash(short) if no tag
-        println( "Hash:    " + gitInfo.gitHash) // short commit hash
-        println( "Branch:  " + gitInfo.branchName) // branch name (null if tag checkout)
-        println( "TagBuild:" + gitInfo.isCleanTag) // true if repoi is in dettached head mode(e.g. git checkout <tag>)
-    }
-}
 
 String getShortVersionName() {
     return project.version.toString()
