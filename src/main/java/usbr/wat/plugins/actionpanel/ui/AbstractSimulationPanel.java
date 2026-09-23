@@ -1,8 +1,6 @@
 package usbr.wat.plugins.actionpanel.ui;
 
-import java.awt.Color;               // AWT color constants and custom color construction
 import java.awt.EventQueue;          // Provides invokeLater for scheduling work on the Event Dispatch Thread
-import java.awt.GridBagConstraints;  // Specifies per-cell layout constraints for GridBagLayout
 import java.awt.GridBagLayout;       // Flexible grid-based Swing layout manager
 import java.awt.Point;               // Represents an (x, y) coordinate, used for mouse hit-testing
 import java.awt.event.MouseEvent;    // Carries mouse interaction data including cursor position
@@ -11,8 +9,6 @@ import java.util.ArrayList;         // Resizable-array List implementation for c
 import java.util.Date;               // Converts epoch milliseconds to a formatted date string
 import java.util.List;               // Generic ordered collection interface
 
-import javax.swing.BorderFactory;        // Factory for creating Swing border decorations
-import javax.swing.JLabel;               // Swing label component for displaying text and icons
 import javax.swing.JPanel;              // General-purpose Swing container used for sub-panels
 import javax.swing.tree.MutableTreeNode; // Interface for tree nodes that can be modified, used for project tree selection
 import javax.swing.tree.TreePath;        // Represents the path from the tree root to a selected node
@@ -24,9 +20,7 @@ import com.rma.io.RmaFile;               // RMA abstraction over a filesystem fi
 import hec2.wat.WAT;                     // Entry point for accessing top-level WAT framework objects (e.g. WatFrame)
 import hec2.wat.model.WatSimulation;     // WAT simulation model object containing compute state, paths, and metadata
 
-import rma.swing.ColorIcon;              // Renders a solid filled square of a given color as a Swing icon
 import rma.swing.EnabledJPanel;          // RMA JPanel subclass with built-in enabled/disabled visual state support
-import rma.swing.RmaInsets;              // Constants for common GridBagLayout inset configurations
 import rma.util.RMAFilenameFilter;       // Filename filter that accepts files matching a given extension
 import rma.util.RMAIO;                   // RMA file I/O utilities including path and filename manipulation
 
@@ -49,9 +43,7 @@ import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTableNode;  // Tree-ta
  * This class provides the shared UI infrastructure and behaviour used by all concrete
  * simulation panel implementations in the WTMP action panel. Responsibilities include:
  *
- *   Building a color-coded legend that maps simulation compute states to row colors.
  *   Populating and refreshing a SimulationTreeTable from the active simulation group.
- *   Resolving per-row foreground colors based on a simulation's current compute state.
  *   Delegating context actions (edit metadata, display log, show in project tree,
  *   display in map, display report) to the appropriate framework components.
  *   Collecting SimulationReportInfo objects for the selected simulations and results.
@@ -64,29 +56,6 @@ import usbr.wat.plugins.actionpanel.ui.tree.SimulationTreeTableNode;  // Tree-ta
 @SuppressWarnings("serial")
 public abstract class AbstractSimulationPanel extends EnabledJPanel
 		implements UsbrPanel {
-	// --- Compute-state row foreground colors shown in the simulation table ---
-
-	/**
-	 * Row color indicating a simulation has never been computed.
-	 */
-	protected static final Color NOT_COMPUTED_COLOR = Color.BLUE;
-
-	/**
-	 * Row color indicating a simulation has been successfully computed.
-	 */
-	protected static final Color COMPUTED_COLOR = Color.GREEN.darker();
-
-	/**
-	 * Row color indicating the most recent compute attempt ended with an error.
-	 */
-	protected static final Color COMPUTED_ERROR_COLOR = Color.RED;
-
-	/**
-	 * Row color indicating a simulation was previously computed but is now out of date.
-	 */
-	protected static final Color NEEDS_TO_COMPUTE_COLOR = Color.BLACK;
-
-
 	// --- Core child components shared by all concrete subclasses ---
 
 	/**
@@ -122,81 +91,14 @@ public abstract class AbstractSimulationPanel extends EnabledJPanel
 
 
 	/**
-	 * Builds and returns a horizontal legend panel mapping compute-state colors to labels.
-	 * <p>
-	 * The legend contains four entries laid out left to right:
-	 * "Not Computed" (blue), "Out of Date" (black), "Computed" (green), "Compute Error" (red).
-	 * Each entry pairs a solid color icon with a descriptive text label. The panel is
-	 * enclosed in a titled (empty-title) border to visually group it from surrounding content.
+	 * Builds and returns the simulation legend panel.
+	 * Compute-state colors are intentionally not displayed because those row colors were
+	 * unreliable and could appear on the wrong simulation after compute/table updates.
 	 *
-	 * @return a configured JPanel containing the four labeled color legend entries
+	 * @return an empty JPanel placeholder for existing callers
 	 */
 	protected JPanel buildLegendPanel() {
-		JPanel legendPanel = new JPanel(new GridBagLayout());
-
-		// Surround the legend with an empty-titled border for visual grouping
-		legendPanel.setBorder(BorderFactory.createTitledBorder(""));
-
-		// Shared constraint object; individual fields are overridden per entry
-		GridBagConstraints gbc = new GridBagConstraints();
-
-		// --- "Not Computed" entry ---
-		ColorIcon icon = new ColorIcon(NOT_COMPUTED_COLOR);
-		JLabel label = new JLabel("Not Computed");
-		label.setIcon(icon);
-		gbc.gridx = GridBagConstraints.RELATIVE;
-		gbc.gridy = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1;
-		gbc.weightx = 0.0;
-		gbc.weighty = 0.0;
-		gbc.anchor = GridBagConstraints.CENTER;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.insets = RmaInsets.INSETS5555;
-		legendPanel.add(label, gbc);
-
-		// --- "Out of Date" entry ---
-		icon = new ColorIcon(NEEDS_TO_COMPUTE_COLOR);
-		label = new JLabel("Out of Date");
-		label.setIcon(icon);
-		gbc.gridx = GridBagConstraints.RELATIVE;
-		gbc.gridy = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1;
-		gbc.weightx = 0.0;
-		gbc.weighty = 0.0;
-		gbc.anchor = GridBagConstraints.CENTER;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.insets = RmaInsets.INSETS5555;
-		legendPanel.add(label, gbc);
-
-		// --- "Computed" entry ---
-		icon = new ColorIcon(COMPUTED_COLOR);
-		label = new JLabel("Computed");
-		label.setIcon(icon);
-		gbc.gridx = GridBagConstraints.RELATIVE;
-		gbc.gridy = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = 1;
-		gbc.weightx = 0.0;
-		gbc.weighty = 0.0;
-		gbc.anchor = GridBagConstraints.CENTER;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.insets = RmaInsets.INSETS5555;
-		legendPanel.add(label, gbc);
-
-		// --- "Compute Error" entry (REMAINDER spans to end of row) ---
-		icon = new ColorIcon(COMPUTED_ERROR_COLOR);
-		label = new JLabel("Compute Error");
-		label.setIcon(icon);
-		gbc.gridx = GridBagConstraints.RELATIVE;
-		gbc.gridy = GridBagConstraints.RELATIVE;
-		gbc.gridwidth = GridBagConstraints.REMAINDER;
-		gbc.weightx = 0.0;
-		gbc.weighty = 0.001;  // Small positive weight anchors this entry to the top of its cell
-		gbc.anchor = GridBagConstraints.CENTER;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.insets = RmaInsets.INSETS5555;
-		legendPanel.add(label, gbc);
-
-		return legendPanel;
+		return new JPanel();
 	}
 
 
@@ -493,14 +395,12 @@ public abstract class AbstractSimulationPanel extends EnabledJPanel
 
 
 	/**
-	 * Replaces the simulation table's model with one built from the given group and
-	 * recolors all simulation rows to reflect current compute states.
+	 * Replaces the simulation table's model with one built from the given group.
 	 *
 	 * Steps performed:
 	 * 1. Build a new SimulationTreeTableModel from the group and apply it to the table.
 	 * 2. Clear all existing row color overrides.
-	 * 3. Iterate every row, resolve the foreground color for WatSimulation rows, and apply it.
-	 * 4. Revalidate the table to trigger a layout and repaint pass.
+	 * 3. Revalidate the table to trigger a layout and repaint pass.
 	 *
 	 * @param sg the simulation group whose simulations should be shown in the table
 	 */
@@ -512,57 +412,8 @@ public abstract class AbstractSimulationPanel extends EnabledJPanel
 		// Remove any color overrides left over from the previous model
 		_simulationTable.clearColors();
 
-		// Apply compute-state colors to each simulation row
-		int rowCnt = _simulationTable.getRowCount();
-		for (int r = 0; r < rowCnt; r++) {
-			Object val = _simulationTable.getValueAt(r, SimulationTreeTableModel.SIMULATION_COLUMN);
-
-			if (val instanceof WatSimulation) {
-				WatSimulation sim = (WatSimulation) val;
-				Color color = getSimForegroundColor(sim);
-				_simulationTable.setRowForeground(r, color);
-			}
-		}
-
 		// Trigger a layout recalculation to account for the new model data
 		_simulationTable.revalidate();
-	}
-
-
-	/**
-	 * Resolves the foreground row color that represents a simulation's current compute state.
-	 *
-	 * The priority order for state evaluation is:
-	 * 1. Not computable             -> NOT_COMPUTED_COLOR  (blue)
-	 * 2. Has a compute error        -> COMPUTED_ERROR_COLOR (red)
-	 * 3. Computed but out of date   -> NEEDS_TO_COMPUTE_COLOR (black)
-	 * 4. Computable and computed    -> COMPUTED_COLOR (green)
-	 * 5. Fallthrough (not computed) -> NOT_COMPUTED_COLOR (blue)
-	 *
-	 * @param sim the simulation whose state should be evaluated; must not be null
-	 * @return the Color to use as the row foreground for this simulation
-	 */
-	private Color getSimForegroundColor(WatSimulation sim) {
-		if (!sim.isComputable()) {
-			// Simulation cannot be run (e.g. missing required inputs)
-			return NOT_COMPUTED_COLOR;
-
-		} else if (sim.hasComputeError()) {
-			// Most recent compute attempt failed
-			return COMPUTED_ERROR_COLOR;
-
-		} else if (sim.hasComputed() && sim.needToCompute()) {
-			// Results exist but inputs have changed since the last run
-			return NEEDS_TO_COMPUTE_COLOR;
-
-		} else if (sim.isComputable() && sim.hasComputed()) {
-			// Successfully computed and still up to date
-			return COMPUTED_COLOR;
-
-		} else {
-			// No results yet and no error; treat as not yet computed
-			return NOT_COMPUTED_COLOR;
-		}
 	}
 
 
@@ -702,51 +553,16 @@ public abstract class AbstractSimulationPanel extends EnabledJPanel
 
 
 	/**
-	 * Updates the foreground row colors in the simulation table to reflect the current
-	 * compute state of each simulation. Rows containing a WatSimulation object are colored
-	 * using the simulation's state-derived foreground color. If the system property
-	 * "NoSimulationComputeState" is set to true, all coloring is suppressed and the method
-	 * returns immediately after clearing existing colors. The table is repainted at the end
-	 * to flush all color changes to the screen. This method overrides the base class
-	 * implementation to provide simulation-specific compute state visualization.
+	 * Clears simulation row colors. The previous compute-state colors were unreliable because
+	 * row foregrounds are tracked by table row index, which can make status colors appear on
+	 * the wrong simulation after compute or table updates.
 	 */
 	@Override
 	public void updateComputeStates() {
-		// Clear all existing row color overrides before reapplying
+		// Clear all existing row color overrides
 		_simulationTable.clearColors();
 
-		// Allow callers to suppress compute-state coloring via a system property
-		if (Boolean.getBoolean("NoSimulationComputeState")) {
-			return;
-		}
-
-		// Declare variables for the current simulation, its foreground color, and the cell value
-		WatSimulation sim;
-		Color fgColor;
-		Object val;
-
-		// Clear a second time to ensure a clean slate after the property check
-		_simulationTable.clearColors();
-
-		// Iterate over every row in the simulation table to apply state-based coloring
-		for (int r = 0; r < _simulationTable.getRowCount(); r++) {
-			// Retrieve the object in the simulation column for the current row
-			val = _simulationTable.getValueAt(r, SimulationTreeTableModel.SIMULATION_COLUMN);
-
-			// Only apply coloring to rows that contain a WatSimulation object
-			if (val instanceof WatSimulation) {
-				// Cast the cell value to WatSimulation to access its compute state
-				sim = (WatSimulation) val;
-
-				// Resolve the foreground color that corresponds to this simulation's compute state
-				fgColor = getSimForegroundColor(sim);
-
-				// Apply the resolved color to the current row in the table
-				_simulationTable.setRowForeground(r, fgColor);
-			}
-		}
-
-		// Flush all color changes to the screen
+		// Flush the cleared colors to the screen
 		_simulationTable.repaint();
 	}
 
