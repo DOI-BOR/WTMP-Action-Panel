@@ -542,7 +542,7 @@ public abstract class AbstractSimulationPanel extends EnabledJPanel
 	 * @param sim the simulation whose state should be evaluated; must not be null
 	 * @return the Color to use as the row foreground for this simulation
 	 */
-	private Color getSimForegroundColor(WatSimulation sim) {
+	public static Color getSimForegroundColor(WatSimulation sim) {
 		if (!sim.isComputable()) {
 			// Simulation cannot be run (e.g. missing required inputs)
 			return NOT_COMPUTED_COLOR;

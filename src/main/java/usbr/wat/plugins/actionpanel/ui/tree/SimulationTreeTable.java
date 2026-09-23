@@ -56,6 +56,7 @@ import usbr.wat.plugins.actionpanel.ActionPanelPlugin;              // Provides 
 import usbr.wat.plugins.actionpanel.actions.SaveSimulationAsAction; // Provides SaveSimulationAsAction for the "Save As..." context menu action
 import usbr.wat.plugins.actionpanel.model.ResultsData;              // Provides ResultsData for identifying selected ResultsData rows in the tree-table
 import usbr.wat.plugins.actionpanel.ui.UsbrPanel;                   // Provides UsbrPanel for the parent panel reference that drives simulation actions
+import usbr.wat.plugins.actionpanel.ui.AbstractSimulationPanel;		// Provides the shared compute-state color resolution logic
 
 /**
  * A specialised RmaJXTreeTable that displays WAT simulations and their associated
@@ -754,7 +755,7 @@ public class SimulationTreeTable extends RmaJXTreeTable {
 		 *
 		 * @param component        the renderer component to colour
 		 * @param componentAdapter the adapter providing row, column, and selection context
-		 * @return the coloured component
+		 * @return the colored component
 		 */
 		@Override
 		protected Component doHighlight(Component component, ComponentAdapter componentAdapter) {
@@ -764,16 +765,23 @@ public class SimulationTreeTable extends RmaJXTreeTable {
 				if (obj instanceof WatSimulation) {
 					// Simulation rows get the light blue alternating background
 					component.setBackground(_oddRowBackground);
+
+					// Resolve the foreground color live from this row's simulation instead of a
+					// row-index-keyed lookup. The tree shape changes whenever a simulation gains or
+					// loses result rows, so a color cached against a row index can end up painted on
+					// whatever simulation later shifts into that row. Deriving it here, from the
+					// object actually occupying this row at paint time, keeps it correct regardless
+					// of how rows above it have shifted.
+					Color fg = AbstractSimulationPanel.getSimForegroundColor((WatSimulation) obj);
+					if (fg != null) {
+						component.setForeground(fg);
+					}
+
 				} else {
 					// Results rows use the standard table background colour
 					component.setBackground(UIManager.getColor("Table.background"));
 				}
 
-				// Apply per-row foreground colour for compute-state visual coding
-				Color fg = getRowForeground(componentAdapter.row);
-				if (fg != null) {
-					component.setForeground(fg);
-				}
 			} else if (componentAdapter.isSelected()) {
 				// Selected rows always use the standard selection colours regardless of type
 				component.setBackground(UIManager.getColor("Table.selectionBackground"));
