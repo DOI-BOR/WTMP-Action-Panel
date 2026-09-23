@@ -132,6 +132,20 @@ public class RunForecastSimulationAction extends AbstractAction {
 			return;
 		}
 
+		// Validate member lists before opening the compute dialog so invalid formats do not fail silently
+		for (EnsembleSet selectedESet : selectedESets) {
+			String memberSet = selectedESet.getMemberSetToCompute();
+
+			if (!isValidIntegerSet(memberSet)) {
+				JOptionPane.showMessageDialog(_parent,
+						"Could not interpret the ensemble member list \"" + memberSet
+								+ "\".\nUse comma-separated integers or ranges, such as 1,2,3 or 1-3,5.",
+						"Invalid Ensemble Member List", JOptionPane.WARNING_MESSAGE);
+
+				return;
+			}
+		}
+
 		// Combine keyboard request with panel setting to determine whether to recompute all
 		recomputeAll = recomputeAll || _parentPanel.shouldRecomputeAll();
 
@@ -238,5 +252,50 @@ public class RunForecastSimulationAction extends AbstractAction {
 			// Not an integer
 			return false;
 		}
+	}
+
+	/**
+	 * Checks whether a member list contains only comma-separated integers or integer ranges.
+	 *
+	 * @param txt the input string to validate
+	 * @return true if the input can be parsed by {@link #getIntegerSet(String)}, false otherwise
+	 */
+	public static boolean isValidIntegerSet(String txt) {
+		if (txt == null || txt.trim().isEmpty()) {
+			return false;
+		}
+
+		String[] tokens = txt.split(",", -1);
+
+		for (String token : tokens) {
+			String word = token.trim();
+
+			if (word.isEmpty()) {
+				return false;
+			}
+
+			if (word.contains("-")) {
+				String[] rangeParts = word.split("-", -1);
+
+				if (rangeParts.length != 2) {
+					return false;
+				}
+
+				String start = rangeParts[0].trim();
+				String end = rangeParts[1].trim();
+
+				if (!isParsableToInt(start) || !isParsableToInt(end)) {
+					return false;
+				}
+
+				if (Integer.parseInt(start) > Integer.parseInt(end)) {
+					return false;
+				}
+			} else if (!isParsableToInt(word)) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
