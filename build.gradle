@@ -16,7 +16,10 @@ dependencies {
     implementation libs.wat.cequalw2.plugin
     implementation(libs.merlin.data.exchange) {
         exclude group: 'mil.army.usace.hec'
-    }
+        version {
+			branch = "main"
+	    }
+	}
 
     api (libs.bundles.jasperreports) {
         exclude group: 'net.sf.jasperreports', module: 'jasperreports'
@@ -27,7 +30,11 @@ dependencies {
 	implementation libs.poi
 	implementation libs.poi.ooxml
 
-    implementation libs.usbr.git.library
+    implementation (libs.usbr.git.library){
+        version {
+			branch = "main"
+		}
+    }
     implementation libs.jgit
     implementation libs.gitlab4j
     implementation libs.swingx.core

@@ -9,7 +9,8 @@ dependencyResolutionManagement {
 
         // Route only gov.usbr.wq artifacts to GitHub Packages
         exclusiveContent {
-            forRepository {
+            forRepositories (
+            mavenLocal(),
                 maven {
                     name = 'GitHubPackages'
                     url = uri('https://maven.pkg.github.com/doi-bor/Merlin-to-HEC')
@@ -18,12 +19,13 @@ dependencyResolutionManagement {
                         password = System.getenv("GITHUB_TOKEN")
                     }
                 }
-            }
+            )
             filter { includeModule('gov.usbr.wq', 'merlin-data-exchange') }
         }
         // Route only gov.usbr.wq artifacts to GitHub Packages
         exclusiveContent {
-            forRepository {
+            forRepositories (
+            mavenLocal(),
                 maven {
                     name = 'GitHubPackages'
                     url = uri('https://maven.pkg.github.com/doi-bor/WTMP-Git-Library')
@@ -32,7 +34,7 @@ dependencyResolutionManagement {
                         password = System.getenv("GITHUB_TOKEN")
                     }
                 }
-            }
+            )
             filter { includeModule('usbr.wat.plugins', 'usbr-git-library') }
         }
         maven {
@@ -54,5 +56,17 @@ dependencyResolutionManagement {
             url 'https://repo.osgeo.org/repository/release/'
         }
         mavenCentral()
+        // New GitLab mirror repo
+        maven {
+            name = 'GitLabMirror'
+            url = uri('https://gitlab.bor.doi.net/api/v4/projects/992/packages/maven')
+            credentials(PasswordCredentials) {
+                username = System.getenv("GITLAB_USER")
+                password  = System.getenv("GITLAB_TOKEN")
+            }
+            authentication {
+                header(BasicAuthentication)
+            }
+        }
     }
 }
