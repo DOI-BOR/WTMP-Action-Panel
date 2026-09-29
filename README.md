@@ -151,7 +151,7 @@ The specific configuration needed for local will vary based on the developer's e
 	
 	<br>The end of the build process will either result in a green "BUILD SUCCESSFUL" notification or a red "BUILD FAILED" notification. The build is configured to enable a stack trace on failure to aid in debugging. Resolve any errors and repeat the build until it successfully completes.
 	
-	<br>It is important to note that the build will execute for whatever branch the repository is currently on. This is also important for downstream repositories that will potentially key off of local packages named by branch. As the Action Panel has no upstream dependencies, this does not appply to this repository. 
+	<br>It is important to note that the build will execute for whatever branch the repository is currently on. This is also important for downstream repositories that will potentially key off of local packages named by branch, specifically Merlin-to-HEC and WTMP-Git-Library. 
 
 
 7) Publishing the gradle package
